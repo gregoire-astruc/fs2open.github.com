@@ -2229,7 +2229,19 @@ int parse_create_object_sub(p_object *p_objp)
 		int max_allowed_sparks, num_sparks, iLoop;
 
 		Objects[objnum].hull_strength = p_objp->initial_hull * shipp->ship_max_hull_strength / 100.0f;
-		for (iLoop = 0; iLoop<MAX_SHIELD_SECTIONS; iLoop++)
+		int n_shd_sections;
+		switch (Objects[objnum].n_shield_segments) {
+			case 1:
+				n_shd_sections = 1;
+				break;
+			case 2:
+				n_shd_sections = 2;
+				break;
+			default:
+				n_shd_sections = MAX_SHIELD_SECTIONS;
+			break;
+		}
+		for (iLoop = 0; iLoop<n_shd_sections; iLoop++)
 		{
 			Objects[objnum].shield_quadrant[iLoop] = (float) (p_objp->initial_shields * get_max_shield_quad(&Objects[objnum]) / 100.0f);
 		}
