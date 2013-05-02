@@ -1107,120 +1107,17 @@ void script_state::ParseChunkSub(int *out_lang, int *out_index, char* debug_str)
 	Assert(out_index != NULL);
 	Assert(debug_str != NULL);
 
-	if(check_for_string("[["))
-	{
-		//Lua from file
+	// Currently only Lua is supported
+	*out_lang = SC_LUA;
 
-		//Lua
-		*out_lang = SC_LUA;
+	LuaCallback callback(GetLuaSession());
 
-		char *filename = alloc_block("[[", "]]");
+	stuff_lua_callback(GetLuaSession(), callback, debug_str);
 
-		//Load from file
-		CFILE *cfp = cfopen(filename, "rb", CFILE_NORMAL, CF_TYPE_SCRIPTS );
-		if(cfp == NULL)
-		{
-			Warning(LOCATION, "Could not load lua script file '%s'", filename);
-		}
-		else
-		{
-			int len = cfilelength(cfp);
+	LuaReference ref(callback.getReference());
+	ref.setKeepReference(true);
 
-			char *raw_lua = (char*)vm_malloc(len+1);
-			raw_lua[len] = '\0';
-
-			cfread(raw_lua, len, 1, cfp);
-			cfclose(cfp);
-
-			//WMC - use filename instead of debug_str so that the filename
-			//gets passed.
-			if(!luaL_loadbuffer(GetLuaSession(), raw_lua, len, filename))
-			{
-				//Stick it in the registry
-				*out_index = luaL_ref(GetLuaSession(), LUA_REGISTRYINDEX);
-			}
-			else
-			{
-				if(lua_isstring(GetLuaSession(), -1))
-					LuaError(GetLuaSession());
-				else
-					LuaError(GetLuaSession(), "Error parsing %s", filename);
-				*out_index = -1;
-			}
-			vm_free(raw_lua);
-		}
-		//dealloc
-		//WMC - For some reason these cause crashes
-		vm_free(filename);
-	}
-	else if(check_for_string("["))
-	{
-		//Lua string
-
-		//Assume Lua
-		*out_lang = SC_LUA;
-
-		//Allocate raw script
-		char* raw_lua = alloc_block("[", "]", 1);
-		//WMC - minor hack to make sure that the last line gets
-		//executed properly. In testing, I couldn't reproduce Nuke's
-		//crash, so this is here just to be on the safe side.
-		strcat(raw_lua, "\n");
-
-		char *tmp_ptr = raw_lua;
-		
-		//Load it into a buffer & parse it
-		//WMC - This is causing an access violation error. Sigh.
-		if(!luaL_loadbuffer(GetLuaSession(), tmp_ptr, strlen(tmp_ptr), debug_str))
-		{
-			//Stick it in the registry
-			*out_index = luaL_ref(GetLuaSession(), LUA_REGISTRYINDEX);
-		}
-		else
-		{
-			if(lua_isstring(GetLuaSession(), -1))
-				LuaError(GetLuaSession());
-			else
-				LuaError(GetLuaSession(), "Error parsing %s", debug_str);
-			*out_index = -1;
-		}
-
-		//free the mem
-		//WMC - This makes debug go wonky.
-		vm_free(raw_lua);
-	}
-	else
-	{
-		char buf[PARSE_BUF_SIZE];
-
-		//Assume lua
-		*out_lang = SC_LUA;
-
-		strcpy_s(buf, "return ");
-
-		//Stuff it
-		stuff_string(buf+strlen(buf), F_RAW, sizeof(buf) - strlen(buf));
-
-		//Add ending
-		strcat_s(buf, "\n");
-
-		int len = strlen(buf);
-
-		//Load it into a buffer & parse it
-		if(!luaL_loadbuffer(GetLuaSession(), buf, len, debug_str))
-		{
-			//Stick it in the registry
-			*out_index = luaL_ref(GetLuaSession(), LUA_REGISTRYINDEX);
-		}
-		else
-		{
-			if(lua_isstring(GetLuaSession(), -1))
-				LuaError(GetLuaSession());
-			else
-				LuaError(GetLuaSession(), "Error parsing %s", debug_str);
-			*out_index = -1;
-		}
-	}
+	*out_index = ref.getReference();
 }
 
 script_hook script_state::ParseChunk(char* debug_str)

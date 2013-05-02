@@ -538,6 +538,10 @@
     <ClCompile Include="..\..\code\parse\encrypt.cpp" />
     <ClCompile Include="..\..\code\parse\generic_log.cpp" />
     <ClCompile Include="..\..\code\parse\lua.cpp" />
+    <ClCompile Include="..\..\code\parse\lua\LuaCallback.cpp" />
+    <ClCompile Include="..\..\code\parse\lua\LuaTable.cpp" />
+    <ClCompile Include="..\..\code\parse\lua\LuaUtil.cpp" />
+    <ClCompile Include="..\..\code\parse\lua\LuaValue.cpp" />
     <ClCompile Include="..\..\code\parse\parselo.cpp" />
     <ClCompile Include="..\..\code\parse\scripting.cpp" />
     <ClCompile Include="..\..\code\parse\sexp.cpp" />
@@ -822,6 +826,10 @@
     <ClInclude Include="..\..\code\parse\encrypt.h" />
     <ClInclude Include="..\..\code\parse\generic_log.h" />
     <ClInclude Include="..\..\code\parse\lua.h" />
+    <ClInclude Include="..\..\code\parse\lua\LuaCallback.h" />
+    <ClInclude Include="..\..\code\parse\lua\LuaTable.h" />
+    <ClInclude Include="..\..\code\parse\lua\LuaUtil.h" />
+    <ClInclude Include="..\..\code\parse\lua\LuaValue.h" />
     <ClInclude Include="..\..\code\parse\parselo.h" />
     <ClInclude Include="..\..\code\parse\scripting.h" />
     <ClInclude Include="..\..\code\parse\sexp.h" />

@@ -205,6 +205,9 @@
     <Filter Include="GameHelp\fs2netd">
       <UniqueIdentifier>{eaaf5609-a655-4b46-95b4-bee16c341561}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Parse\Lua">
+      <UniqueIdentifier>{d6206e86-14b4-44f2-98d4-5e4e19725efe}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\code\ai\ai.cpp">
@@ -1056,6 +1059,18 @@
     <ClCompile Include="..\..\code\parse\generic_log.cpp">
       <Filter>Parse</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\code\parse\lua\LuaCallback.cpp">
+      <Filter>Parse\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\code\parse\lua\LuaTable.cpp">
+      <Filter>Parse\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\code\parse\lua\LuaUtil.cpp">
+      <Filter>Parse\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\code\parse\lua\LuaValue.cpp">
+      <Filter>Parse\Lua</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\code\ai\ai.h">
@@ -1858,6 +1873,18 @@
     </ClInclude>
     <ClInclude Include="..\..\code\PilotFile\pilotfile.h">
       <Filter>PilotFile</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\code\parse\lua\LuaCallback.h">
+      <Filter>Parse\Lua</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\code\parse\lua\LuaTable.h">
+      <Filter>Parse\Lua</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\code\parse\lua\LuaUtil.h">
+      <Filter>Parse\Lua</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\code\parse\lua\LuaValue.h">
+      <Filter>Parse\Lua</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

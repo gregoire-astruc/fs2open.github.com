@@ -13,6 +13,7 @@
 #include "globalincs/globals.h"
 #include "cfile/cfile.h"
 #include "globalincs/pstypes.h"
+#include "parse/lua/LuaCallback.h"
 
 #include <csetjmp>
 #include <cstdio>
@@ -260,5 +261,7 @@ int get_string_or_variable (char *str);
 int get_string_or_variable (SCP_string &str);
 #define PARSING_FOUND_STRING		0
 #define PARSING_FOUND_VARIABLE		1
+
+bool stuff_lua_callback(lua_State* L, LuaCallback& callBack, const SCP_string& debug_str = "");
 
 #endif

@@ -50,6 +50,9 @@
 #define BMPMAN_INTERNAL
 #include "bmpman/bm_internal.h"
 
+#include "parse/lua/LuaTable.h"
+#include "parse/lua/LuaCallback.h"
+
 //*************************Lua globals*************************
 SCP_vector<ade_table_entry> Ade_table_entries;
 
@@ -14351,6 +14354,7 @@ static const char *Lua_type_names[] = {
 	"function",
 	"userdata",
 	"thread",
+	"table",
 };
 
 static int Lua_type_names_num = sizeof(Lua_type_names)/sizeof(char*);
@@ -14448,8 +14452,8 @@ int ade_get_args(lua_State *L, char *fmt, ...)
 	while(*fmt && nargs <= total_args)
 	{
 		//Skip functions; I assume these are being used to return args
-		while(lua_type(L, nargs) == LUA_TFUNCTION && nargs <= total_args)
-			nargs++;
+		//while(lua_type(L, nargs) == LUA_TFUNCTION && nargs <= total_args)
+		//	nargs++;
 
 		if(nargs > total_args)
 			break;
@@ -14555,6 +14559,43 @@ int ade_get_args(lua_State *L, char *fmt, ...)
 					}
 				}
 				break;
+			case 't':
+				{
+					// Table
+					if (lua_istable(L, nargs))
+					{
+						LuaTable* table = (LuaTable*) va_arg(vl, LuaTable*);
+						table->setReference(LuaReference::create(L, nargs));
+					}
+					else
+					{
+						LuaError(L, "%s: Argument %d is an invalid type '%s'; table expected", funcname, nargs, ade_get_type_string(L, nargs));
+						if(!optional_args) return 0;
+					}
+				}
+				break;
+			case 'u':
+				{
+					// Function
+					if (lua_isfunction(L, nargs) || lua_iscfunction(L, nargs))
+					{
+						LuaCallback* callback = (LuaCallback*) va_arg(vl, LuaCallback*);
+						callback->setReference(LuaReference::create(L, nargs));
+					}
+					else
+					{
+						LuaError(L, "%s: Argument %d is an invalid type '%s'; function expected", funcname, nargs, ade_get_type_string(L, nargs));
+						if(!optional_args) return 0;
+					}
+				}
+				break;
+			case 'v':
+				{
+					// Generic Value
+					LuaValue* value = (LuaValue*) va_arg(vl, LuaValue*);
+					value->setReference(LuaReference::create(L, nargs));
+				}
+				break;
 			case '|':
 				nargs--;	//cancel out the nargs++ at the end
 				counted_args--;
@@ -14651,6 +14692,24 @@ int ade_set_args(lua_State *L, char *fmt, ...)
 					}
 					break;
 				}
+			case 't':
+				{
+					LuaTable* table = (LuaTable*) va_arg(vl, LuaTable*);
+					table->pushValue();
+				}
+				break;
+			case 'u':
+				{
+					LuaCallback* func = (LuaCallback*) va_arg(vl, LuaCallback*);
+					func->pushValue();
+				}
+				break;
+			case 'v':
+				{
+					LuaValue* val = (LuaValue*) va_arg(vl, LuaValue*);
+					val->pushValue();
+				}
+				break;
 			//WMC -  Don't forget to update lua_set_arg
 			default:
 				Error(LOCATION, "Bad character passed to ade_set_args; (%c)", *(fmt-1));

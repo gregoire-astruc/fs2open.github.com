@@ -1467,6 +1467,111 @@ void stuff_malloc_string(char **dest, int type, char *terminators)
 	}
 }
 
+bool stuff_lua_callback(lua_State* L, LuaCallback& callBack, const SCP_string& debug_str)
+{
+	// Originally from scripting.cpp
+	
+	bool retVal = true;
+
+	if(check_for_string("[["))
+	{
+		//Lua from file
+		char *filename = alloc_block("[[", "]]");
+
+		//Load from file
+		CFILE *cfp = cfopen(filename, "rb", CFILE_NORMAL, CF_TYPE_SCRIPTS );
+		if(cfp == NULL)
+		{
+			Warning(LOCATION, "Could not load lua script file '%s'", filename);
+			retVal = false;
+		}
+		else
+		{
+			int len = cfilelength(cfp);
+
+			char *raw_lua = (char*)vm_malloc(len+1);
+			raw_lua[len] = '\0';
+
+			cfread(raw_lua, len, 1, cfp);
+			cfclose(cfp);
+
+			try
+			{
+				callBack.parseCode(SCP_string(raw_lua, len + 1), SCP_string(filename));
+			}
+			catch(const SCP_string& err)
+			{
+				LuaError(callBack.luaState, "Error parsing %s:\n%s", filename, err.c_str());
+
+				retVal = false;
+			}
+
+			vm_free(raw_lua);
+		}
+		//dealloc
+		//WMC - For some reason these cause crashes
+		vm_free(filename);
+	}
+	else if(check_for_string("["))
+	{
+		//Lua string
+
+		//Allocate raw script
+		char* raw_lua = alloc_block("[", "]", 1);
+		//WMC - minor hack to make sure that the last line gets
+		//executed properly. In testing, I couldn't reproduce Nuke's
+		//crash, so this is here just to be on the safe side.
+		strcat(raw_lua, "\n");
+
+		char *tmp_ptr = raw_lua;
+		
+		//Load it into a buffer & parse it
+		//WMC - This is causing an access violation error. Sigh.
+
+		try
+		{
+			callBack.parseCode(SCP_string(tmp_ptr), debug_str);
+		}
+		catch(const SCP_string& err)
+		{
+			LuaError(callBack.luaState, "Error parsing %s:\n%s", debug_str.c_str(), err.c_str());
+
+			retVal = false;
+		}
+
+		//free the mem
+		//WMC - This makes debug go wonky.
+		vm_free(raw_lua);
+	}
+	else
+	{
+		char buf[PARSE_BUF_SIZE];
+
+		strcpy_s(buf, "return ");
+
+		//Stuff it
+		stuff_string(buf+strlen(buf), F_RAW, sizeof(buf) - strlen(buf));
+
+		//Add ending
+		strcat_s(buf, "\n");
+
+		int len = strlen(buf);
+
+		try
+		{
+			callBack.parseCode(SCP_string(buf, len), debug_str);
+		}
+		catch(const SCP_string& err)
+		{
+			LuaError(callBack.luaState, "Error parsing %s:\n%s", debug_str.c_str(), err.c_str());
+
+			retVal = false;
+		}
+	}
+
+	return retVal;
+}
+
 // After reading a multitext string, you can call this function to convert any newlines into
 // spaces, so it's a one paragraph string (I.e. as in MS-Word).
 //
@@ -1770,11 +1875,23 @@ int strip_comments(char *line, int in_multiline_comment)
 
 		// check whether major, minor, and build line up with this version
 		if (major > FS_VERSION_MAJOR)
-			goto done_with_line;
-		if (minor > FS_VERSION_MINOR)
-			goto done_with_line;
-		if (build > FS_VERSION_BUILD)
-			goto done_with_line;
+		{
+ 			goto done_with_line;
+		}
+		else if (major == FS_VERSION_MAJOR)
+		{
+			if (minor > FS_VERSION_MINOR)
+			{
+				goto done_with_line;
+			}
+			else if (minor == FS_VERSION_MINOR)
+			{
+				if (build > FS_VERSION_BUILD)
+				{
+					goto done_with_line;
+				}
+			}
+		}
 
 	
 		// this version is compatible, so copy the line past the tag
