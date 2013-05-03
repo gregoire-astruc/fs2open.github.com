@@ -349,11 +349,11 @@ canvas_w(-1), canvas_h(-1), target_w(-1), target_h(-1)
 }
 
 // constructor for custom gauges
-HudGauge::HudGauge(int _gauge_config, bool _slew, int r, int g, int b, char* _custom_name, char* _custom_text, char* frame_fname, int txtoffset_x, int txtoffset_y):
+HudGauge::HudGauge(int _gauge_config, bool _slew, int r, int g, int b, const SCP_string& _custom_name, char* _custom_text, char* frame_fname, int txtoffset_x, int txtoffset_y):
 base_w(0), base_h(0), gauge_config(_gauge_config), gauge_object(HUD_OBJECT_CUSTOM), font_num(FONT1), lock_color(false), sexp_lock_color(false), 
 reticle_follow(_slew), active(false), off_by_default(false), sexp_override(false), pop_up(false), message_gauge(false),
 disabled_views(VM_EXTERNAL | VM_DEAD_VIEW | VM_WARP_CHASE | VM_PADLOCK_ANY), custom_gauge(true), textoffset_x(txtoffset_x),
- textoffset_y(txtoffset_y), texture_target(-1), canvas_w(-1), canvas_h(-1), target_w(-1), target_h(-1)
+textoffset_y(txtoffset_y), texture_target(-1), canvas_w(-1), canvas_h(-1), target_w(-1), target_h(-1), custom_name(_custom_name)
 {
 	position[0] = 0;
 	position[1] = 0;
@@ -372,12 +372,6 @@ disabled_views(VM_EXTERNAL | VM_DEAD_VIEW | VM_WARP_CHASE | VM_PADLOCK_ANY), cus
 
 	texture_target_fname[0] = '\0';
 
-	if(_custom_name) {
-		strcpy_s(custom_name, _custom_name);
-	} else {
-		custom_name[0] = '\0';
-	}
-
 	if(_custom_text) {
 		custom_text = _custom_text;
 		default_text = _custom_text;
@@ -395,6 +389,14 @@ disabled_views(VM_EXTERNAL | VM_DEAD_VIEW | VM_WARP_CHASE | VM_PADLOCK_ANY), cus
 		if (custom_frame.first_frame < 0 ) {
 			Warning(LOCATION,"Cannot load hud ani: %s\n", frame_fname);
 		}
+	}
+}
+
+HudGauge::~HudGauge()
+{
+	if (lua_table != NULL)
+	{
+		delete lua_table;
 	}
 }
 
@@ -426,7 +428,7 @@ void HudGauge::initFont(int font)
 	}
 }
 
-char* HudGauge::getCustomGaugeName()
+const SCP_string HudGauge::getCustomGaugeName()
 {
 	return custom_name;
 }
@@ -555,6 +557,21 @@ int HudGauge::getConfigType()
 int HudGauge::getObjectType()
 {
 	return gauge_object;
+}
+
+LuaTable* HudGauge::getLuaTable(lua_State* state)
+{
+	if (lua_table == NULL)
+	{
+		lua_table = new LuaTable(state);
+		lua_table->create();
+	}
+	else
+	{
+		Assertion(lua_table->luaState == state, "Lua state missmatch! Debug and trace back.");
+	}
+
+	return lua_table;
 }
 
 void HudGauge::lockConfigColor(bool lock)
@@ -3766,7 +3783,7 @@ void hud_page_in()
 
 HudGauge* hud_get_gauge(char* name)
 {
-	char* gauge_name;
+	SCP_string gauge_name;
 	size_t j;
 
 	// go through all gauges and return the gauge that matches
@@ -3774,7 +3791,7 @@ HudGauge* hud_get_gauge(char* name)
 		for(j = 0; j < Ship_info[Player_ship->ship_info_index].hud_gauges.size(); j++) {
 
 			gauge_name = Ship_info[Player_ship->ship_info_index].hud_gauges[j]->getCustomGaugeName();
-			if(!strcmp(name, gauge_name)) {
+			if(!gauge_name.compare(name)) {
 				return Ship_info[Player_ship->ship_info_index].hud_gauges[j];
 			}
 		}
@@ -3782,13 +3799,22 @@ HudGauge* hud_get_gauge(char* name)
 		for(j = 0; j < default_hud_gauges.size(); j++) {
 
 			gauge_name = default_hud_gauges[j]->getCustomGaugeName();
-			if(!strcmp(name, gauge_name)) {
+			if(!gauge_name.compare(name)) {
 				return default_hud_gauges[j];
 			}
 		}
 	}
 
 	return NULL;
+}
+
+SCP_vector<HudGauge*>& hud_get_gauges()
+{
+	if(Ship_info[Player_ship->ship_info_index].hud_gauges.size() > 0) {
+		return Ship_info[Player_ship->ship_info_index].hud_gauges;
+	} else {
+		return default_hud_gauges;
+	}
 }
 
 HudGaugeMultiMsg::HudGaugeMultiMsg():

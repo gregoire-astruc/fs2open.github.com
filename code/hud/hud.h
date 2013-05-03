@@ -14,6 +14,7 @@
 #include "graphics/2d.h"
 #include "hud/hudparse.h"
 #include "globalincs/vmallocator.h"
+#include "parse/lua/LuaTable.h"
 
 struct object;
 struct cockpit_display;
@@ -235,7 +236,6 @@ protected:
 	hud_frames custom_frame;
 	int custom_frame_offset;
 	int textoffset_x, textoffset_y;
-	char custom_name[NAME_LENGTH];
 	SCP_string custom_text;
 	
 	SCP_string default_text;
@@ -247,12 +247,20 @@ protected:
 	int target_w, target_h;
 	int target_x, target_y;
 	int display_offset_x, display_offset_y;
+
+	// scripting properties
+	LuaTable* lua_table;
+protected:
+	SCP_string custom_name;
+
 public:
 	// constructors
 	HudGauge();
 	HudGauge(int _gauge_object, int _gauge_config, bool _slew, bool _message, int _disabled_views, int r, int g, int b);
 	// constructor for custom gauges
-	HudGauge(int _gauge_config, bool _slew, int r, int g, int b, char* _custom_name, char* _custom_text, char* frame_fname, int txtoffset_x, int txtoffset_y);
+	HudGauge(int _gauge_config, bool _slew, int r, int g, int b, const SCP_string& _custom_name, char* _custom_text, char* frame_fname, int txtoffset_x, int txtoffset_y);
+
+	virtual ~HudGauge();
 
 	void initPosition(int x, int y);
 	void initBaseResolution(int w, int h);
@@ -263,6 +271,7 @@ public:
 
 	int getConfigType();
 	int getObjectType();
+	LuaTable* getLuaTable(lua_State* state);
 	bool isOffbyDefault();
 	bool isActive();
 	
@@ -282,7 +291,7 @@ public:
 	void resetTimers();
 
 	// For updating custom gauges
-	char* getCustomGaugeName();
+	const SCP_string getCustomGaugeName();
 	void updateCustomGaugeCoords(int _x, int _y);
 	void updateCustomGaugeFrame(int frame_offset);
 	void updateCustomGaugeText(const char* txt);
@@ -523,6 +532,7 @@ public:
 };
 
 HudGauge* hud_get_gauge(char* name);
+SCP_vector<HudGauge*>& hud_get_gauges();
 
 extern SCP_vector<HudGauge*> default_hud_gauges;
 
