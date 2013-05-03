@@ -6,7 +6,7 @@ LuaValue::LuaValue(lua_State* state) : luaState( state ), luaType( LUA_TNONE ), 
 	Assertion(state != NULL, "Invalid lua state passed to LuaValue constructor!");
 }
 
-LuaValue::LuaValue(const LuaValue& other) : luaState( other.luaState ), neededLuaType( LUA_TNONE )
+LuaValue::LuaValue(const LuaValue& other) : luaState( other.luaState ), neededLuaType( other.neededLuaType )
 {
 	other.pushValue();
 
