@@ -16,6 +16,7 @@
 #include "hud/hudescort.h"
 #include "hud/hudconfig.h"
 #include "hud/hudgauges.h"
+#include "hud/hudscripting.h"
 #include "iff_defs/iff_defs.h"
 #include "io/key.h"
 #include "io/mouse.h"
@@ -1488,38 +1489,63 @@ ADE_VIRTVAR(Name, l_GameState,"string", "Game state name", "string", "Game state
 }
 
 //**********HANDLE: HUD Gauge
-ade_obj<HudGauge> l_HudGauge("HudGauge", "HUD Gauge handle");
-
 ADE_VIRTVAR(Name, l_HudGauge, "string", "Custom HUD Gauge name", "string", "Custom HUD Gauge name, or nil if handle is invalid")
 {
-	HudGauge* gauge;
+	hud_gauge_h* gauge;
 
 	if (!ade_get_args(L, "o", l_HudGauge.GetPtr(&gauge)))
 		return ADE_RETURN_NIL;
 
-	if (gauge->getConfigType() != HUD_OBJECT_CUSTOM)
+	if (gauge == NULL ||!gauge->IsValid())
+	{
+		return ADE_RETURN_NIL;
+	}
+
+	if (gauge->Get()->getConfigType() != HUD_OBJECT_CUSTOM
+		&& gauge->Get()->getConfigType() != HUD_OBJECT_SCRIPTING)
 		return ADE_RETURN_NIL;
 
-	return ade_set_args(L, "s", gauge->getCustomGaugeName());
+	return ade_set_args(L, "s", gauge->Get()->getCustomGaugeName().c_str());
 }
 
 ADE_VIRTVAR(Text, l_HudGauge, "string", "Custom HUD Gauge text", "string", "Custom HUD Gauge text, or nil if handle is invalid")
 {
-	HudGauge* gauge;
+	hud_gauge_h* gauge;
 	char* text = NULL;
 
 	if (!ade_get_args(L, "o|s", l_HudGauge.GetPtr(&gauge), text))
 		return ADE_RETURN_NIL;
 
-	if (gauge->getConfigType() != HUD_OBJECT_CUSTOM)
+	if (gauge == NULL ||!gauge->IsValid())
+	{
+		return ADE_RETURN_NIL;
+	}
+
+	if (gauge->Get()->getConfigType() != HUD_OBJECT_CUSTOM
+		&& gauge->Get()->getConfigType() != HUD_OBJECT_SCRIPTING)
 		return ADE_RETURN_NIL;
 
 	if (ADE_SETTING_VAR && text != NULL)
 	{
-		gauge->updateCustomGaugeText(text);
+		gauge->Get()->updateCustomGaugeText(text);
 	}
 
-	return ade_set_args(L, "s", gauge->getCustomGaugeText());
+	return ade_set_args(L, "s", gauge->Get()->getCustomGaugeText());
+}
+
+ADE_FUNC(getPropertiesTable, l_HudGauge, NULL, "Gets the table associated with this hud gauge", "table", "The table of the hud gauge, or nil if invalid")
+{
+	hud_gauge_h* gauge;
+
+	if (!ade_get_args(L, "o", l_HudGauge.GetPtr(&gauge)))
+		return ADE_RETURN_NIL;
+
+	if (gauge == NULL ||!gauge->IsValid())
+	{
+		return ADE_RETURN_NIL;
+	}
+
+	return ade_set_args(L, "t", gauge->Get()->getLuaTable(L));
 }
 
 //**********HANDLE: Eyepoint
@@ -11709,7 +11735,7 @@ ADE_FUNC(getHUDGaugeHandle, l_HUD, "string Name", "Returns a handle to a specifi
 	if (gauge == NULL)
 		return ADE_RETURN_NIL;
 	else
-		return ade_set_args(L, "o", l_HudGauge.Set(*gauge));
+		return ade_set_args(L, "o", l_HudGauge.Set(hud_gauge_h(gauge)));
 }
 
 //**********LIBRARY: Graphics
