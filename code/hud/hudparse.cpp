@@ -9,6 +9,7 @@
 #include <cstddef>
 
 #include "parse/parselo.h"
+#include "parse/scripting.h"
 #include "graphics/2d.h"
 #include "localization/localize.h"
 #include "hud/hud.h"
@@ -22,6 +23,7 @@
 #include "hud/hudwingmanstatus.h"
 #include "hud/hudbrackets.h"
 #include "hud/hudlock.h"
+#include "hud/hudscripting.h"
 #include "mission/missiontraining.h"
 #include "mission/missionmessage.h"
 #include "hud/hudparse.h" //Duh.
@@ -853,6 +855,9 @@ int parse_gauge_type()
 	if ( optional_string("+Secondary Weapons:") )
 		return HUD_OBJECT_SECONDARY_WEAPONS;
 
+	if (optional_string("+Scripting Gauge:"))
+		return HUD_OBJECT_SCRIPTING;
+
 	return -1;
 }
 
@@ -1032,6 +1037,9 @@ void load_gauge(int gauge, int base_w, int base_h, int hud_font, SCP_vector<int>
 	case HUD_OBJECT_SECONDARY_WEAPONS:
 		load_gauge_secondary_weapons(base_w, base_h, hud_font, ship_idx, use_clr);
 		break;
+	case HUD_OBJECT_SCRIPTING:
+		load_gauge_scripting(base_w, base_h, hud_font, ship_idx, use_clr);
+		break;
 	default:
 		Warning(LOCATION, "Invalid gauge found in hud_gauges.tbl");
 		break;
@@ -1062,7 +1070,7 @@ void load_gauge_custom(int base_w, int base_h, int hud_font, SCP_vector<int>* sh
 	int coords[2];
 	int base_res[2] = {640, 480};
 	char gauge_string[MAX_FILENAME_LEN];
-	char name[MAX_FILENAME_LEN];
+	SCP_string name;
 	char text[MAX_FILENAME_LEN];
 	char filename[MAX_FILENAME_LEN];
 	int gauge_type = HUD_CENTER_RETICLE;
@@ -1126,7 +1134,7 @@ void load_gauge_custom(int base_w, int base_h, int hud_font, SCP_vector<int>* sh
 		}
 
 		required_string("Name:");
-		stuff_string(name, F_NAME, MAX_FILENAME_LEN);
+		stuff_string(name, F_NAME);
 
 		required_string("Text:");
 		stuff_string(text, F_NAME, MAX_FILENAME_LEN);
@@ -8550,5 +8558,131 @@ void load_gauge_secondary_weapons(int base_w, int base_h, int font, SCP_vector<i
 		delete hud_gauge;
 	} else {
 		default_hud_gauges.push_back(hud_gauge);
+	}
+}
+
+void load_gauge_scripting(int base_w, int base_h, int hud_font, SCP_vector<int>* ship_idx, color *use_clr)
+{
+	int coords[2];
+	int base_res[2] = {640, 480};
+	SCP_string name = "<unnamed>";
+	bool slew = false;
+
+	int font_num = FONT1;
+	int colors[3] = {255, 255, 255};
+	bool lock_color = false;
+
+	// render to texture parameters
+	char display_name[MAX_FILENAME_LEN] = "";
+	int display_size[2] = {0, 0};
+	int display_offset[2] = {0, 0};
+	int canvas_size[2] = {0, 0};
+
+	if(check_base_res(base_w, base_h)) {
+		base_res[0] = base_w;
+		base_res[1] = base_h;
+		
+		if(optional_string("Position:")) {
+			stuff_int_list(coords, 2);
+		}
+
+		if ( optional_string("Cockpit Target:") && ship_idx->at(0) >= 0 ) {
+			stuff_string(display_name, F_NAME, MAX_FILENAME_LEN);
+
+			if ( optional_string("Canvas Size:") ) {
+				stuff_int_list(canvas_size, 2);
+			}
+
+			if ( optional_string("Display Offset:") ) {
+				stuff_int_list(display_offset, 2);
+			}
+
+			required_string("Display Size:");
+			stuff_int_list(display_size, 2);
+		}
+
+		if ( use_clr != NULL ) {
+			colors[0] = use_clr->red;
+			colors[1] = use_clr->green;
+			colors[2] = use_clr->blue;
+
+			lock_color = true;
+		} else if ( optional_string("Color:") ) {
+			stuff_int_list(colors, 3);
+
+			check_color(colors);
+
+			lock_color = true;
+		}
+
+		if ( optional_string("Font:") ) {
+			stuff_int(&font_num);
+		} else {
+			if ( hud_font >=0 ) {
+				font_num = hud_font;
+			}
+		}
+
+		required_string("Name:");
+		stuff_string(name, F_NAME);
+
+		if(optional_string("Slew:")) {
+			stuff_boolean(&slew);
+		}
+	}
+
+	ScriptingGauge* hud_gauge = new ScriptingGauge();
+
+	hud_gauge->initName(name);
+	hud_gauge->initBaseResolution(base_res[0], base_res[1]);
+	hud_gauge->initPosition(coords[0], coords[1]);
+	hud_gauge->initFont(font_num);
+	hud_gauge->initSlew(slew);
+	hud_gauge->updateColor(colors[0], colors[1], colors[2]);
+	hud_gauge->lockConfigColor(lock_color);
+	hud_gauge->initCockpitTarget(display_name, display_offset[0], display_offset[1], display_size[0], display_size[1], canvas_size[0], canvas_size[1]);
+
+	if(ship_idx->at(0) >= 0) {
+		for (SCP_vector<int>::iterator ship_index = ship_idx->begin(); ship_index != ship_idx->end(); ++ship_index) {
+			ScriptingGauge* instance = new ScriptingGauge();
+			*instance = *hud_gauge;
+			Ship_info[*ship_index].hud_gauges.push_back(instance);
+		}
+		delete hud_gauge;
+	} else {
+		default_hud_gauges.push_back(hud_gauge);
+	}
+
+	if (optional_string("+Parsing Callback:"))
+	{
+		LuaCallback callback(Script_system.GetLuaSession());
+
+		if (stuff_lua_callback(Script_system.GetLuaSession(), callback, 
+			name.size() > 0 ? SCP_string("Scripting gauge: ").append(name) : "Scripting gauge"))
+		{
+			LuaValueList list;
+
+			list.push_back(LuaValue(Script_system.GetLuaSession(), l_HudGauge.Set(hud_gauge_h(hud_gauge))));
+
+			LuaValueList returned = callback.call(list);
+
+			if (returned.size() > 0)
+			{
+				// This function actuall returned a function
+				LuaValue funcValue = returned[0];
+
+				// Check if this is a function
+				LuaCallback callback(Script_system.GetLuaSession());
+				if (funcValue.getValue(callback))
+				{
+					// Call the function
+					callback.call(list);
+				}
+				else
+				{
+					mprintf(("HUD: Dropped return value of parsing callback, might be unwanted."));
+				}
+			}
+		}
 	}
 }

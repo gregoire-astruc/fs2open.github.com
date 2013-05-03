@@ -29,7 +29,7 @@ void init_hud();
 void load_missing_retail_gauges();
 void check_color(int *colorp);
 
-#define NUM_HUD_OBJECT_ENTRIES			56		// not used anywhere?
+#define NUM_HUD_OBJECT_ENTRIES			57		// not used anywhere?
 int parse_gauge_type();
 void load_gauge(int gauge, int base_w = -1, int base_h = -1, int font = -1, SCP_vector<int>* ship_idx = NULL, color *use_clr = NULL);
 
@@ -200,5 +200,8 @@ void load_gauge_primary_weapons(int base_w, int base_h, int font, SCP_vector<int
 
 #define HUD_OBJECT_SECONDARY_WEAPONS	55
 void load_gauge_secondary_weapons(int base_w, int base_h, int font, SCP_vector<int>* ship_idx = NULL, color *use_clr = NULL);
+
+#define HUD_OBJECT_SCRIPTING			56
+void load_gauge_scripting(int base_w, int base_h, int font, SCP_vector<int>* ship_idx = NULL, color *use_clr = NULL);
 
 #endif // _HUDPARSE_H
