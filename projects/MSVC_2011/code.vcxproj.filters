@@ -1071,6 +1071,9 @@
     <ClCompile Include="..\..\code\parse\lua\LuaValue.cpp">
       <Filter>Parse\Lua</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\code\hud\hudscripting.cpp">
+      <Filter>Hud</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\code\ai\ai.h">
@@ -1885,6 +1888,9 @@
     </ClInclude>
     <ClInclude Include="..\..\code\parse\lua\LuaValue.h">
       <Filter>Parse\Lua</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\code\hud\hudscripting.h">
+      <Filter>Hud</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
