@@ -8,7 +8,7 @@ LuaReference LuaReference::create(lua_State* state, int position)
 
 	lua_pushvalue(state, position);
 
-	LuaReference ref = LuaReference(state, luaL_ref(state, LUA_REGISTRYINDEX));
+	LuaReference ref(state, luaL_ref(state, LUA_REGISTRYINDEX));
 
 	ref.pushValue();
 
