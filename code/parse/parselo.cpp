@@ -1469,6 +1469,7 @@ void stuff_malloc_string(char **dest, int type, char *terminators)
 
 bool stuff_lua_callback(lua_State* L, LuaCallback& callBack, const SCP_string& debug_str)
 {
+	Assertion(L != NULL, "Invalid lua state passed to stuff_lua_callback.");
 	// Originally from scripting.cpp
 	
 	bool retVal = true;
