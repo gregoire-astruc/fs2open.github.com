@@ -87,18 +87,18 @@ LuaValueList LuaCallback::call(const LuaValueList& args)
 	lua_pushcfunction(luaState, callbackErrorFunc);
 	int err_idx = lua_gettop(luaState);
 
+	// Push the function onto the stack
+	this->pushValue();
+
 	// Push the arguments onto the stack
 	for (LuaValueList::const_iterator iter = args.begin(); iter != args.end(); ++iter)
 	{
-		LuaConvert::pushValue(luaState, *iter);
+		iter->pushValue();
 	}
-
-	this->pushValue();
 
 	// actually call the function now!
 	int err = lua_pcall(luaState, args.size(), LUA_MULTRET, err_idx);
 
-	// Reset number of arguments
 	if (!err)
 	{
 		int numReturn = lua_gettop(luaState) - err_idx;
@@ -106,7 +106,7 @@ LuaValueList LuaCallback::call(const LuaValueList& args)
 		values.reserve(numReturn);
 
 		LuaValue val(luaState);
-		for (int i = 0; i< numReturn; ++i)
+		for (int i = 0; i < numReturn; ++i)
 		{
 			if (LuaConvert::popValue(luaState, val))
 			{
