@@ -18,20 +18,20 @@ LuaReference LuaReference::create(lua_State* state, int position)
 }
 
 LuaReference::LuaReference(lua_State* state) :
-		luaState(state)
+	luaState(state), keepReference(false)
 {
 	Assert(state != NULL);
 }
 
 LuaReference::LuaReference(lua_State* state, int reference) :
-		luaState(state), reference(reference)
+		luaState(state), reference(reference), keepReference(false)
 {
 	Assert(state != NULL);
 	Assertion(reference >= 0, "Illegal reference number, got %d!", reference);
 }
 
 LuaReference::LuaReference(const LuaReference& other) :
-		luaState(NULL), reference(-1)
+		luaState(NULL), reference(-1), keepReference(false)
 {
 	if (other.isValid())
 	{

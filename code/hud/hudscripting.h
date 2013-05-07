@@ -3,7 +3,6 @@
 #define _HUDSCRIPTING_H
 
 #include "hud/hud.h"
-#include "parse/lua.h"
 #include "parse/lua/LuaCallback.h"
 
 // Defined here to be publically available
@@ -25,8 +24,6 @@ public:
 	bool IsValid() { return hud_gauge != NULL; }
 };
 
-static ade_obj<hud_gauge_h> l_HudGauge("HudGauge", "HUD Gauge handle");
-
 class ScriptingGauge : public HudGauge
 {
 private:
@@ -40,9 +37,16 @@ public:
 	void initName(const SCP_string& name);
 
 	void setUpdateCallback(const LuaCallback& callback);
+	void resetUpdateCallback();
+
 	void setRenderCallback(const LuaCallback& callback);
+	void resetRenderCallback();
+
+	LuaCallback* getUpdateCallback();
+	LuaCallback* getRenderCallback();
 
 	void render(float frametime);
+	bool canRender();
 	void onFrame(float frametime);
 };
 

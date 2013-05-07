@@ -59,14 +59,17 @@ void LuaCallback::setCFunction(lua_CFunction func)
 
 bool LuaCallback::setEnvironment(const LuaTable& table)
 {
-	Assert(table.getReference().isValid());
+	Assert(table.getReference().lock()->isValid());
 
 	this->pushValue();
 	table.pushValue();
-	
+
+	bool ret = lua_setfenv(luaState, -2) != 0;
+
+	// Pop the function again
 	lua_pop(luaState, 1);
 
-	return lua_setfenv(luaState, -2) != 0;
+	return ret;
 }
 
 LuaValueList LuaCallback::operator()(const LuaValueList& args)

@@ -10,6 +10,7 @@
 
 #include "parse/parselo.h"
 #include "parse/scripting.h"
+#include "parse/lua_globals.h"
 #include "graphics/2d.h"
 #include "localization/localize.h"
 #include "hud/hud.h"
@@ -468,6 +469,7 @@ void hud_positions_init()
 	// load missing retail gauges for the default and ship-specific HUDs
 	load_missing_retail_gauges();
 	
+	Script_system.RunCondition(CHA_HUDPARSED);
 }
 
 void load_missing_retail_gauges()
@@ -8642,17 +8644,6 @@ void load_gauge_scripting(int base_w, int base_h, int hud_font, SCP_vector<int>*
 	hud_gauge->lockConfigColor(lock_color);
 	hud_gauge->initCockpitTarget(display_name, display_offset[0], display_offset[1], display_size[0], display_size[1], canvas_size[0], canvas_size[1]);
 
-	if(ship_idx->at(0) >= 0) {
-		for (SCP_vector<int>::iterator ship_index = ship_idx->begin(); ship_index != ship_idx->end(); ++ship_index) {
-			ScriptingGauge* instance = new ScriptingGauge();
-			*instance = *hud_gauge;
-			Ship_info[*ship_index].hud_gauges.push_back(instance);
-		}
-		delete hud_gauge;
-	} else {
-		default_hud_gauges.push_back(hud_gauge);
-	}
-
 	if (optional_string("+Parsing Callback:"))
 	{
 		LuaCallback callback(Script_system.GetLuaSession());
@@ -8662,7 +8653,7 @@ void load_gauge_scripting(int base_w, int base_h, int hud_font, SCP_vector<int>*
 		{
 			LuaValueList list;
 
-			list.push_back(LuaValue(Script_system.GetLuaSession(), l_HudGauge.Set(hud_gauge_h(hud_gauge))));
+			list.push_back(LuaValue(Script_system.GetLuaSession(), l_ScriptingHudGauge.Set(hud_gauge_h(hud_gauge))));
 
 			LuaValueList returned = callback.call(list);
 
@@ -8684,5 +8675,16 @@ void load_gauge_scripting(int base_w, int base_h, int hud_font, SCP_vector<int>*
 				}
 			}
 		}
+	}
+
+	if(ship_idx->at(0) >= 0) {
+		for (SCP_vector<int>::iterator ship_index = ship_idx->begin(); ship_index != ship_idx->end(); ++ship_index) {
+			ScriptingGauge* instance = new ScriptingGauge();
+			*instance = *hud_gauge;
+			Ship_info[*ship_index].hud_gauges.push_back(instance);
+		}
+		delete hud_gauge;
+	} else {
+		default_hud_gauges.push_back(hud_gauge);
 	}
 }

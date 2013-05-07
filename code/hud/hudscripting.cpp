@@ -1,22 +1,25 @@
 
 #include "hud/hudscripting.h"
+#include "parse/lua_globals.h"
 
 ScriptingGauge::ScriptingGauge():
-	HudGauge(HUD_OBJECT_SCRIPTING, HUD_TEXT_FLASH, true, false, 0, 255, 255, 255)
+	HudGauge(HUD_OBJECT_SCRIPTING, HUD_TEXT_FLASH, true, false, 0, 255, 255, 255),
+	updateCallback(NULL), renderCallback(NULL)
 {
-	
+	// Scripting gauges are always custom gauges
+	custom_gauge = true;
 }
 
 ScriptingGauge::~ScriptingGauge()
 {
-	if (renderCallback)
-	{
-		delete renderCallback;
-	}
-
 	if (updateCallback)
 	{
 		delete updateCallback;
+	}
+
+	if (renderCallback)
+	{
+		delete renderCallback;
 	}
 }
 
@@ -27,24 +30,46 @@ void ScriptingGauge::initName(const SCP_string& name)
 
 void ScriptingGauge::setUpdateCallback(const LuaCallback& callback)
 {
-	if (updateCallback)
-	{
-		delete updateCallback;
-		updateCallback = NULL;
-	}
+	this->resetUpdateCallback();
 
 	updateCallback = new LuaCallback(callback);
 }
 
+void ScriptingGauge::resetUpdateCallback()
+{
+	if (updateCallback)
+	{
+		delete updateCallback;
+	}
+	
+	updateCallback = NULL;
+}
+
 void ScriptingGauge::setRenderCallback(const LuaCallback& callback)
+{
+	this->resetRenderCallback();
+
+	renderCallback = new LuaCallback(callback);
+}
+
+void ScriptingGauge::resetRenderCallback()
 {
 	if (renderCallback)
 	{
 		delete renderCallback;
-		renderCallback = NULL;
 	}
+	
+	renderCallback = NULL;
+}
 
-	renderCallback = new LuaCallback(callback);
+LuaCallback* ScriptingGauge::getUpdateCallback()
+{
+	return updateCallback;
+}
+
+LuaCallback* ScriptingGauge::getRenderCallback()
+{
+	return renderCallback;
 }
 
 void ScriptingGauge::render(float frametime)
@@ -53,13 +78,18 @@ void ScriptingGauge::render(float frametime)
 	{
 		LuaValueList list;
 
-		ade_odata data = l_HudGauge.Set(hud_gauge_h(this));
-
-		list.push_back(LuaValue(renderCallback->luaState, data));
+		list.push_back(LuaValue(renderCallback->luaState, l_ScriptingHudGauge.Set(hud_gauge_h(this))));
 		list.push_back(LuaValue(renderCallback->luaState, frametime));
+		list.push_back(LuaValue(renderCallback->luaState, position[0]));
+		list.push_back(LuaValue(renderCallback->luaState, position[1]));
 
 		renderCallback->call(list);
 	}
+}
+
+bool ScriptingGauge::canRender()
+{
+	return true;
 }
 
 void ScriptingGauge::onFrame(float frametime)
@@ -68,10 +98,8 @@ void ScriptingGauge::onFrame(float frametime)
 	{
 		LuaValueList list;
 
-		ade_odata data = l_HudGauge.Set(hud_gauge_h(this));
-
-		list.push_back(LuaValue(updateCallback->luaState, data));
-		list.push_back(LuaValue(updateCallback->luaState, frametime));
+		list.push_back(LuaValue(renderCallback->luaState, l_ScriptingHudGauge.Set(hud_gauge_h(this))));
+		list.push_back(LuaValue(renderCallback->luaState, frametime));
 
 		updateCallback->call(list);
 	}

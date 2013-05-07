@@ -19,7 +19,7 @@ LuaTable::~LuaTable()
 
 bool LuaTable::setMetatable(const LuaTable& table)
 {
-	Assert(table.getReference().isValid());
+	Assert(table.getReference().lock()->isValid());
 
 	this->pushValue();
 	table.pushValue();
@@ -35,7 +35,7 @@ void LuaTable::create()
 {
 	lua_newtable(luaState);
 
-	reference = LuaReference::create(luaState);
+	setReference(LuaReference::create(luaState));
 
 	lua_pop(luaState, 1);
 }

@@ -228,14 +228,7 @@ public:
 	}
 };
 
-//*************************Lua global structs*************************
+//*************************Lua global structs
 
-
-//*************************Lua globals*************************
-extern ade_obj<object_h> l_Object;
-extern ade_obj<object_h> l_Weapon;
-extern ade_obj<object_h> l_Ship;
-extern ade_obj<object_h> l_Debris;
-extern ade_obj<object_h> l_Asteroid;
 
 #endif //_LUA_H

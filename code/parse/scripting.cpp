@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdarg.h>
+#include <boost/weak_ptr.hpp>
 #include "parse/scripting.h"
 #include "parse/lua.h"
 #include "parse/parselo.h"
@@ -1114,10 +1115,10 @@ void script_state::ParseChunkSub(int *out_lang, int *out_index, char* debug_str)
 
 	stuff_lua_callback(GetLuaSession(), callback, debug_str);
 
-	LuaReference ref(callback.getReference());
-	ref.setKeepReference(true);
+	boost::shared_ptr<LuaReference> ref = callback.getReference().lock();
+	ref->setKeepReference(true);
 
-	*out_index = ref.getReference();
+	*out_index = ref->getReference();
 }
 
 script_hook script_state::ParseChunk(char* debug_str)

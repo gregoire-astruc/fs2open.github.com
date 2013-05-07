@@ -2,6 +2,7 @@
 #define __LUAVALUE_H__
 
 #include "parse/lua/LuaUtil.h"
+#include <boost/smart_ptr.hpp>
 
 /**
  * @brief Represents a Lua-value
@@ -49,7 +50,7 @@ public:
 	 *
 	 * @return The LuaReference instance.
 	 */
-	virtual LuaReference getReference() const;
+	virtual const boost::weak_ptr<LuaReference> getReference() const;
 
 	/**
 	 * @brief Gets the lua type of this value.
@@ -62,6 +63,8 @@ public:
 
 	template<class ValueType>
 	bool getValue(ValueType& target) const;
+
+	bool isValid() const;
 
 	/**
 	 * @brief Pushes this lua value onto the stack.
@@ -120,7 +123,7 @@ public:
 
 	lua_State* luaState; //!< The lua state of this value.
 protected:
-	LuaReference reference;
+	boost::shared_ptr<LuaReference> reference;
 
 	int luaType;
 

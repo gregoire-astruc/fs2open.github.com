@@ -86,11 +86,11 @@ bool LuaValue::operator>=(const LuaValue& other)
 
 void LuaValue::setReference(const LuaReference& reference)
 {
-	this->reference = reference;
+	this->reference = boost::shared_ptr<LuaReference>(new LuaReference(reference));
 
-	if (this->reference.isValid())
+	if (this->reference->isValid())
 	{
-		this->reference.pushValue();
+		this->reference->pushValue();
 
 		this->luaType = lua_type(luaState, -1);
 
@@ -98,9 +98,9 @@ void LuaValue::setReference(const LuaReference& reference)
 	}
 }
 
-LuaReference LuaValue::getReference() const
+const boost::weak_ptr<LuaReference> LuaValue::getReference() const
 {
-	return reference;
+	return boost::weak_ptr<LuaReference>(reference);
 }
 
 int LuaValue::getLuaType() const
@@ -108,14 +108,19 @@ int LuaValue::getLuaType() const
 	return luaType;
 }
 
+bool LuaValue::isValid() const
+{
+	return reference->isValid();
+}
+
 void LuaValue::pushValue() const
 {
-	if (this->reference.isValid())
+	if (this->reference->isValid())
 	{
-		this->reference.pushValue();
+		this->reference->pushValue();
 
 		// Type check...
-		Assertion(lua_type(luaState, -1) == luaType, "Illegal reference type! Expecting \"%s\", got \"s\".", 
+		Assertion(lua_type(luaState, -1) == luaType, "Illegal reference type! Expecting \"%s\", got \"%s\".", 
 			lua_typename(luaState, luaType), lua_typename(luaState, lua_type(luaState, -1)));
 	}
 }

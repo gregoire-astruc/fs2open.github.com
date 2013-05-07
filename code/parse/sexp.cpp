@@ -20,7 +20,8 @@
 #include <ctype.h>
 #include <assert.h>
 #include <limits.h>
-#ifdef _MSC_VER
+
+#if _MSC_VER < 1600 // Visual Studio 2010 includes stdint.h
 	#include "globalincs/msvc/stdint.h"
 #else
 	#include <stdint.h>

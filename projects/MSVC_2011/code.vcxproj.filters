@@ -1892,6 +1892,9 @@
     <ClInclude Include="..\..\code\hud\hudscripting.h">
       <Filter>Hud</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\code\parse\lua_globals.h">
+      <Filter>Parse</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\..\code\directx\dxguid.lib">

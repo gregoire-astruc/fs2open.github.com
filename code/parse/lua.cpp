@@ -35,6 +35,7 @@
 #include "object/objectshield.h"
 #include "object/waypoint.h"
 #include "parse/lua.h"
+#include "parse/lua_globals.h"
 #include "parse/parselo.h"
 #include "parse/scripting.h"
 #include "particle/particle.h"
@@ -1486,66 +1487,6 @@ ADE_VIRTVAR(Name, l_GameState,"string", "Game state name", "string", "Game state
 	}
 
 	return ade_set_args(L, "s", GS_state_text[sdx]);
-}
-
-//**********HANDLE: HUD Gauge
-ADE_VIRTVAR(Name, l_HudGauge, "string", "Custom HUD Gauge name", "string", "Custom HUD Gauge name, or nil if handle is invalid")
-{
-	hud_gauge_h* gauge;
-
-	if (!ade_get_args(L, "o", l_HudGauge.GetPtr(&gauge)))
-		return ADE_RETURN_NIL;
-
-	if (gauge == NULL ||!gauge->IsValid())
-	{
-		return ADE_RETURN_NIL;
-	}
-
-	if (gauge->Get()->getConfigType() != HUD_OBJECT_CUSTOM
-		&& gauge->Get()->getConfigType() != HUD_OBJECT_SCRIPTING)
-		return ADE_RETURN_NIL;
-
-	return ade_set_args(L, "s", gauge->Get()->getCustomGaugeName().c_str());
-}
-
-ADE_VIRTVAR(Text, l_HudGauge, "string", "Custom HUD Gauge text", "string", "Custom HUD Gauge text, or nil if handle is invalid")
-{
-	hud_gauge_h* gauge;
-	char* text = NULL;
-
-	if (!ade_get_args(L, "o|s", l_HudGauge.GetPtr(&gauge), text))
-		return ADE_RETURN_NIL;
-
-	if (gauge == NULL ||!gauge->IsValid())
-	{
-		return ADE_RETURN_NIL;
-	}
-
-	if (gauge->Get()->getConfigType() != HUD_OBJECT_CUSTOM
-		&& gauge->Get()->getConfigType() != HUD_OBJECT_SCRIPTING)
-		return ADE_RETURN_NIL;
-
-	if (ADE_SETTING_VAR && text != NULL)
-	{
-		gauge->Get()->updateCustomGaugeText(text);
-	}
-
-	return ade_set_args(L, "s", gauge->Get()->getCustomGaugeText());
-}
-
-ADE_FUNC(getPropertiesTable, l_HudGauge, NULL, "Gets the table associated with this hud gauge", "table", "The table of the hud gauge, or nil if invalid")
-{
-	hud_gauge_h* gauge;
-
-	if (!ade_get_args(L, "o", l_HudGauge.GetPtr(&gauge)))
-		return ADE_RETURN_NIL;
-
-	if (gauge == NULL ||!gauge->IsValid())
-	{
-		return ADE_RETURN_NIL;
-	}
-
-	return ade_set_args(L, "t", gauge->Get()->getLuaTable(L));
 }
 
 //**********HANDLE: Eyepoint
@@ -3620,6 +3561,417 @@ ADE_FUNC(getFramesLeft, l_Texture, NULL, "Gets number of frames left, from handl
 		return ade_set_error(L, "i", 0);
 
 	return ade_set_args(L, "i", num);
+}
+
+//**********HANDLE: HUD Gauge
+ade_obj<hud_gauge_h> l_HudGauge("HudGauge", "HUD Gauge handle");
+
+ADE_VIRTVAR(Name, l_HudGauge, "string", "Custom HUD Gauge name", "string", "Custom HUD Gauge name, or nil if handle is invalid")
+{
+	hud_gauge_h* gauge = NULL;
+
+	if (!ade_get_args(L, "o", l_HudGauge.GetPtr(&gauge)))
+		return ADE_RETURN_NIL;
+
+	if (gauge == NULL ||!gauge->IsValid())
+	{
+		return ADE_RETURN_NIL;
+	}
+
+	if (gauge->Get()->getObjectType() != HUD_OBJECT_CUSTOM
+		&& gauge->Get()->getObjectType() != HUD_OBJECT_SCRIPTING)
+		return ADE_RETURN_NIL;
+
+	return ade_set_args(L, "s", gauge->Get()->getCustomGaugeName().c_str());
+}
+
+ADE_VIRTVAR(Text, l_HudGauge, "string", "Custom HUD Gauge text", "string", "Custom HUD Gauge text, or nil if handle is invalid")
+{
+	hud_gauge_h* gauge = NULL;
+	char* text = NULL;
+
+	if (!ade_get_args(L, "o|s", l_HudGauge.GetPtr(&gauge), text))
+		return ADE_RETURN_NIL;
+
+	if (gauge == NULL ||!gauge->IsValid())
+	{
+		return ADE_RETURN_NIL;
+	}
+
+	if (gauge->Get()->getObjectType() != HUD_OBJECT_CUSTOM)
+		return ADE_RETURN_NIL;
+
+	if (ADE_SETTING_VAR && text != NULL)
+	{
+		gauge->Get()->updateCustomGaugeText(text);
+	}
+
+	return ade_set_args(L, "s", gauge->Get()->getCustomGaugeText());
+}
+
+ADE_VIRTVAR(Properties, l_HudGauge, "table", "Gets the table associated with this hud gauge", "table", "The table of the hud gauge, or nil if invalid")
+{
+	hud_gauge_h* gauge = NULL;
+
+	if (!ade_get_args(L, "o", l_HudGauge.GetPtr(&gauge)))
+		return ADE_RETURN_NIL;
+
+	if (gauge == NULL ||!gauge->IsValid())
+	{
+		return ADE_RETURN_NIL;
+	}
+
+	if (ADE_SETTING_VAR)
+	{
+		LuaError(L, "Setting the properties table is not allowed!");
+	}
+
+	return ade_set_args(L, "t", gauge->Get()->getLuaTable(L));
+}
+
+ADE_FUNC(renderString, l_HudGauge, "number x, number y, string text", "Renders the given text at the coordinates.", NULL, "nothing")
+{
+	hud_gauge_h* gauge_h = NULL;
+	int x;
+	int y;
+	char *string;
+
+	if (!ade_get_args(L, "oiis", l_HudGauge.GetPtr(&gauge_h), &x, &y, &string))
+		return ADE_RETURN_NIL;
+
+	if (gauge_h == NULL || !gauge_h->IsValid())
+		return ADE_RETURN_NIL;
+
+	gauge_h->Get()->renderString(x, y, string);
+
+	return ADE_RETURN_NIL;
+}
+
+ADE_FUNC(renderLine, l_HudGauge, "number x1, number y1, number x2, number y2", "Renders a line at the coordinates.", NULL, "nothing")
+{
+	hud_gauge_h* gauge_h = NULL;
+	int x1;
+	int y1;
+	int x2;
+	int y2;
+
+	if (!ade_get_args(L, "oiiii", l_HudGauge.GetPtr(&gauge_h), &x1, &y1, &x2, &y2))
+		return ADE_RETURN_NIL;
+
+	if (gauge_h == NULL || !gauge_h->IsValid())
+		return ADE_RETURN_NIL;
+
+	gauge_h->Get()->renderLine(x1, y1, x2, y2);
+
+	return ADE_RETURN_NIL;
+}
+
+ADE_FUNC(renderGradientLine, l_HudGauge, "number x1, number y1, number x2, number y2", "Renders a line at the coordinates.", NULL, "nothing")
+{
+	hud_gauge_h* gauge_h = NULL;
+	int x1;
+	int y1;
+	int x2;
+	int y2;
+
+	if (!ade_get_args(L, "oiiii", l_HudGauge.GetPtr(&gauge_h), &x1, &y1, &x2, &y2))
+		return ADE_RETURN_NIL;
+
+	if (gauge_h == NULL || !gauge_h->IsValid())
+		return ADE_RETURN_NIL;
+
+	gauge_h->Get()->renderGradientLine(x1, y1, x2, y2);
+
+	return ADE_RETURN_NIL;
+}
+
+ADE_FUNC(renderRectangle, l_HudGauge, "number x1, number y1, number x2, number y2[, boolean fill=true]", "Renders a rectangle at the given coordinates.", NULL, "nothing")
+{
+	hud_gauge_h* gauge_h = NULL;
+	int x1;
+	int y1;
+	int x2;
+	int y2;
+	bool fill = true;
+
+	if (!ade_get_args(L, "oiiii|b", l_HudGauge.GetPtr(&gauge_h), &x1, &y1, &x2, &y2, &fill))
+		return ADE_RETURN_NIL;
+
+	if (gauge_h == NULL || !gauge_h->IsValid())
+		return ADE_RETURN_NIL;
+
+	if (fill)
+	{
+		gauge_h->Get()->renderRect(x1, y1, x2, y2);
+	}
+	else
+	{
+		HudGauge* gauge = gauge_h->Get();
+
+		gauge->renderLine(x1, y1, x2, y1); //Top
+		gauge->renderLine(x1, y2, x2, y2); //Bottom
+		gauge->renderLine(x1, y1, x1, y2); //Left
+		gauge->renderLine(x2, y1, x2, y2); //Right
+	}
+
+	return ADE_RETURN_NIL;
+}
+
+ADE_FUNC(renderCircle, l_HudGauge, "number x, number y, number radius", "Renders a circe at the given coordinates.", NULL, "nothing")
+{
+	hud_gauge_h* gauge_h = NULL;
+	int x;
+	int y;
+	int radius;
+
+	if (!ade_get_args(L, "oiii", l_HudGauge.GetPtr(&gauge_h), &x, &y, &radius))
+		return ADE_RETURN_NIL;
+
+	if (gauge_h == NULL || !gauge_h->IsValid())
+		return ADE_RETURN_NIL;
+
+	gauge_h->Get()->renderCircle(x, y, radius * 2);
+
+	return ADE_RETURN_NIL;
+}
+
+// Copied from drawMonochromeImage
+ADE_FUNC(renderMonochromeImage, l_HudGauge, "texture Texture, number X1, number Y1, [number X2, number Y2]", "Draws a monochrome image using the current color", "boolean", "Whether image was drawn")
+{
+	hud_gauge_h* gauge_h = NULL;
+	int idx;
+	int x,y;
+	int x2=INT_MAX;
+	int y2=INT_MAX;
+	int sx=0;
+	int sy=0;
+
+	if(!ade_get_args(L, "ooii|ii", l_HudGauge.GetPtr(&gauge_h), l_Texture.Get(&idx),&x,&y,&x2,&y2))
+		return ade_set_error(L, "b", false);
+
+	if(!bm_is_valid(idx))
+		return ade_set_error(L, "b", false);
+
+	int w, h;
+	if(bm_get_info(idx, &w, &h) < 0)
+		return ADE_RETURN_FALSE;
+
+	if(sx < 0)
+		sx = w + sx;
+
+	if(sy < 0)
+		sy = h + sy;
+	
+	if(x2!=INT_MAX)
+		w = x2-x;
+
+	if(y2!=INT_MAX)
+		h = y2-y;
+
+	gauge_h->Get()->renderBitmapEx(idx, x, y, w, h, sx, sy);
+
+	return ADE_RETURN_TRUE;
+}
+
+ADE_FUNC(renderImage, l_HudGauge, "texture Texture, [number X1=0, Y1=0, number X2, number Y2, number UVX1 = 0.0, number UVY1 = 0.0, number UVX2=1.0, number UVY2=1.0]",
+		 "Draws an image or texture. Any image extension passed will be ignored."
+		 "The UV variables specify the UV value for each corner of the image. "
+		 "In UV coordinates, (0,0) is the top left of the image; (1,1) is the lower right.",
+		 "boolean",
+		 "Whether image was drawn")
+{
+	hud_gauge_h* gauge_h = NULL;
+	int idx;
+	int x1 = 0;
+	int y1 = 0;
+	int x2=INT_MAX;
+	int y2=INT_MAX;
+	float uv_x1=0.0f;
+	float uv_y1=0.0f;
+	float uv_x2=1.0f;
+	float uv_y2=1.0f;
+
+	if(!ade_get_args(L, "oo|iiiiffff", l_HudGauge.GetPtr(&gauge_h), l_Texture.Get(&idx),&x1,&y1,&x2,&y2,&uv_x1,&uv_y1,&uv_x2,&uv_y2))
+		return ade_set_error(L, "b", false);
+
+	if(!bm_is_valid(idx))
+		return ade_set_error(L, "b", false);
+
+	int w, h;
+	if(bm_get_info(idx, &w, &h) < 0)
+		return ADE_RETURN_FALSE;
+
+	if(x2!=INT_MAX)
+		w = x2-x1;
+
+	if(y2!=INT_MAX)
+		h = y2-y1;
+
+	gauge_h->Get()->renderBitmapUv(idx, x1, y1, w, h, uv_x1, uv_y1, uv_x2, uv_y2);
+
+	return ADE_RETURN_TRUE;
+}
+
+ADE_FUNC(setClip, l_HudGauge, "number x, number y, number width, number height", "Sets the clipping rectangle.", NULL, "nothing")
+{
+	hud_gauge_h* gauge_h = NULL;
+	int x;
+	int y;
+	int width;
+	int height;
+
+	if (!ade_get_args(L, "oiiii", l_HudGauge.GetPtr(&gauge_h), &x, &y, &width, &height))
+		return ADE_RETURN_NIL;
+
+	if (gauge_h == NULL || !gauge_h->IsValid())
+		return ADE_RETURN_NIL;
+
+	gauge_h->Get()->setClip(x, y, width, height);
+
+	return ADE_RETURN_NIL;
+}
+
+ADE_FUNC(resetClip, l_HudGauge, NULL, "Resets the clipping rectangle.", NULL, "nothing")
+{
+	hud_gauge_h* gauge_h = NULL;
+
+	if (!ade_get_args(L, "o", l_HudGauge.GetPtr(&gauge_h)))
+		return ADE_RETURN_NIL;
+
+	if (gauge_h == NULL || !gauge_h->IsValid())
+		return ADE_RETURN_NIL;
+
+	gauge_h->Get()->resetClip();
+
+	return ADE_RETURN_NIL;
+}
+
+ADE_FUNC(isValid, l_HudGauge, NULL, "Determines if the handle is valid", "boolean", "<i>true</i> if valid, <i>false</i> otherwise.")
+{
+	hud_gauge_h* gauge = NULL;
+
+	if (!ade_get_args(L, "o", l_HudGauge.GetPtr(&gauge)))
+		return ADE_RETURN_NIL;
+
+	if (gauge == NULL ||!gauge->IsValid())
+	{
+		return ADE_RETURN_TRUE;
+	}
+	else
+	{
+		return ADE_RETURN_FALSE;
+	}
+}
+
+//**********HANDLE: Scripting HUD Gauge
+ade_obj<hud_gauge_h> l_ScriptingHudGauge("ScriptingHudGauge", "Scripting HUD Gauge handle", &l_HudGauge);
+
+ADE_VIRTVAR(RenderCallback, l_ScriptingHudGauge, "function", "The function called when the hud gauge is rendered.<br>"
+			"The function is treated as <pre>function(gauge, time, x, y)</pre> where the arguments are:"
+			"<ul>"
+				"<li><i>gauge</i>: A handle of type <a href=\"#ScriptingHudGauge\">ScriptingHudGauge</a> which represents the gauge being rendered</li>"
+				"<li><i>time</i>: The frame time</li>"
+				"<li><i>x</i>: The x coordinate of the gauge origin, consider using <i>gauge:setClip(x, y, width, height)</i> if the size is known before rendering.</li>"
+				"<li><i>y</i>: The y coordinate of the gauge origin</li>"
+			"</ul>", "function", "The function or nil when invalid or not set")
+{
+	hud_gauge_h* gauge_h = NULL;
+
+	if (ADE_SETTING_VAR && lua_isnil(L, 2))
+	{
+		if (!ade_get_args(L, "o", l_ScriptingHudGauge.GetPtr(&gauge_h)))
+			return ADE_RETURN_NIL;
+		
+		if (gauge_h == NULL ||!gauge_h->IsValid() || gauge_h->Get()->getObjectType() != HUD_OBJECT_SCRIPTING)
+		{
+			return ADE_RETURN_NIL;
+		}
+
+		static_cast<ScriptingGauge*>(gauge_h->Get())->resetRenderCallback();
+
+		return ADE_RETURN_NIL;
+	}
+
+	LuaCallback callback(L);
+
+	if (!ade_get_args(L, "o|u", l_ScriptingHudGauge.GetPtr(&gauge_h), &callback))
+		return ADE_RETURN_NIL;
+
+	if (gauge_h == NULL ||!gauge_h->IsValid() || gauge_h->Get()->getObjectType() != HUD_OBJECT_SCRIPTING)
+	{
+		return ADE_RETURN_NIL;
+	}
+
+	ScriptingGauge* gauge = static_cast<ScriptingGauge*>(gauge_h->Get());
+
+	if (ADE_SETTING_VAR && callback.isValid())
+	{
+		gauge->setRenderCallback(callback);
+	}
+
+	LuaCallback* luaCallpack = gauge->getRenderCallback();
+
+	if (luaCallpack == NULL)
+	{
+		return ADE_RETURN_NIL;
+	}
+	else
+	{
+		return ade_set_args(L, "u", luaCallpack);
+	}
+}
+
+ADE_VIRTVAR(UpdateCallback, l_ScriptingHudGauge, "function", "The function called when the hud gauge is updated.<br>"
+			"The function is treated as <pre>function(gauge, time)</pre> where the arguments are:"
+			"<ul>"
+				"<li><i>gauge</i>: A handle of type <a href=\"#ScriptingHudGauge\">ScriptingHudGauge</a> which represents the gauge being rendered</li>"
+				"<li><i>time</i>: The frame time</li>"
+			"</ul>", "function", "The function or nil when invalid")
+{
+	hud_gauge_h* gauge_h = NULL;
+
+	if (ADE_SETTING_VAR && lua_isnil(L, 2))
+	{
+		if (!ade_get_args(L, "o", l_ScriptingHudGauge.GetPtr(&gauge_h)))
+			return ADE_RETURN_NIL;
+		
+		if (gauge_h == NULL ||!gauge_h->IsValid() || gauge_h->Get()->getObjectType() != HUD_OBJECT_SCRIPTING)
+		{
+			return ADE_RETURN_NIL;
+		}
+
+		static_cast<ScriptingGauge*>(gauge_h->Get())->resetUpdateCallback();
+
+		return ADE_RETURN_NIL;
+	}
+
+	LuaCallback callback(L);
+
+	if (!ade_get_args(L, "o|u", l_ScriptingHudGauge.GetPtr(&gauge_h), &callback))
+		return ADE_RETURN_NIL;
+
+	if (gauge_h == NULL ||!gauge_h->IsValid() || gauge_h->Get()->getObjectType() != HUD_OBJECT_SCRIPTING)
+	{
+		return ADE_RETURN_NIL;
+	}
+
+	ScriptingGauge* gauge = static_cast<ScriptingGauge*>(gauge_h->Get());
+
+	if (ADE_SETTING_VAR && callback.isValid())
+	{
+		gauge->setUpdateCallback(callback);
+	}
+
+	LuaCallback* luaCallpack = gauge->getUpdateCallback();
+
+	if (luaCallpack == NULL)
+	{
+		return ADE_RETURN_NIL;
+	}
+	else
+	{
+		return ade_set_args(L, "u", luaCallpack);
+	}
 }
 
 //**********OBJECT: vector
@@ -11735,7 +12087,15 @@ ADE_FUNC(getHUDGaugeHandle, l_HUD, "string Name", "Returns a handle to a specifi
 	if (gauge == NULL)
 		return ADE_RETURN_NIL;
 	else
-		return ade_set_args(L, "o", l_HudGauge.Set(hud_gauge_h(gauge)));
+	{
+		switch (gauge->getObjectType())
+		{
+		case HUD_OBJECT_SCRIPTING:
+			return ade_set_args(L, "o", l_ScriptingHudGauge.Set(hud_gauge_h(gauge)));
+		default:
+			return ade_set_args(L, "o", l_HudGauge.Set(hud_gauge_h(gauge)));
+		}
+	}
 }
 
 //**********LIBRARY: Graphics
@@ -13938,6 +14298,62 @@ ADE_FUNC(__len, l_Tables_WeaponClasses, NULL, "Number of weapon classes", "numbe
 		return ade_set_args(L, "i", 0);
 
 	return ade_set_args(L, "i", Num_weapon_types);
+}
+
+//*************************Parsing stuff*************************
+// This library contains access functions to the FSO parsing mechanismn
+ade_lib l_Parsing("Parsing", NULL, "pa", "Parsing functions");
+
+ADE_FUNC(requiredString, l_Parsing, "string", "Requires that the specified string is present, pops up an error "
+		 "when the string wasn't present.", NULL, "nothing")
+{
+	char* str = NULL;
+	if (!ade_get_args(L, "s", &str))
+		return ADE_RETURN_NIL;
+
+	if (str == NULL)
+		return ADE_RETURN_NIL;
+
+	required_string(str);
+
+	return ADE_RETURN_NIL;
+}
+
+ADE_FUNC(optionalString, l_Parsing, "string", "Checks if a string is present", "boolean", "true if present, false otherwise")
+{
+	char* str = NULL;
+	if (!ade_get_args(L, "s", &str))
+		return ADE_RETURN_FALSE;
+
+	if (str == NULL)
+		return ADE_RETURN_FALSE;
+
+	if (optional_string(str))
+	{
+		return ADE_RETURN_TRUE;
+	}
+	else
+	{
+		return ADE_RETURN_FALSE;
+	}
+}
+
+ADE_FUNC(getNumber, l_Parsing, NULL, "Gets a number from the parser", "number", "The parsed number, or nil on error")
+{
+	float f;
+
+	stuff_float(&f);
+
+	return ade_set_args(L, "f", f);
+}
+
+ADE_FUNC(getString, l_Parsing, NULL, "Gets a string from the parser", "string", "The parsed string, or nil on error")
+{
+	SCP_string string;
+
+	stuff_string(string, F_NAME);
+
+	return ade_set_args(L, "s", string.c_str());
 }
 
 //*************************Testing stuff*************************
