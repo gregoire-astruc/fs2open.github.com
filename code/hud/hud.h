@@ -232,6 +232,7 @@ protected:
 	bool flash_status;
 
 	// custom gauge specific stuff
+	SCP_string custom_name;
 	bool custom_gauge;
 	hud_frames custom_frame;
 	int custom_frame_offset;
@@ -250,8 +251,6 @@ protected:
 
 	// scripting properties
 	LuaTable* lua_table;
-protected:
-	SCP_string custom_name;
 
 public:
 	// constructors
@@ -319,7 +318,7 @@ public:
 	void renderBitmap(int x, int y);
 	void renderBitmap(int frame, int x, int y);
 	void renderBitmapColor(int frame, int x, int y);
-	void renderBitmapUv(int frame, int x, int y, int w, int h, float u0, float v0, float u1, float v1);
+	void renderBitmapUv(int frame, int x, int y, int w, int h, float u0, float v0, float u1, float v1, float alpha = 1.0f, int alpha_blend = GR_ALPHABLEND_NONE);
 	void renderBitmapEx(int frame, int x, int y, int w, int h, int sx, int sy);
 	void renderString(int x, int y, char *str);
 	void renderString(int x, int y, int gauge_id, char *str);

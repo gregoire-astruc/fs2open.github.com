@@ -292,7 +292,7 @@ static int Damage_flash_timer;
 HudGauge::HudGauge():
 base_w(0), base_h(0), gauge_config(-1), font_num(FONT1), lock_color(false), sexp_lock_color(false), reticle_follow(false), 
 active(false), off_by_default(false), sexp_override(false), pop_up(false), disabled_views(0), custom_gauge(false),
-texture_target(-1), canvas_w(-1), canvas_h(-1), target_w(-1), target_h(-1)
+texture_target(-1), canvas_w(-1), canvas_h(-1), target_w(-1), target_h(-1), lua_table(NULL)
 {
 	position[0] = 0;
 	position[1] = 0;
@@ -317,7 +317,7 @@ HudGauge::HudGauge(int _gauge_object, int _gauge_config, bool _slew, bool _messa
 base_w(0), base_h(0), gauge_config(_gauge_config), gauge_object(_gauge_object), font_num(FONT1), lock_color(false), sexp_lock_color(false),
 reticle_follow(_slew), active(false), off_by_default(false), sexp_override(false), pop_up(false), message_gauge(_message),
 disabled_views(_disabled_views), custom_gauge(false), textoffset_x(0), textoffset_y(0), texture_target(-1),
-canvas_w(-1), canvas_h(-1), target_w(-1), target_h(-1)
+canvas_w(-1), canvas_h(-1), target_w(-1), target_h(-1), lua_table(NULL)
 {
 	Assert(gauge_config <= NUM_HUD_GAUGES && gauge_config >= 0);
 
@@ -353,7 +353,7 @@ HudGauge::HudGauge(int _gauge_config, bool _slew, int r, int g, int b, const SCP
 base_w(0), base_h(0), gauge_config(_gauge_config), gauge_object(HUD_OBJECT_CUSTOM), font_num(FONT1), lock_color(false), sexp_lock_color(false), 
 reticle_follow(_slew), active(false), off_by_default(false), sexp_override(false), pop_up(false), message_gauge(false),
 disabled_views(VM_EXTERNAL | VM_DEAD_VIEW | VM_WARP_CHASE | VM_PADLOCK_ANY), custom_gauge(true), textoffset_x(txtoffset_x),
-textoffset_y(txtoffset_y), texture_target(-1), canvas_w(-1), canvas_h(-1), target_w(-1), target_h(-1), custom_name(_custom_name)
+textoffset_y(txtoffset_y), texture_target(-1), canvas_w(-1), canvas_h(-1), target_w(-1), target_h(-1), custom_name(_custom_name), lua_table(NULL)
 {
 	position[0] = 0;
 	position[1] = 0;
@@ -868,6 +868,41 @@ void HudGauge::renderBitmap(int frame, int x, int y)
 {
 	gr_set_bitmap(frame);
 	renderBitmap(x, y);
+}
+
+void HudGauge::renderBitmapUv(int frame, int x, int y, int w, int h, float u0, float v0,
+							  float u1, float v1, float alpha = 1.0f, int alpha_blend = GR_ALPHABLEND_NONE)
+{
+	int nx = 0, ny = 0; 
+	
+	if( !emp_should_blit_gauge() ) { 
+		return;
+	}
+
+	emp_hud_jitter(&x, &y); 
+
+	gr_set_bitmap(frame);
+
+	if( gr_screen.rendering_to_texture != -1 ) {
+		gr_set_screen_scale(canvas_w, canvas_h, target_w, target_h);
+	} else {
+		if ( reticle_follow ) {
+			nx = HUD_nose_x;
+			ny = HUD_nose_y;
+
+			gr_resize_screen_pos(&nx, &ny);
+			gr_set_screen_scale(base_w, base_h);
+			gr_unsize_screen_pos(&nx, &ny);
+		} else {
+			gr_set_screen_scale(base_w, base_h);
+		}
+	}
+
+	gr_set_bitmap(frame, alpha_blend, GR_BITBLT_MODE_NORMAL, alpha);
+	bitmap_rect_list brl = bitmap_rect_list(x + nx, y + ny, w, h, u0, v0, u1, v1);
+	gr_bitmap_list(&brl, 1, false);
+	
+	gr_reset_screen_scale();
 }
 
 void HudGauge::renderBitmapEx(int frame, int x, int y, int w, int h, int sx, int sy)
@@ -3787,7 +3822,7 @@ HudGauge* hud_get_gauge(char* name)
 	size_t j;
 
 	// go through all gauges and return the gauge that matches
-	if(Ship_info[Player_ship->ship_info_index].hud_gauges.size() > 0) {
+	if(Player_ship != NULL && Ship_info[Player_ship->ship_info_index].hud_gauges.size() > 0) {
 		for(j = 0; j < Ship_info[Player_ship->ship_info_index].hud_gauges.size(); j++) {
 
 			gauge_name = Ship_info[Player_ship->ship_info_index].hud_gauges[j]->getCustomGaugeName();
