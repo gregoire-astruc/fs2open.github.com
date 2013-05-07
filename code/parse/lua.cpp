@@ -14338,6 +14338,21 @@ ADE_FUNC(optionalString, l_Parsing, "string", "Checks if a string is present", "
 	}
 }
 
+ADE_FUNC(showMessage, l_Parsing, "string[, boolean error=false]", "Shows a message as a warning or an error.", NULL, "nothing")
+{
+	char* str = NULL;
+	bool error = false;
+	if (!ade_get_args(L, "s|b", &str, &error))
+		return ADE_RETURN_NIL;
+
+	if (str == NULL)
+		return ADE_RETURN_NIL;
+
+	error_display(error ? 1 : 0, "%s", str);
+
+	return ADE_RETURN_NIL;
+}
+
 ADE_FUNC(getNumber, l_Parsing, NULL, "Gets a number from the parser", "number", "The parsed number, or nil on error")
 {
 	float f;
