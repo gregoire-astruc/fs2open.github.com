@@ -1489,7 +1489,7 @@ bool stuff_lua_callback(lua_State* L, LuaCallback& callBack, const SCP_string& d
 		else
 		{
 			int len = cfilelength(cfp);
-
+			
 			char *raw_lua = (char*)vm_malloc(len+1);
 			raw_lua[len] = '\0';
 
@@ -1498,7 +1498,7 @@ bool stuff_lua_callback(lua_State* L, LuaCallback& callBack, const SCP_string& d
 
 			try
 			{
-				callBack.parseCode(SCP_string(raw_lua, len + 1), SCP_string(filename));
+				callBack.parseCode(SCP_string(raw_lua, len), SCP_string(filename));
 			}
 			catch(const SCP_string& err)
 			{

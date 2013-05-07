@@ -871,9 +871,9 @@ void HudGauge::renderBitmap(int frame, int x, int y)
 }
 
 void HudGauge::renderBitmapUv(int frame, int x, int y, int w, int h, float u0, float v0,
-							  float u1, float v1, float alpha = 1.0f, int alpha_blend = GR_ALPHABLEND_NONE)
+							  float u1, float v1, float alpha, int alpha_blend)
 {
-	int nx = 0, ny = 0; 
+	int nx = 0, ny = 0;
 	
 	if( !emp_should_blit_gauge() ) { 
 		return;
