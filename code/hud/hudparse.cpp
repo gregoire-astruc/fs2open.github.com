@@ -468,8 +468,6 @@ void hud_positions_init()
 
 	// load missing retail gauges for the default and ship-specific HUDs
 	load_missing_retail_gauges();
-	
-	Script_system.RunCondition(CHA_HUDPARSED);
 }
 
 void load_missing_retail_gauges()
