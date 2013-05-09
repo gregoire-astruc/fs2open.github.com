@@ -16,7 +16,7 @@ public:
 	 * @brief Initializes the lua value
 	 *
 	 * The instance does not point to a lua-value after the constructor has finished. To reference
-	 * a value use #getReference()
+	 * a value use #setReference(const LuaReference&)
 	 *
 	 * @param state The lua state
 	 */
