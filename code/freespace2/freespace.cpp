@@ -879,6 +879,7 @@ void game_level_close()
 		mission_campaign_save_player_persistent_variables();	// Goober5000
 
 		// De-Initialize the game subsystems
+		particle_level_close(); // m!m
 		sexp_music_close();	// Goober5000
 		event_music_level_close();
 		game_stop_looped_sounds();
@@ -1008,7 +1009,7 @@ void game_level_init(int seed)
 	player_level_init();
 	shipfx_flash_init();			// Init the ship gun flash system.
 	game_flash_reset();			// Reset the flash effect
-	particle_init();				// Reset the particle system
+	particle_level_init();				// Reset the particle system
 	fireball_init();
 	debris_init();
 	shield_hit_init();				//	Initialize system for showing shield hits
@@ -1951,7 +1952,8 @@ void game_init()
 	if (!new_alpha_colors_init()) {
 		old_alpha_colors_init();
 	}
-
+	
+	particle_init();
 	obj_init();	
 	mflash_game_init();	
 	armor_init();

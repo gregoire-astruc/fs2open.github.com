@@ -13,6 +13,7 @@
 #define _PARTICLE_H
 
 #include "globalincs/pstypes.h"
+#include "particle/ParticleSystem.h"
 
 //#define MAX_PARTICLES	2000	//	Reduced from 2000 to 800 by MK on 4/1/98.  Most I ever saw was 400 and the system recovers
 											//	gracefully from running out of slots.
@@ -24,8 +25,12 @@
 //==================== PARTICLE SYSTEM GAME SEQUENCING CODE ==================
 //============================================================================
 
-// Resets particle system.  Call between levels.
 void particle_init();
+
+// Resets particle system.  Call between levels.
+void particle_level_init();
+
+void particle_level_close();
 
 // called at game exit to cleanup any used resources
 void particle_close();
@@ -39,6 +44,11 @@ void particle_render_all();
 // kill all active particles
 void particle_kill_all();
 
+//============================================================================
+//====================== PARTICLE EFFECT PARSING FUNCTION ====================
+//============================================================================
+
+int parse_particle_effect();
 
 //============================================================================
 //=============== LOW-LEVEL SINGLE PARTICLE CREATION CODE ====================
@@ -73,7 +83,8 @@ typedef struct particle_info {
 	ubyte	reverse;						// play any animations in reverse
 } particle_info;
 
-typedef struct particle {
+class particle {
+public:
 	// old style data
 	vec3d	pos;				// position
 	vec3d	velocity;			// velocity
@@ -92,11 +103,15 @@ typedef struct particle {
 	int		particle_index;		// used to keep particle offset in dynamic array for orient usage
 
 	uint signature;
-} particle;
+
+	bool isValid();
+};
 
 // Creates a single particle. See the PARTICLE_?? defines for types.
-particle *particle_create( particle_info *pinfo );
-particle *particle_create( vec3d *pos, vec3d *vel, float lifetime, float rad, int type, int optional_data = -1, float tracer_length=-1.0f, struct object *objp=NULL, bool reverse=false );
+boost::weak_ptr<particle> particle_create( particle_info *pinfo );
+boost::weak_ptr<particle> particle_create( vec3d *pos, vec3d *vel, float lifetime,
+											float rad, int type, int optional_data = -1,
+											float tracer_length=-1.0f, struct object *objp=NULL, bool reverse=false );
 
 //============================================================================
 //============== HIGH-LEVEL PARTICLE SYSTEM CREATION CODE ====================

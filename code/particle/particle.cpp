@@ -8,7 +8,7 @@
 */
 
 
-
+#include "freespace2/freespace.h"
 #include "globalincs/systemvars.h"
 #include "graphics/2d.h"
 #include "render/3d.h" 
@@ -17,13 +17,18 @@
 #include "object/object.h"
 #include "cmdline/cmdline.h"
 #include "graphics/grbatch.h"
+#include "parse/parselo.h"
 
 #ifndef NDEBUG
 #include "io/timer.h"
 #endif
 
+#include <boost/smart_ptr.hpp>
+
+using namespace boost;
+
 int Num_particles = 0;
-static SCP_vector<particle*> Particles;
+static SCP_vector<shared_ptr<particle>> Particles;
 
 int Anim_bitmap_id_fire = -1;
 int Anim_num_frames_fire = -1;
@@ -40,8 +45,135 @@ uint lastSignature = 0; // 0 is an invalid signature!
 
 int Particle_buffer_object = -1;
 
-// Reset everything between levels
+boost::shared_ptr<EffectTrait> create_effect_trait(const SCP_string& type)
+{
+	using namespace boost;
+
+	return shared_ptr<EffectTrait>();
+}
+
+void do_parse(boost::shared_ptr<ParticleSystem> system)
+{
+	using namespace boost;
+
+	optional_string("#Particle Effects");
+
+	while (optional_string("$Particle Effect:"))
+	{
+		SCP_string name;
+		stuff_string(name, F_NAME);
+
+		bool no_create = false;
+		shared_ptr<ParticleEffect> effect;
+		
+		if (optional_string("+nocreate"))
+		{
+			int id = system->getEffectId(name);
+
+			if (id >= 0)
+			{
+				effect = system->getEffect(id);
+				no_create = true;
+			}
+			else
+			{
+				Warning(LOCATION, "Unknown overwriting particle effect name \"%s\"!", name.c_str());
+			}
+		}
+
+		// No effect yet referenced, create one
+		if (!no_create)
+		{
+			effect = shared_ptr<ParticleEffect>(new ParticleEffect(weak_ptr<ParticleSystem>(system), name));
+		}
+
+		while (optional_string("$Effect Trait:"))
+		{
+			SCP_string type;
+			SCP_string name;
+
+			stuff_string(type, F_NAME);
+
+			if (optional_string("+Name:"))
+			{
+				stuff_string(name, F_NAME);
+			}
+
+			bool trait_no_create = false;
+			shared_ptr<EffectTrait> effectTrait;
+
+			if (optional_string("+nocreate"))
+			{
+				effectTrait = effect->getTrait(name);
+
+				if (effectTrait)
+				{
+					trait_no_create = true;
+				}
+			}
+
+			if (!trait_no_create)
+			{
+				effectTrait = create_effect_trait(type);
+			}
+
+			if (effectTrait)
+			{
+				skip_to_start_of_string_either("$Particle Effect:", "$Effect Trait:");
+				continue;
+			}
+
+			effectTrait->doParse();
+
+			// Only add trait of not already created
+			if (!trait_no_create)
+			{
+				effect->addTrait(effectTrait);
+			}
+		}
+		
+		// Only add effect if it wasn't an overwrite
+		if (!no_create)
+		{
+			system->addParticleEffect(effect);
+		}
+	}
+
+	optional_string("#End");
+}
+
+void parse_particles_table(char* filename)
+{
+	using namespace boost;
+
+	int rval;
+
+	if ((rval = setjmp(parse_abort)) != 0) {
+		mprintf(("TABLES: Unable to parse '%s'!  Error code = %i.\n", filename, rval));
+		return;
+	}
+
+	read_file_text(filename, CF_TYPE_TABLES);
+
+	reset_parse();
+
+	do_parse(ParticleSystem::getInstance());
+}
+
 void particle_init()
+{
+	// Parse the effects definitions main table
+	if (cf_exists_full("particle_effect.tbl", CF_TYPE_TABLES))
+	{
+		parse_particles_table("particle_effect.tbl");
+	}
+
+	// Then other modular ones
+	parse_modular_table(NOX("*-pae.tbm"), parse_particles_table);
+}
+
+// Reset everything between levels
+void particle_level_init()
 {
 	int fps;
 
@@ -72,15 +204,37 @@ void particle_init()
 	}
 }
 
+void particle_level_close()
+{
+	ParticleSystem::getInstance()->levelClose();
+}
+
 // only call from game_shutdown()!!!
 void particle_close()
 {
-	for (SCP_vector<particle*>::iterator p = Particles.begin(); p != Particles.end(); ++p)
+	for (SCP_vector<shared_ptr<particle>>::iterator p = Particles.begin(); p != Particles.end(); ++p)
 	{
 		(*p)->signature = 0;
-		delete *p;
+		p->reset();
 	}
 	Particles.clear();
+}
+
+
+int parse_particle_effect()
+{
+	SCP_string effectName;
+
+	stuff_string(effectName, F_NAME);
+
+	int id = ParticleSystem::getInstance()->getEffectId(effectName);
+
+	if (id < 0)
+	{
+		Warning(LOCATION, "Illegal particle effect name \"%s\"!", effectName.c_str());
+	}
+
+	return id;
 }
 
 void particle_page_in()
@@ -106,14 +260,14 @@ DCF(particles,"Turns particles on/off")
 int Num_particles_hwm = 0;
 
 // Creates a single particle. See the PARTICLE_?? defines for types.
-particle *particle_create( particle_info *pinfo )
+boost::weak_ptr<particle> particle_create( particle_info *pinfo )
 {
 	if ( !Particles_enabled )
 	{
-		return NULL;
+		return weak_ptr<particle>();
 	}
 
-	particle* new_particle = new particle();
+	shared_ptr<particle> new_particle = shared_ptr<particle>(new particle());
 	int fps = 1;
 	
 	new_particle->pos = pinfo->pos;
@@ -134,8 +288,7 @@ particle *particle_create( particle_info *pinfo )
 		case PARTICLE_BITMAP_PERSISTENT: {
 			if (pinfo->optional_data < 0) {
 				Int3();
-				delete new_particle;
-				return NULL;
+				return weak_ptr<particle>();
 			}
 
 			bm_get_info( pinfo->optional_data, NULL, NULL, NULL, &new_particle->nframes, &fps );
@@ -150,8 +303,7 @@ particle *particle_create( particle_info *pinfo )
 
 		case PARTICLE_FIRE: {
 			if (Anim_bitmap_id_fire < 0) {
-				delete new_particle;
-				return NULL;
+				return weak_ptr<particle>();
 			}
 
 			new_particle->optional_data = Anim_bitmap_id_fire;
@@ -162,8 +314,7 @@ particle *particle_create( particle_info *pinfo )
 
 		case PARTICLE_SMOKE: {
 			if (Anim_bitmap_id_smoke < 0) {
-				delete new_particle;
-				return NULL;
+				return weak_ptr<particle>();
 			}
 
 			new_particle->optional_data = Anim_bitmap_id_smoke;
@@ -174,8 +325,7 @@ particle *particle_create( particle_info *pinfo )
 
 		case PARTICLE_SMOKE2: {
 			if (Anim_bitmap_id_smoke2 < 0) {
-				delete new_particle;
-				return NULL;
+				return weak_ptr<particle>();
 			}
 
 			new_particle->optional_data = Anim_bitmap_id_smoke2;
@@ -200,16 +350,16 @@ particle *particle_create( particle_info *pinfo )
 	}
 #endif
 
-	return Particles.back();
+	return weak_ptr<particle>(Particles.back());
 }
 
-particle *particle_create( vec3d *pos, vec3d *vel, float lifetime, float rad, int type, int optional_data, float tracer_length, object *objp, bool reverse )
+boost::weak_ptr<particle> particle_create( vec3d *pos, vec3d *vel, float lifetime, float rad, int type, int optional_data, float tracer_length, object *objp, bool reverse )
 {
 	particle_info pinfo;
 
 	if ( (type < 0) || (type >= NUM_PARTICLE_TYPES) ) {
 		Int3();
-		return NULL;
+		return weak_ptr<particle>();
 	}
 
 	// setup old data
@@ -235,7 +385,7 @@ particle *particle_create( vec3d *pos, vec3d *vel, float lifetime, float rad, in
 	pinfo.reverse = reverse? 1 : 0;
 
 	// lower level function
-	return particle_create(&pinfo);
+	return weak_ptr<particle>(particle_create(&pinfo));
 }
 
 MONITOR( NumParticles )
@@ -250,37 +400,19 @@ void particle_move_all(float frametime)
 	if ( Particles.empty() )
 		return;
 
-	for (SCP_vector<particle*>::iterator p = Particles.begin(); p != Particles.end(); )
+	for (SCP_vector<shared_ptr<particle>>::iterator p = Particles.begin(); p != Particles.end(); )
 	{	
-		particle* part = *p;
+		shared_ptr<particle> part = *p;
 		if (part->age == 0.0f) {
 			part->age = 0.00001f;
 		} else {
 			part->age += frametime;
 		}
 
-		bool remove_particle = false;
-
-		// if its time expired, remove it
-		if (part->age > part->max_life) {
-			// special case, if max_life is 0 then we want it to render at least once
-			if ( (part->age > frametime) || (part->max_life > 0.0f) ) {
-				remove_particle = true;
-			}
-		}
-
-		// if the particle is attached to an object which has become invalid, kill it
-		if (part->attached_objnum >= 0) {
-			// if the signature has changed, or it's bogus, kill it
-			if ( (part->attached_objnum >= MAX_OBJECTS) || (part->attached_sig != Objects[part->attached_objnum].signature) ) {
-				remove_particle = true;
-			}
-		}
-
-		if (remove_particle)
+		if (!part->isValid())
 		{
 			part->signature = 0;
-			delete part;
+			part.reset();
 
 			// if we're sitting on the very last particle, popping-back will invalidate the iterator!
 			if (p + 1 == Particles.end())
@@ -311,10 +443,10 @@ void particle_kill_all()
 	Num_particles = 0;
 	Num_particles_hwm = 0;
 
-	for (SCP_vector<particle*>::iterator p = Particles.begin(); p != Particles.end(); ++p)
+	for (SCP_vector<shared_ptr<particle>>::iterator p = Particles.begin(); p != Particles.end(); ++p)
 	{
 		(*p)->signature = 0;
-		delete *p;
+		p->reset();
 	}
 	Particles.clear();
 }
@@ -367,8 +499,8 @@ void particle_render_all()
 	if ( Particles.empty() )
 		return;
 
-	for (SCP_vector<particle*>::iterator p = Particles.begin(); p != Particles.end(); ++p) {
-		particle* part = *p;
+	for (SCP_vector<shared_ptr<particle>>::iterator p = Particles.begin(); p != Particles.end(); ++p) {
+		shared_ptr<particle> part = *p;
 		// skip back-facing particles (ripped from fullneb code)
 		// Wanderer - add support for attached particles
 		vec3d p_pos;
@@ -546,3 +678,23 @@ void particle_emit( particle_emitter *pe, int type, int optional_data, float ran
 	}
 }
 
+bool particle::isValid()
+{
+	// if its time expired, remove it
+	if (age > max_life) {
+		// special case, if max_life is 0 then we want it to render at least once
+		if ( (age > flFrametime) || (max_life > 0.0f) ) {
+			return false;
+		}
+	}
+
+	// if the particle is attached to an object which has become invalid, kill it
+	if (attached_objnum >= 0) {
+		// if the signature has changed, or it's bogus, kill it
+		if ( (attached_objnum >= MAX_OBJECTS) || (attached_sig != Objects[attached_objnum].signature) ) {
+			return false;
+		}
+	}
+
+	return true;
+}

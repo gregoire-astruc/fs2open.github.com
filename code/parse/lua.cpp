@@ -10680,29 +10680,30 @@ ADE_FUNC(pollAllButtons, l_Control_Info, NULL, "Access the four bitfields contai
 class particle_h
 {
 protected:
-	particle *part;
+	boost::weak_ptr<particle> part;
 	uint sig;
 public:
 	particle_h()
 	{
-		part = NULL;
+		part = boost::weak_ptr<particle>();
 	}
 
-	particle_h(particle *particle)
+	particle_h(boost::weak_ptr<particle> particle)
 	{
 		this->part = particle;
-		if (particle != NULL)
-			this->sig = particle->signature;
+		if (!particle.expired())
+			this->sig = particle.lock()->signature;
 	}
 
-	particle* Get()
+	boost::weak_ptr<particle> Get()
 	{
 		return this->part;
 	}
 
 	bool isValid()
 	{
-		if (this != NULL && part != NULL && part->signature != 0 && part->signature == this->sig)
+		boost::shared_ptr<particle> partPtr = part.lock();
+		if (!part.expired() && partPtr->signature != 0 && partPtr->signature == this->sig)
 			return true;
 		else
 			return false;
@@ -10731,10 +10732,10 @@ ADE_VIRTVAR(Position, l_Particle, "vector", "The current position of the particl
 
 	if (ADE_SETTING_VAR)
 	{
-		ph->Get()->pos = newVec;
+		ph->Get().lock()->pos = newVec;
 	}
 
-	return ade_set_args(L, "o", l_Vector.Set(ph->Get()->pos));
+	return ade_set_args(L, "o", l_Vector.Set(ph->Get().lock()->pos));
 }
 
 ADE_VIRTVAR(Velocity, l_Particle, "vector", "The current velocity of the particle (world vector)", "vector", "The current velocity")
@@ -10752,10 +10753,10 @@ ADE_VIRTVAR(Velocity, l_Particle, "vector", "The current velocity of the particl
 
 	if (ADE_SETTING_VAR)
 	{
-		ph->Get()->velocity = newVec;
+		ph->Get().lock()->velocity = newVec;
 	}
 
-	return ade_set_args(L, "o", l_Vector.Set(ph->Get()->velocity));
+	return ade_set_args(L, "o", l_Vector.Set(ph->Get().lock()->velocity));
 }
 
 ADE_VIRTVAR(Age, l_Particle, "number", "The time this particle already lives", "number", "The current age or -1 on error")
@@ -10774,10 +10775,10 @@ ADE_VIRTVAR(Age, l_Particle, "number", "The time this particle already lives", "
 	if (ADE_SETTING_VAR)
 	{
 		if (newAge >= 0)
-			ph->Get()->age = newAge;
+			ph->Get().lock()->age = newAge;
 	}
 
-	return ade_set_args(L, "f", ph->Get()->age);
+	return ade_set_args(L, "f", ph->Get().lock()->age);
 }
 
 ADE_VIRTVAR(MaximumLife, l_Particle, "number", "The time this particle can live", "number", "The maximal life or -1 on error")
@@ -10796,10 +10797,10 @@ ADE_VIRTVAR(MaximumLife, l_Particle, "number", "The time this particle can live"
 	if (ADE_SETTING_VAR)
 	{
 		if (newLife >= 0)
-			ph->Get()->max_life = newLife;
+			ph->Get().lock()->max_life = newLife;
 	}
 
-	return ade_set_args(L, "f", ph->Get()->max_life);
+	return ade_set_args(L, "f", ph->Get().lock()->max_life);
 }
 
 ADE_VIRTVAR(Radius, l_Particle, "number", "The radius of the particle", "number", "The radius or -1 on error")
@@ -10818,10 +10819,10 @@ ADE_VIRTVAR(Radius, l_Particle, "number", "The radius of the particle", "number"
 	if (ADE_SETTING_VAR)
 	{
 		if (newRadius >= 0)
-			ph->Get()->radius = newRadius;
+			ph->Get().lock()->radius = newRadius;
 	}
 
-	return ade_set_args(L, "f", ph->Get()->radius);
+	return ade_set_args(L, "f", ph->Get().lock()->radius);
 }
 
 ADE_VIRTVAR(TracerLength, l_Particle, "number", "The tracer legth of the particle", "number", "The radius or -1 on error")
@@ -10840,10 +10841,10 @@ ADE_VIRTVAR(TracerLength, l_Particle, "number", "The tracer legth of the particl
 	if (ADE_SETTING_VAR)
 	{
 		if (newTracer >= 0) 
-			ph->Get()->tracer_length = newTracer;
+			ph->Get().lock()->tracer_length = newTracer;
 	}
 
-	return ade_set_args(L, "f", ph->Get()->tracer_length);
+	return ade_set_args(L, "f", ph->Get().lock()->tracer_length);
 }
 
 ADE_VIRTVAR(AttachedObject, l_Particle, "object", "The object this particle is attached to. If valid the position will be relativ to this object and the velocity will be ignored.", "object", "Attached object or invalid object handle on error")
@@ -10862,10 +10863,10 @@ ADE_VIRTVAR(AttachedObject, l_Particle, "object", "The object this particle is a
 	if (ADE_SETTING_VAR)
 	{
 		if (newObj->IsValid())
-			ph->Get()->attached_objnum = newObj->objp->signature;
+			ph->Get().lock()->attached_objnum = newObj->objp->signature;
 	}
 
-	return ade_set_args(L, "o", l_Object.Set(object_h(&Objects[ph->Get()->attached_objnum])));
+	return ade_set_args(L, "o", l_Object.Set(object_h(&Objects[ph->Get().lock()->attached_objnum])));
 }
 
 ADE_FUNC(isValid, l_Particle, NULL, "Detects whether this handle is valid", "boolean", "true if valid false if not")
@@ -14000,9 +14001,9 @@ ADE_FUNC(createParticle, l_Testing, "vector Position, vector Velocity, number Li
 		pi.attached_sig = objh->objp->signature;
 	}
 
-	particle *p = particle_create(&pi);
+	boost::weak_ptr<particle> p = particle_create(&pi);
 
-	if (p != NULL)
+	if (!p.expired())
 		return ade_set_args(L, "o", l_Particle.Set(particle_h(p)));
 	else
 		return ADE_RETURN_NIL;
