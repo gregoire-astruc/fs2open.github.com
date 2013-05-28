@@ -102,8 +102,6 @@ public:
 	ubyte	reverse;			// play any animations in reverse
 	int		particle_index;		// used to keep particle offset in dynamic array for orient usage
 
-	uint signature;
-
 	bool isValid();
 };
 

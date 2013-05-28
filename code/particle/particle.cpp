@@ -41,8 +41,6 @@ int Anim_num_frames_smoke2 = -1;
 
 static int Particles_enabled = 1;
 
-uint lastSignature = 0; // 0 is an invalid signature!
-
 int Particle_buffer_object = -1;
 
 boost::shared_ptr<EffectTrait> create_effect_trait(const SCP_string& type)
@@ -212,11 +210,6 @@ void particle_level_close()
 // only call from game_shutdown()!!!
 void particle_close()
 {
-	for (SCP_vector<shared_ptr<particle>>::iterator p = Particles.begin(); p != Particles.end(); ++p)
-	{
-		(*p)->signature = 0;
-		p->reset();
-	}
 	Particles.clear();
 }
 
@@ -339,7 +332,6 @@ boost::weak_ptr<particle> particle_create( particle_info *pinfo )
 			break;
 	}
 	
-	new_particle->signature = ++lastSignature;
 	Particles.push_back( new_particle );
 
 #ifndef NDEBUG
@@ -411,7 +403,6 @@ void particle_move_all(float frametime)
 
 		if (!part->isValid())
 		{
-			part->signature = 0;
 			part.reset();
 
 			// if we're sitting on the very last particle, popping-back will invalidate the iterator!
@@ -442,12 +433,7 @@ void particle_kill_all()
 	// kill all active particles
 	Num_particles = 0;
 	Num_particles_hwm = 0;
-
-	for (SCP_vector<shared_ptr<particle>>::iterator p = Particles.begin(); p != Particles.end(); ++p)
-	{
-		(*p)->signature = 0;
-		p->reset();
-	}
+	
 	Particles.clear();
 }
 
