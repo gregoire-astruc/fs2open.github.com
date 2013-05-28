@@ -11,6 +11,7 @@
 
 class ParticleSource;
 class ParticleSystem;
+class EffectTrait;
 
 class ParticleEffect
 {
