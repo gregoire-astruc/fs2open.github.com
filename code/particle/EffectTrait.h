@@ -4,6 +4,7 @@
 
 #include "globalincs/pstypes.h"
 #include "object/object.h"
+#include "particle/particle.h"
 
 #include <boost/smart_ptr.hpp>
 
@@ -42,6 +43,8 @@ struct GenericTraitConfiguration
 	{}
 };
 
+class particle;
+
 class GenericEffectTrait : public EffectTrait
 {
 private:
@@ -56,7 +59,7 @@ protected:
 
 	vec3d getEffectPosition(const ParticleSource& source, bool* success = NULL) const;
 
-	vec3d getEffectDirection(const ParticleSource& source, bool* success = NULL) const;
+	vec3d getEffectDirection(const ParticleSource& source, bool* success = NULL, bool addVelocity = true) const;
 
 	boost::weak_ptr<particle> createParticle(vec3d* position, vec3d* vel, int animation, float lifetime, float radius, object* obj = NULL);
 public:

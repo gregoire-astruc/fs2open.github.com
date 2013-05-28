@@ -72,34 +72,55 @@ vec3d GenericEffectTrait::getEffectPosition(const ParticleSource& source, bool* 
 		*success = true;
 	}
 
-	if (source.getArgument(POSITION, argumentAny))
-	{
-		return any_cast<vec3d>(argumentAny);
-	}
-
-	if (source.getArgument(COLLISION_INFO, argumentAny))
-	{
-		return any_cast<mc_info>(argumentAny).hit_point_world;
-	}
-
+	// If the source has a particle use that first
 	if (source.getArgument(PARTICLE, argumentAny))
 	{
 		weak_ptr<particle> part = any_cast<weak_ptr<particle>>(argumentAny);
 
 		if (!part.expired())
 		{
-			return part.lock()->pos;
+			vec3d pos = part.lock()->pos;
+
+			// Optionally add the POSITION argument
+			if (source.getArgument(POSITION, argumentAny))
+			{
+				vec3d position = any_cast<vec3d>(argumentAny);
+				vm_vec_add2(&pos, &position);
+			}
+
+			return pos;
 		}
 	}
 
+	// If it has an object use its position
 	if (source.getArgument(OBJECT, argumentAny))
 	{
 		object_h objh = any_cast<object_h>(argumentAny);
 
 		if (objh.IsValid())
 		{
-			return objh.objp->pos;
+			object* objp = objh.objp;
+			vec3d pos = objp->pos;
+			
+			// Also optionally use the position with the objects rotation
+			if (source.getArgument(POSITION, argumentAny))
+			{
+				vec3d position = any_cast<vec3d>(argumentAny);
+				vec3d dest;
+
+				vm_vec_unrotate(&dest, &position, &objp->orient);
+
+				vm_vec_add2(&pos, &dest);
+			}
+
+			return pos;
 		}
+	}
+
+	// The last case is just to return the position
+	if (source.getArgument(POSITION, argumentAny))
+	{
+		return any_cast<vec3d>(argumentAny);
 	}
 
 	if (success != NULL)
@@ -107,11 +128,14 @@ vec3d GenericEffectTrait::getEffectPosition(const ParticleSource& source, bool* 
 		*success = false;
 	}
 
+	// return null vector in error case.
 	return vmd_zero_vector;
 }
 
-vec3d GenericEffectTrait::getEffectDirection(const ParticleSource& source, bool* success) const
+vec3d GenericEffectTrait::getEffectDirection(const ParticleSource& source, bool* success, bool addVelocity) const
 {
+	// This works similary to GenericEffectTrait::getEffectPosition
+
 	any argumentAny;
 
 	if (success != NULL)
@@ -119,29 +143,26 @@ vec3d GenericEffectTrait::getEffectDirection(const ParticleSource& source, bool*
 		*success = true;
 	}
 
-	if (source.getArgument(DIRECTION, argumentAny))
-	{
-		return any_cast<vec3d>(argumentAny);
-	}
-
-	if (source.getArgument(COLLISION_INFO, argumentAny))
-	{
-		vec3d dest;
-		mc_info info = any_cast<mc_info>(argumentAny);
-		vec3d normal = info.hit_normal;
-
-		vm_vec_unrotate(&dest, &normal, info.orient);
-
-		return dest;
-	}
-
-	if (source.getArgument(PARTICLE, argumentAny))
+	// We only need the velocity of the particle and only if addVelocity is true
+	if (addVelocity && source.getArgument(PARTICLE, argumentAny))
 	{
 		weak_ptr<particle> part = any_cast<weak_ptr<particle>>(argumentAny);
 
 		if (!part.expired())
 		{
-			return part.lock()->velocity;
+			vec3d dir = part.lock()->velocity;
+
+			// Optionally add the POSITION argument
+			if (source.getArgument(DIRECTION, argumentAny))
+			{
+				vec3d direction = any_cast<vec3d>(argumentAny);
+				vm_vec_add2(&dir, &direction);
+			}
+
+			// Normalize the direction
+			vm_vec_normalize(&dir);
+
+			return dir;
 		}
 	}
 
@@ -151,8 +172,43 @@ vec3d GenericEffectTrait::getEffectDirection(const ParticleSource& source, bool*
 
 		if (objh.IsValid())
 		{
-			return objh.objp->phys_info.vel;
+			object* objp = objh.objp;
+			vec3d dir;
+
+			if (addVelocity)
+			{
+				dir = objp->phys_info.vel;
+			
+				// Also optionally use the position with the objects rotation
+				if (source.getArgument(DIRECTION, argumentAny))
+				{
+					vec3d direction = any_cast<vec3d>(argumentAny);
+					vec3d dest;
+
+					vm_vec_unrotate(&dest, &direction, &objp->orient);
+
+					vm_vec_add2(&dir, &dest);
+				}
+
+				vm_vec_normalize(&dir);
+
+				return dir;
+			}
+			else if (source.getArgument(DIRECTION, argumentAny))
+			{
+				// Also optionally use the position with the objects rotation
+				vec3d direction = any_cast<vec3d>(argumentAny);
+
+				vm_vec_unrotate(&dir, &direction, &objp->orient);
+
+				return dir;
+			}
 		}
+	}
+
+	if (source.getArgument(DIRECTION, argumentAny))
+	{
+		return any_cast<vec3d>(argumentAny);
 	}
 
 	if (success != NULL)
