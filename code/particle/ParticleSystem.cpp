@@ -71,7 +71,7 @@ ParticleSource* ParticleSystem::createParticleEffect(int effectId)
 int ParticleSystem::getEffectId(const SCP_string& name) const
 {
 	int id = 0;
-	for (SCP_vector<shared_ptr<ParticleEffect>>::iterator iter = particleEffects.begin();
+	for (SCP_vector<shared_ptr<ParticleEffect>>::const_iterator iter = particleEffects.begin();
 		iter != particleEffects.end(); ++iter)
 	{
 		if (!(*iter)->getName().compare(name))
