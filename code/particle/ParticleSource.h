@@ -13,8 +13,7 @@ enum SourceArgumentType
 	POSITION,
 	DIRECTION,
 	OBJECT,
-	PARTICLE,
-	COLLISION_INFO
+	PARTICLE
 };
 
 class ParticleEffect;
