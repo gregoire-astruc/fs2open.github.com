@@ -51,23 +51,25 @@ bool isType(const any& any)
 void ParticleSource::setArgument(SourceArgumentType type, any& argument)
 {
 #ifndef NDEBUG
-	// Check the argument type to make sure the correct types are passed
+	// Check the argument type to make sure the correct types are passed and also validate the arguments
 	switch (type)
 	{
 	case POSITION:
 		Assertion(isType<vec3d>(argument), "Illegal argument type, expected vector!");
 		break;
 	case DIRECTION:
+		const float EPSILON = 0.001f;
+
 		Assertion(isType<vec3d>(argument), "Illegal argument type, expected vector!");
+
+		vec3d dir = any_cast<vec3d>(argument);
+		Assertion(vm_vec_mag_squared(&dir) > 1.0f - EPSILON && vm_vec_mag_squared(&dir) < 1.0f + EPSILON, "Direction vector argument is not normalized!");
 		break;
 	case OBJECT:
 		Assertion(isType<object_h>(argument), "Illegal argument type, expected object pointer!");
 		break;
 	case PARTICLE:
 		Assertion(isType<weak_ptr<particle>>(argument), "Illegal argument type, expected particle pointer!");
-		break;
-	case COLLISION_INFO:
-		Assertion(isType<mc_info>(argument), "Illegal argument type, expected particle pointer!");
 		break;
 	}
 #endif
