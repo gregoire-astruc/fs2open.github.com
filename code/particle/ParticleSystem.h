@@ -35,7 +35,7 @@ public:
 
 	ParticleSource* createParticleEffect(int effectId);
 
-	inline boost::shared_ptr<ParticleEffect>& getEffect(int id) const
+	inline boost::shared_ptr<ParticleEffect> getEffect(int id) const
 	{
 		Assertion(id < (int) particleEffects.size(), 
 			"Tried to access particle effect %d, got %d definitions.", id, (int) particleEffects.size());
