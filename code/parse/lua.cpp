@@ -10681,7 +10681,7 @@ class particle_h
 {
 protected:
 	boost::weak_ptr<particle> part;
-	uint sig;
+
 public:
 	particle_h()
 	{
@@ -10691,8 +10691,6 @@ public:
 	particle_h(boost::weak_ptr<particle> particle)
 	{
 		this->part = particle;
-		if (!particle.expired())
-			this->sig = particle.lock()->signature;
 	}
 
 	boost::weak_ptr<particle> Get()
@@ -10703,7 +10701,7 @@ public:
 	bool isValid()
 	{
 		boost::shared_ptr<particle> partPtr = part.lock();
-		if (!part.expired() && partPtr->signature != 0 && partPtr->signature == this->sig)
+		if (!part.expired())
 			return true;
 		else
 			return false;
@@ -14003,10 +14001,7 @@ ADE_FUNC(createParticle, l_Testing, "vector Position, vector Velocity, number Li
 
 	boost::weak_ptr<particle> p = particle_create(&pi);
 
-	if (!p.expired())
-		return ade_set_args(L, "o", l_Particle.Set(particle_h(p)));
-	else
-		return ADE_RETURN_NIL;
+	return ade_set_args(L, "o", l_Particle.Set(particle_h(p)));
 }
 
 ADE_FUNC(getStack, l_Testing, NULL, "Generates an ADE stackdump", "string", "Current Lua stack")
