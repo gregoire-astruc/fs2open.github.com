@@ -542,6 +542,7 @@
     <ClCompile Include="..\..\code\parse\scripting.cpp" />
     <ClCompile Include="..\..\code\parse\sexp.cpp" />
     <ClCompile Include="..\..\code\particle\EffectTrait.cpp" />
+    <ClCompile Include="..\..\code\particle\GenericEffectTrait.cpp" />
     <ClCompile Include="..\..\code\Particle\particle.cpp" />
     <ClCompile Include="..\..\code\particle\ParticleEffect.cpp" />
     <ClCompile Include="..\..\code\particle\ParticleSource.cpp" />
@@ -830,6 +831,7 @@
     <ClInclude Include="..\..\code\parse\scripting.h" />
     <ClInclude Include="..\..\code\parse\sexp.h" />
     <ClInclude Include="..\..\code\particle\EffectTrait.h" />
+    <ClInclude Include="..\..\code\particle\GenericEffectTrait.h" />
     <ClInclude Include="..\..\code\Particle\particle.h" />
     <ClInclude Include="..\..\code\particle\ParticleEffect.h" />
     <ClInclude Include="..\..\code\particle\ParticleSource.h" />
