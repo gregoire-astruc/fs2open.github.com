@@ -4,7 +4,7 @@ using namespace boost;
 
 shared_ptr<ParticleSystem> ParticleSystem::globalInstance = shared_ptr<ParticleSystem>();
 
-ParticleSystem::ParticleSystem() : lastSignature(0)
+ParticleSystem::ParticleSystem()
 {
 }
 
@@ -61,7 +61,7 @@ ParticleSource* ParticleSystem::createParticleEffect(int effectId)
 	shared_ptr<ParticleEffect> effect = this->getEffect(effectId);
 
 	weak_ptr<ParticleEffect> ptr(effect);
-	ParticleSource source(ptr, ++lastSignature);
+	ParticleSource source(ptr);
 
 	particleSources.push_back(source);
 

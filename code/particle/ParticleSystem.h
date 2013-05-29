@@ -20,8 +20,6 @@ private:
 	SCP_vector<boost::shared_ptr<ParticleEffect>> particleEffects;
 	SCP_vector<ParticleSource> particleSources;
 
-	uint lastSignature;
-
 	// Do not allow new instances
 	ParticleSystem();
 public:

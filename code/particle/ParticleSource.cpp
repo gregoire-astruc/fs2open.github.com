@@ -5,7 +5,7 @@
 
 using namespace boost;
 
-ParticleSource::ParticleSource(boost::weak_ptr<ParticleEffect> parentEffect, uint sig) : parentEffect(parentEffect), signature(sig)
+ParticleSource::ParticleSource(boost::weak_ptr<ParticleEffect> parentEffect) : parentEffect(parentEffect)
 {
 }
 
@@ -24,7 +24,7 @@ bool ParticleSource::getArgument(SourceArgumentType type, boost::any& value) con
 	}
 	else
 	{
-		value = *valueIter;
+		value = valueIter->second;
 
 		return true;
 	}
@@ -52,24 +52,35 @@ void ParticleSource::setArgument(SourceArgumentType type, any& argument)
 {
 #ifndef NDEBUG
 	// Check the argument type to make sure the correct types are passed and also validate the arguments
+	const float EPSILON = 0.001f;
+
 	switch (type)
 	{
 	case POSITION:
 		Assertion(isType<vec3d>(argument), "Illegal argument type, expected vector!");
 		break;
 	case DIRECTION:
-		const float EPSILON = 0.001f;
+		{
+			Assertion(isType<vec3d>(argument), "Illegal argument type, expected vector!");
 
-		Assertion(isType<vec3d>(argument), "Illegal argument type, expected vector!");
-
-		vec3d dir = any_cast<vec3d>(argument);
-		Assertion(vm_vec_mag_squared(&dir) > 1.0f - EPSILON && vm_vec_mag_squared(&dir) < 1.0f + EPSILON, "Direction vector argument is not normalized!");
+			vec3d dir = any_cast<vec3d>(argument);
+			Assertion(vm_vec_mag_squared(&dir) > 1.0f - EPSILON && vm_vec_mag_squared(&dir) < 1.0f + EPSILON, "Direction vector argument is not normalized!");
+		}
 		break;
 	case OBJECT:
 		Assertion(isType<object_h>(argument), "Illegal argument type, expected object pointer!");
 		break;
 	case PARTICLE:
 		Assertion(isType<weak_ptr<particle>>(argument), "Illegal argument type, expected particle pointer!");
+		break;
+	case INCOMING_DIRECTION:
+		Assertion(isType<weak_ptr<particle>>(argument), "Illegal argument type, expected particle pointer!");
+		{
+			Assertion(isType<vec3d>(argument), "Illegal argument type, expected vector!");
+
+			vec3d dir = any_cast<vec3d>(argument);
+			Assertion(vm_vec_mag_squared(&dir) > 1.0f - EPSILON && vm_vec_mag_squared(&dir) < 1.0f + EPSILON, "Incoming direction vector argument is not normalized!");
+		}
 		break;
 	}
 #endif
