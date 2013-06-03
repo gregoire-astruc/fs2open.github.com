@@ -129,8 +129,3 @@ bool ParticleSource::isActive() const
 
 	return parentEffect.lock()->isActive(*this);
 }
-
-bool ParticleSource::operator==(const ParticleSource& other) const
-{
-	return signature == other.signature;
-}

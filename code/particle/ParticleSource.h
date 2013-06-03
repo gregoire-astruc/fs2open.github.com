@@ -41,8 +41,6 @@ public:
 	void update(float frametime);
 
 	bool isActive() const;
-
-	bool operator==(const ParticleSource& other) const;
 };
 
 #endif // _PARTICLE_SOURCE_H
