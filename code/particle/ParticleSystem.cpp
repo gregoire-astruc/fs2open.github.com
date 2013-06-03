@@ -87,7 +87,7 @@ int ParticleSystem::getEffectId(const SCP_string& name) const
 
 shared_ptr<ParticleSystem> ParticleSystem::getInstance()
 {
-	if (globalInstance)
+	if (!globalInstance)
 	{
 		globalInstance = shared_ptr<ParticleSystem>(new ParticleSystem());
 	}
