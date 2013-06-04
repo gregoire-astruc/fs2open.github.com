@@ -547,6 +547,7 @@
     <ClCompile Include="..\..\code\particle\ParticleEffect.cpp" />
     <ClCompile Include="..\..\code\particle\ParticleSource.cpp" />
     <ClCompile Include="..\..\code\particle\ParticleSystem.cpp" />
+    <ClCompile Include="..\..\code\particle\TraitUtil.cpp" />
     <ClCompile Include="..\..\code\PcxUtils\pcxutils.cpp" />
     <ClCompile Include="..\..\code\Physics\physics.cpp" />
     <ClCompile Include="..\..\code\PilotFile\csg.cpp" />
@@ -836,6 +837,7 @@
     <ClInclude Include="..\..\code\particle\ParticleEffect.h" />
     <ClInclude Include="..\..\code\particle\ParticleSource.h" />
     <ClInclude Include="..\..\code\particle\ParticleSystem.h" />
+    <ClInclude Include="..\..\code\particle\TraitUtil.h" />
     <ClInclude Include="..\..\code\PcxUtils\pcxutils.h" />
     <ClInclude Include="..\..\code\Physics\physics.h" />
     <ClInclude Include="..\..\code\PilotFile\pilotfile.h" />
