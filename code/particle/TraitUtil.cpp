@@ -125,6 +125,31 @@ ValueRange<int> TraitUtil::parseValueRange<int>(const int lowerBound, const int 
 	return ValueRange<int>(value1, value2);
 }
 
+bool TraitUtil::hasEffectPosition(const ParticleSource& source)
+{
+	any argumentAny;
+
+	if (source.getArgument(PARTICLE, argumentAny))
+	{
+		weak_ptr<particle> part = any_cast<weak_ptr<particle>>(argumentAny);
+
+		return !part.expired();
+	}
+
+	if (source.getArgument(OBJECT, argumentAny))
+	{
+		object_h objh = any_cast<object_h>(argumentAny);
+
+		return objh.IsValid();
+	}
+
+	if (source.getArgument(POSITION, argumentAny))
+	{
+		return true;
+	}
+
+	return false;
+}
 
 vec3d TraitUtil::getEffectPosition(const ParticleSource& source, bool* success)
 {
@@ -133,6 +158,16 @@ vec3d TraitUtil::getEffectPosition(const ParticleSource& source, bool* success)
 	if (success != NULL)
 	{
 		*success = true;
+	}
+
+	if (!TraitUtil::hasEffectPosition(source))
+	{
+		if (success != NULL)
+		{
+			*success = false;
+		}
+
+		return vmd_zero_vector;
 	}
 
 	// If the source has a particle use that first
@@ -152,16 +187,6 @@ vec3d TraitUtil::getEffectPosition(const ParticleSource& source, bool* success)
 			}
 
 			return pos;
-		}
-		else
-		{
-			if (success != NULL)
-			{
-				*success = false;
-			}
-
-			// return null vector in error case.
-			return vmd_zero_vector;
 		}
 	}
 
@@ -188,16 +213,6 @@ vec3d TraitUtil::getEffectPosition(const ParticleSource& source, bool* success)
 
 			return pos;
 		}
-		else
-		{
-			if (success != NULL)
-			{
-				*success = false;
-			}
-
-			// return null vector in error case.
-			return vmd_zero_vector;
-		}
 	}
 
 	// The last case is just to return the position
@@ -206,13 +221,36 @@ vec3d TraitUtil::getEffectPosition(const ParticleSource& source, bool* success)
 		return any_cast<vec3d>(argumentAny);
 	}
 
-	if (success != NULL)
-	{
-		*success = false;
-	}
+	Error(LOCATION, "Reached end of getEffectPosition without valid vector! Get a coder!");
 
 	// return null vector in error case.
 	return vmd_zero_vector;
+}
+
+bool TraitUtil::hasEffectDirection(const ParticleSource& source)
+{
+	any argumentAny;
+
+	if (source.getArgument(PARTICLE, argumentAny))
+	{
+		weak_ptr<particle> part = any_cast<weak_ptr<particle>>(argumentAny);
+
+		return !part.expired();
+	}
+
+	if (source.getArgument(OBJECT, argumentAny))
+	{
+		object_h objh = any_cast<object_h>(argumentAny);
+
+		return objh.IsValid();
+	}
+
+	if (source.getArgument(DIRECTION, argumentAny))
+	{
+		return true;
+	}
+
+	return false;
 }
 
 vec3d TraitUtil::getEffectDirection(const ParticleSource& source, bool* success, bool addVelocity)
@@ -224,6 +262,16 @@ vec3d TraitUtil::getEffectDirection(const ParticleSource& source, bool* success,
 	if (success != NULL)
 	{
 		*success = true;
+	}
+
+	if (!TraitUtil::hasEffectDirection(source))
+	{
+		if (success != NULL)
+		{
+			*success = false;
+		}
+
+		return vmd_zero_vector;
 	}
 
 	// We only need the velocity of the particle and only if addVelocity is true
@@ -246,16 +294,6 @@ vec3d TraitUtil::getEffectDirection(const ParticleSource& source, bool* success,
 			vm_vec_normalize_safe(&dir);
 
 			return dir;
-		}
-		else
-		{
-			if (success != NULL)
-			{
-				*success = false;
-			}
-
-			// return null vector in error case.
-			return vmd_zero_vector;
 		}
 	}
 
@@ -297,16 +335,6 @@ vec3d TraitUtil::getEffectDirection(const ParticleSource& source, bool* success,
 				return dir;
 			}
 		}
-		else
-		{
-			if (success != NULL)
-			{
-				*success = false;
-			}
-
-			// return null vector in error case.
-			return vmd_zero_vector;
-		}
 	}
 
 	if (source.getArgument(DIRECTION, argumentAny))
@@ -314,10 +342,7 @@ vec3d TraitUtil::getEffectDirection(const ParticleSource& source, bool* success,
 		return any_cast<vec3d>(argumentAny);
 	}
 
-	if (success != NULL)
-	{
-		*success = false;
-	}
+	Error(LOCATION, "Reached end of getEffectDirection without valid vector! Get a coder!");
 
 	return vmd_zero_vector;
 }

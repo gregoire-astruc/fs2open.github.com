@@ -40,16 +40,17 @@ void GenericEffectTrait::update(const ParticleSource& source, float frametime)
 {
 	if (spawningParticles(source))
 	{
-		vec3d position = getEffectPosition(source);
+		vec3d position = TraitUtil::getEffectPosition(source);
 
-		vec3d dir = getEffectDirection(source, NULL, config.addObjectVelocity);
+		// If this is not available it will be the null-vector which is OK
+		vec3d dir = TraitUtil::getEffectDirection(source, NULL, config.addObjectVelocity);
 
 		any incomingAny;
 		if (config.reflectDirection && source.getArgument(INCOMING_DIRECTION, incomingAny))
 		{
 			vec3d incoming = any_cast<vec3d>(incomingAny);
 
-			dir = getReflectionVector(&incoming, &dir);
+			dir = TraitUtil::getReflectionVector(&incoming, &dir);
 		}
 
 		vm_vec_scale(&dir, TraitUtil::randomRange(config.particleVelocity));
@@ -89,10 +90,7 @@ void GenericEffectTrait::initializeTrait(ParticleSource& source)
 
 bool GenericEffectTrait::isActive(const ParticleSource& source) const
 {
-	bool b;
-	this->getEffectPosition(source, &b);
-
-	if (!b)
+	if (!TraitUtil::hasEffectPosition(source))
 	{
 		return false;
 	}

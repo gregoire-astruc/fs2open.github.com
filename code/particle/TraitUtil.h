@@ -32,8 +32,10 @@ namespace TraitUtil
 	template<class ValueType>
 	ValueRange<ValueType> parseValueRange(const ValueType lowerBound, const ValueType upperBound);
 
+	bool hasEffectPosition(const ParticleSource& source);
 	vec3d getEffectPosition(const ParticleSource& source, bool* success = NULL);
-
+	
+	bool hasEffectDirection(const ParticleSource& source);
 	vec3d getEffectDirection(const ParticleSource& source, bool* success = NULL, bool addVelocity = true);
 
 	vec3d getReflectionVector(vec3d* incoming, vec3d* normal);
