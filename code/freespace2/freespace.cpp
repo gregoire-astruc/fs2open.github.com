@@ -4029,6 +4029,7 @@ void game_simulation_frame()
 		if (!physics_paused)	{
 			// Move particle system
 			particle_move_all(flFrametime);	
+			ParticleSystem::getInstance()->update(flFrametime);
 
 			// Move missile trails
 			trail_move_all(flFrametime);		
