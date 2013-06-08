@@ -12,23 +12,24 @@
 
 struct GenericTraitConfiguration
 {
-	ValueRange<int> beginDelay;
-	ValueRange<int> effectDuration;
+	TraitUtil::ValueRange<int> beginDelay;
+	TraitUtil::ValueRange<int> effectDuration;
 	int trailEffectID;
 	int effectAnimation;
 	int effectFrameNumber;
 
-	ValueRange<float> particleLifetime;
-	ValueRange<float> particleSize;
-	ValueRange<int> particleNumber;
-	ValueRange<float> particleVelocity;
+	TraitUtil::ValueRange<float> particleLifetime;
+	TraitUtil::ValueRange<float> particleSize;
+	TraitUtil::ValueRange<int> particleNumber;
+	TraitUtil::ValueRange<float> particleVelocity;
 
 	bool addObjectVelocity;
 	bool reflectDirection;
 
 	GenericTraitConfiguration() : trailEffectID(-1), effectAnimation(-1), addObjectVelocity(true),
-		particleLifetime(ValueRange<float>(-1.0f)), particleNumber(ValueRange<int>(1)), beginDelay(ValueRange<int>(0)),
-		particleVelocity(ValueRange<float>(0.0f)), reflectDirection(false)
+		particleLifetime(TraitUtil::ValueRange<float>(-1.0f)), particleNumber(TraitUtil::ValueRange<int>(1)),
+		beginDelay(TraitUtil::ValueRange<int>(0)), particleVelocity(TraitUtil::ValueRange<float>(0.0f)),
+		reflectDirection(false)
 	{}
 };
 

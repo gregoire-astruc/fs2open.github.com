@@ -5,21 +5,21 @@
 #include "globalincs/pstypes.h"
 #include "particle/ParticleSource.h"
 
-template<class ValueType>
-struct ValueRange
-{
-	ValueType upper;
-	ValueType lower;
-
-	ValueRange() {}
-
-	ValueRange(const ValueType& value) : upper(value), lower(value) {}
-
-	ValueRange(const ValueType& value1, const ValueType& value2) : upper(value1), lower(value2) {}
-};
-
 namespace TraitUtil
 {
+	template<class ValueType>
+	struct ValueRange
+	{
+		ValueType upper;
+		ValueType lower;
+
+		ValueRange() {}
+
+		ValueRange(const ValueType& value) : upper(value), lower(value) {}
+
+		ValueRange(const ValueType& value1, const ValueType& value2) : upper(value1), lower(value2) {}
+	};
+
 	template<class ValueType>
 	ValueType randomRange(const ValueType lower, const ValueType upper);
 

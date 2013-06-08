@@ -27,7 +27,7 @@ int TraitUtil::randomRange<int>(const int upper, const int lower)
 }
 
 template<>
-ValueRange<float> TraitUtil::parseValueRange<float>(const float lowerBound, const float upperBound)
+TraitUtil::ValueRange<float> TraitUtil::parseValueRange<float>(const float lowerBound, const float upperBound)
 {
 	float value1;
 	float value2;
@@ -77,7 +77,7 @@ ValueRange<float> TraitUtil::parseValueRange<float>(const float lowerBound, cons
 }
 
 template<>
-ValueRange<int> TraitUtil::parseValueRange<int>(const int lowerBound, const int upperBound)
+TraitUtil::ValueRange<int> TraitUtil::parseValueRange<int>(const int lowerBound, const int upperBound)
 {
 	int value1;
 	int value2;

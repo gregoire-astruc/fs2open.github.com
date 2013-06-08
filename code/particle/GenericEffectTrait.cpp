@@ -112,43 +112,45 @@ bool GenericEffectTrait::isActive(const ParticleSource& source) const
 
 void GenericEffectTrait::doParse()
 {
+	using namespace TraitUtil;
+
 	required_string("+Effect Animation:");
 	{
-		config.effectAnimation = TraitUtil::parseAnimation(config.effectFrameNumber);
+		config.effectAnimation = parseAnimation(config.effectFrameNumber);
 	}
 
 	if (optional_string("+Effect Delay:"))
 	{
-		ValueRange<float> times = TraitUtil::parseValueRange(0.0f, std::numeric_limits<float>::max());
+		ValueRange<float> times = parseValueRange(0.0f, std::numeric_limits<float>::max());
 
 		config.beginDelay = ValueRange<int>(fl2i(times.lower * 1000.0f), fl2i(times.upper * 1000.0f));
 	}
 
 	required_string("+Effect Duration:");
 	{
-		ValueRange<float> times = TraitUtil::parseValueRange(0.0f, std::numeric_limits<float>::max());
+		ValueRange<float> times = parseValueRange(0.0f, std::numeric_limits<float>::max());
 
 		config.effectDuration = ValueRange<int>(fl2i(times.lower * 1000.0f), fl2i(times.upper * 1000.0f));
 	}
 
 	if (optional_string("+Particle Lifetime:"))
 	{
-		config.particleLifetime = TraitUtil::parseValueRange(0.0f, std::numeric_limits<float>::max());
+		config.particleLifetime = parseValueRange(0.0f, std::numeric_limits<float>::max());
 	}
 	
 	required_string("+Particle Radius:");
 	{
-		config.particleSize = TraitUtil::parseValueRange(0.0f, std::numeric_limits<float>::max());
+		config.particleSize = parseValueRange(0.0f, std::numeric_limits<float>::max());
 	}
 
 	if (optional_string("+Particle Number:"))
 	{
-		config.particleNumber = TraitUtil::parseValueRange(1, std::numeric_limits<int>::max());
+		config.particleNumber = parseValueRange(1, std::numeric_limits<int>::max());
 	}
 
 	if (optional_string("+Particle Velocity:"))
 	{
-		config.particleVelocity = TraitUtil::parseValueRange(0.0f, std::numeric_limits<float>::max());
+		config.particleVelocity = parseValueRange(0.0f, std::numeric_limits<float>::max());
 	}
 
 	if (optional_string("+Add Object Velocity:"))
