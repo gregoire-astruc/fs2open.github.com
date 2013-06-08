@@ -30,7 +30,7 @@ boost::weak_ptr<particle> GenericEffectTrait::createParticle(vec3d* position, ve
 		ParticleSource* source = ParticleSystem::getInstance()->createParticleEffect(config.trailEffectID);
 
 		any argument = any(particle);
-		source->setArgument(PARTICLE, argument);
+		source->setArgument<PARTICLE>(argument);
 	}
 
 	return particle;
@@ -46,7 +46,7 @@ void GenericEffectTrait::update(const ParticleSource& source, float frametime)
 		vec3d dir = TraitUtil::getEffectDirection(source, NULL, config.addObjectVelocity);
 
 		any incomingAny;
-		if (config.reflectDirection && source.getArgument(INCOMING_DIRECTION, incomingAny))
+		if (config.reflectDirection && source.getArgument<INCOMING_DIRECTION>(incomingAny))
 		{
 			vec3d incoming = any_cast<vec3d>(incomingAny);
 
@@ -78,6 +78,14 @@ bool GenericEffectTrait::spawningParticles(const ParticleSource& source)
 	return timestamp_elapsed(state.beginTimestamp) && !timestamp_elapsed(state.endTimestamp);
 }
 
+void GenericEffectTrait::pageIn()
+{
+	if (config.effectAnimation >= 0)
+	{
+		bm_page_in_xparent_texture(config.effectAnimation, config.effectFrameNumber);
+	}
+}
+
 void GenericEffectTrait::initializeTrait(ParticleSource& source)
 {
 	GenericEffectState state;
@@ -106,13 +114,7 @@ void GenericEffectTrait::doParse()
 {
 	required_string("+Effect Animation:");
 	{
-		SCP_string fileName;
-		stuff_string(fileName, F_NAME);
-
-		config.effectAnimation = bm_load(fileName);
-		if(config.effectAnimation < 0) {
-			config.effectAnimation = bm_load_animation(const_cast<char*>(fileName.c_str()), NULL, NULL, NULL, true);
-		}
+		config.effectAnimation = TraitUtil::parseAnimation(config.effectFrameNumber);
 	}
 
 	if (optional_string("+Effect Delay:"))

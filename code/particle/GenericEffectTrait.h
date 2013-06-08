@@ -16,6 +16,7 @@ struct GenericTraitConfiguration
 	ValueRange<int> effectDuration;
 	int trailEffectID;
 	int effectAnimation;
+	int effectFrameNumber;
 
 	ValueRange<float> particleLifetime;
 	ValueRange<float> particleSize;
@@ -48,6 +49,8 @@ public:
 	GenericEffectTrait(const SCP_string& name);
 
 	void associate(ParticleEffect& effect);
+
+	virtual void pageIn();
 
 	virtual void update(const ParticleSource& source, float frametime);
 

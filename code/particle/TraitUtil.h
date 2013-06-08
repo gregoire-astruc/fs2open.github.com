@@ -32,6 +32,8 @@ namespace TraitUtil
 	template<class ValueType>
 	ValueRange<ValueType> parseValueRange(const ValueType lowerBound, const ValueType upperBound);
 
+	int parseAnimation(int& nframes);
+
 	bool hasEffectPosition(const ParticleSource& source);
 	vec3d getEffectPosition(const ParticleSource& source, bool* success = NULL);
 	

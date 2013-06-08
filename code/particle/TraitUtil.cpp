@@ -3,6 +3,7 @@
 #include "parse/parselo.h"
 #include "math/vecmat.h"
 #include "object/object.h"
+#include "bmpman/bmpman.h"
 
 #include <boost/any.hpp>
 
@@ -125,25 +126,43 @@ ValueRange<int> TraitUtil::parseValueRange<int>(const int lowerBound, const int 
 	return ValueRange<int>(value1, value2);
 }
 
+int TraitUtil::parseAnimation(int& nframes)
+{
+	SCP_string fileName;
+	stuff_string(fileName, F_NAME);
+
+	int anim = bm_load(fileName);
+	if(anim < 0)
+	{
+		anim = bm_load_animation(const_cast<char*>(fileName.c_str()), &nframes, NULL, NULL, true);
+	}
+	else
+	{
+		nframes = 1;
+	}
+
+	return anim;
+}
+
 bool TraitUtil::hasEffectPosition(const ParticleSource& source)
 {
 	any argumentAny;
 
-	if (source.getArgument(PARTICLE, argumentAny))
+	if (source.getArgument<PARTICLE>(argumentAny))
 	{
 		weak_ptr<particle> part = any_cast<weak_ptr<particle>>(argumentAny);
 
 		return !part.expired();
 	}
 
-	if (source.getArgument(OBJECT, argumentAny))
+	if (source.getArgument<OBJECT>(argumentAny))
 	{
 		object_h objh = any_cast<object_h>(argumentAny);
 
 		return objh.IsValid();
 	}
 
-	if (source.getArgument(POSITION, argumentAny))
+	if (source.getArgument<POSITION>(argumentAny))
 	{
 		return true;
 	}
@@ -171,7 +190,7 @@ vec3d TraitUtil::getEffectPosition(const ParticleSource& source, bool* success)
 	}
 
 	// If the source has a particle use that first
-	if (source.getArgument(PARTICLE, argumentAny))
+	if (source.getArgument<PARTICLE>(argumentAny))
 	{
 		weak_ptr<particle> part = any_cast<weak_ptr<particle>>(argumentAny);
 
@@ -180,7 +199,7 @@ vec3d TraitUtil::getEffectPosition(const ParticleSource& source, bool* success)
 			vec3d pos = part.lock()->pos;
 
 			// Optionally add the POSITION argument
-			if (source.getArgument(POSITION, argumentAny))
+			if (source.getArgument<POSITION>(argumentAny))
 			{
 				vec3d position = any_cast<vec3d>(argumentAny);
 				vm_vec_add2(&pos, &position);
@@ -191,7 +210,7 @@ vec3d TraitUtil::getEffectPosition(const ParticleSource& source, bool* success)
 	}
 
 	// If it has an object use its position
-	if (source.getArgument(OBJECT, argumentAny))
+	if (source.getArgument<OBJECT>(argumentAny))
 	{
 		object_h objh = any_cast<object_h>(argumentAny);
 
@@ -201,7 +220,7 @@ vec3d TraitUtil::getEffectPosition(const ParticleSource& source, bool* success)
 			vec3d pos = objp->pos;
 			
 			// Also optionally use the position with the objects rotation
-			if (source.getArgument(POSITION, argumentAny))
+			if (source.getArgument<POSITION>(argumentAny))
 			{
 				vec3d position = any_cast<vec3d>(argumentAny);
 				vec3d dest;
@@ -216,7 +235,7 @@ vec3d TraitUtil::getEffectPosition(const ParticleSource& source, bool* success)
 	}
 
 	// The last case is just to return the position
-	if (source.getArgument(POSITION, argumentAny))
+	if (source.getArgument<POSITION>(argumentAny))
 	{
 		return any_cast<vec3d>(argumentAny);
 	}
@@ -231,21 +250,21 @@ bool TraitUtil::hasEffectDirection(const ParticleSource& source)
 {
 	any argumentAny;
 
-	if (source.getArgument(PARTICLE, argumentAny))
+	if (source.getArgument<PARTICLE>(argumentAny))
 	{
 		weak_ptr<particle> part = any_cast<weak_ptr<particle>>(argumentAny);
 
 		return !part.expired();
 	}
 
-	if (source.getArgument(OBJECT, argumentAny))
+	if (source.getArgument<OBJECT>(argumentAny))
 	{
 		object_h objh = any_cast<object_h>(argumentAny);
 
 		return objh.IsValid();
 	}
 
-	if (source.getArgument(DIRECTION, argumentAny))
+	if (source.getArgument<DIRECTION>(argumentAny))
 	{
 		return true;
 	}
@@ -275,7 +294,7 @@ vec3d TraitUtil::getEffectDirection(const ParticleSource& source, bool* success,
 	}
 
 	// We only need the velocity of the particle and only if addVelocity is true
-	if (addVelocity && source.getArgument(PARTICLE, argumentAny))
+	if (addVelocity && source.getArgument<PARTICLE>(argumentAny))
 	{
 		weak_ptr<particle> part = any_cast<weak_ptr<particle>>(argumentAny);
 
@@ -284,7 +303,7 @@ vec3d TraitUtil::getEffectDirection(const ParticleSource& source, bool* success,
 			vec3d dir = part.lock()->velocity;
 
 			// Optionally add the POSITION argument
-			if (source.getArgument(DIRECTION, argumentAny))
+			if (source.getArgument<DIRECTION>(argumentAny))
 			{
 				vec3d direction = any_cast<vec3d>(argumentAny);
 				vm_vec_add2(&dir, &direction);
@@ -297,7 +316,7 @@ vec3d TraitUtil::getEffectDirection(const ParticleSource& source, bool* success,
 		}
 	}
 
-	if (source.getArgument(OBJECT, argumentAny))
+	if (source.getArgument<OBJECT>(argumentAny))
 	{
 		object_h objh = any_cast<object_h>(argumentAny);
 
@@ -311,7 +330,7 @@ vec3d TraitUtil::getEffectDirection(const ParticleSource& source, bool* success,
 				dir = objp->phys_info.vel;
 			
 				// Also optionally use the position with the objects rotation
-				if (source.getArgument(DIRECTION, argumentAny))
+				if (source.getArgument<DIRECTION>(argumentAny))
 				{
 					vec3d direction = any_cast<vec3d>(argumentAny);
 					vec3d dest;
@@ -325,7 +344,7 @@ vec3d TraitUtil::getEffectDirection(const ParticleSource& source, bool* success,
 
 				return dir;
 			}
-			else if (source.getArgument(DIRECTION, argumentAny))
+			else if (source.getArgument<DIRECTION>(argumentAny))
 			{
 				// Also optionally use the position with the objects rotation
 				vec3d direction = any_cast<vec3d>(argumentAny);
@@ -337,7 +356,7 @@ vec3d TraitUtil::getEffectDirection(const ParticleSource& source, bool* success,
 		}
 	}
 
-	if (source.getArgument(DIRECTION, argumentAny))
+	if (source.getArgument<DIRECTION>(argumentAny))
 	{
 		return any_cast<vec3d>(argumentAny);
 	}
