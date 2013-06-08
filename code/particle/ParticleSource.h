@@ -62,14 +62,14 @@ bool ParticleSource::getArgument(boost::any& value) const
 #ifndef NDEBUG
 
 template<class T>
-bool isType(const any& any)
+bool isType(const boost::any& any)
 {
 	try
 	{
-		any_cast<T>(any);
+		boost::any_cast<T>(any);
 		return true;
 	}
-	catch (const bad_any_cast &)
+	catch (const boost::bad_any_cast &)
 	{
 		return false;
 	}
@@ -77,8 +77,8 @@ bool isType(const any& any)
 
 #endif
 
-template<SourceArgumentType TYPE>
-void ParticleSource::setArgument(const any& argument)
+template<typename SourceArgumentType TYPE>
+void ParticleSource::setArgument(const boost::any& argument)
 {
 #ifndef NDEBUG
 	// Check the argument type to make sure the correct types are passed and also validate the arguments
