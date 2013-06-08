@@ -11,6 +11,7 @@
 
 #include "freespace2/freespace.h"
 #include "freespace2/levelpaging.h"
+#include "particle/ParticleSystem.h"
 
 
 // All the page in functions
@@ -51,6 +52,8 @@ void level_page_in()
 	asteroid_page_in();
 	neb2_page_in();
 	mflash_page_in(false);  // just so long as it happens after weapons_page_in()
+	game_busy( NOX("*** paging in particle effects ***") );
+	ParticleSystem::getInstance()->pageIn();
 
 	// preload mission messages if NOT running low-memory (greater than 48MB)
 	if (game_using_low_mem() == false) {

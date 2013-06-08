@@ -24,6 +24,15 @@ void ParticleEffect::addTrait(boost::shared_ptr<EffectTrait> trait)
 	trait->associate(*this);
 }
 
+void ParticleEffect::pageIn()
+{
+	for (SCP_vector<shared_ptr<EffectTrait>>::const_iterator iter = effectTraits.begin();
+		iter != effectTraits.end(); ++iter)
+	{
+		(*iter)->pageIn();
+	}
+}
+
 boost::shared_ptr<EffectTrait> ParticleEffect::getTrait(const SCP_string& name) const
 {
 	for (SCP_vector<shared_ptr<EffectTrait>>::const_iterator iter = effectTraits.begin();

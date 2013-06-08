@@ -25,6 +25,8 @@ private:
 public:
 	~ParticleSystem();
 	
+	void pageIn();
+
 	void update(float frametime);
 
 	void levelClose();
@@ -33,17 +35,19 @@ public:
 
 	ParticleSource* createParticleEffect(int effectId);
 
-	inline boost::shared_ptr<ParticleEffect> getEffect(int id) const
-	{
-		Assertion(id < (int) particleEffects.size(), 
-			"Tried to access particle effect %d, got %d definitions.", id, (int) particleEffects.size());
-
-		return this->particleEffects[id];
-	}
+	inline boost::shared_ptr<ParticleEffect> getEffect(int id) const;
 
 	int getEffectId(const SCP_string& name) const;
 
 	static boost::shared_ptr<ParticleSystem> getInstance();
 };
+
+boost::shared_ptr<ParticleEffect> ParticleSystem::getEffect(int id) const
+{
+	Assertion(id < (int) particleEffects.size(), 
+		"Tried to access particle effect %d, got %d definitions.", id, (int) particleEffects.size());
+
+	return this->particleEffects[id];
+}
 
 #endif // _PARTICLE_SYSTEM_H

@@ -17,6 +17,8 @@ public:
 
 	const SCP_string& getName() const { return name; }
 
+	virtual void pageIn() {}
+
 	virtual void associate(ParticleEffect& effect) {}
 
 	virtual void update(const ParticleSource& source, float frametime) = 0;

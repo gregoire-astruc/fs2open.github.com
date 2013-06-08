@@ -12,6 +12,15 @@ ParticleSystem::ParticleSystem()
 ParticleSystem::~ParticleSystem()
 {
 }
+	
+void ParticleSystem::pageIn()
+{
+	for (SCP_vector<shared_ptr<ParticleEffect>>::const_iterator iter = particleEffects.begin();
+		iter != particleEffects.end(); ++iter)
+	{
+		(*iter)->pageIn();
+	}
+}
 
 void ParticleSystem::update(float frametime)
 {

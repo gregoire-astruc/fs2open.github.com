@@ -30,6 +30,8 @@ public:
 
 	int requestTraitID();
 
+	void pageIn();
+
 	void addTrait(boost::shared_ptr<EffectTrait> trait);
 
 	boost::shared_ptr<EffectTrait> getTrait(const SCP_string& name) const;
