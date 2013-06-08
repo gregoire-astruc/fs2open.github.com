@@ -21,6 +21,20 @@ const boost::any& ParticleSource::getEffectProperty(int id) const
 	return effectProperties[id];
 }
 
+void ParticleSource::update(float frametime)
+{
+	Assertion(!parentEffect.expired(), "The parent effect pointer is expired!");
+
+	parentEffect.lock()->update(*this, frametime);
+}
+
+bool ParticleSource::isActive() const
+{
+	Assertion(!parentEffect.expired(), "The parent effect pointer is expired!");
+
+	return parentEffect.lock()->isActive(*this);
+}
+
 void ParticleSource::addEffectProperty(int id, const boost::any& value)
 {
 	Assertion(id >= 0, "Effect property id is invalid, get a coder!");

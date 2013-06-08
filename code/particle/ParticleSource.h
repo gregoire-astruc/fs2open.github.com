@@ -41,24 +41,10 @@ public:
 	void addEffectProperty(int id, const boost::any& value);
 	const boost::any& getEffectProperty(int id) const;
 
-	inline void update(float frametime);
+	void update(float frametime);
 
-	inline bool isActive() const;
+	bool isActive() const;
 };
-
-void ParticleSource::update(float frametime)
-{
-	Assertion(!parentEffect.expired(), "The parent effect pointer is expired!");
-
-	parentEffect.lock()->update(*this, frametime);
-}
-
-bool ParticleSource::isActive() const
-{
-	Assertion(!parentEffect.expired(), "The parent effect pointer is expired!");
-
-	return parentEffect.lock()->isActive(*this);
-}
 
 template<SourceArgumentType TYPE>
 bool ParticleSource::getArgument(boost::any& value) const
