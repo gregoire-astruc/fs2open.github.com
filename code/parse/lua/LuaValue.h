@@ -12,6 +12,18 @@
 class LuaValue
 {
 public:
+	enum ValueTypes
+	{
+		INVALID,
+		NIL,
+		STRING,
+		NUMBER,
+		TABLE,
+		FUNCTION,
+		USERDATA,
+		THREAD
+	};
+
 	/**
 	 * @brief Initializes the lua value
 	 *
@@ -57,6 +69,9 @@ public:
 	 * @return One of the LUA_T* defines.
 	 */
 	virtual int getLuaType() const;
+
+	template<ValueTypes TYPE>
+	bool Is() const;
 
 	template<class ValueType>
 	bool setValue(const ValueType target);

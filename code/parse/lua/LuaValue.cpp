@@ -124,3 +124,51 @@ void LuaValue::pushValue() const
 			lua_typename(luaState, luaType), lua_typename(luaState, lua_type(luaState, -1)));
 	}
 }
+
+template<>
+bool LuaValue::Is<LuaValue::INVALID>() const
+{
+	return luaType == LUA_TNONE;
+}
+
+template<>
+bool LuaValue::Is<LuaValue::NIL>() const
+{
+	return luaType == LUA_TNIL;
+}
+
+template<>
+bool LuaValue::Is<LuaValue::STRING>() const
+{
+	return luaType == LUA_TSTRING;
+}
+
+template<>
+bool LuaValue::Is<LuaValue::NUMBER>() const
+{
+	return luaType == LUA_TNUMBER;
+}
+
+template<>
+bool LuaValue::Is<LuaValue::TABLE>() const
+{
+	return luaType == LUA_TTABLE;
+}
+
+template<>
+bool LuaValue::Is<LuaValue::FUNCTION>() const
+{
+	return luaType == LUA_TFUNCTION;
+}
+
+template<>
+bool LuaValue::Is<LuaValue::USERDATA>() const
+{
+	return luaType == LUA_TUSERDATA;
+}
+
+template<>
+bool LuaValue::Is<LuaValue::THREAD>() const
+{
+	return luaType == LUA_TTHREAD;
+}
