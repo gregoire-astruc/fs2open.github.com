@@ -1074,6 +1074,14 @@ T* gauge_load_common(int base_w, int base_h, int hud_font, SCP_vector<int>* ship
 	coords[0] = defaultX;
 	coords[1] = defaultY;
 
+	if(gr_screen.res == GR_640) {
+		base_res[0] = 640;
+		base_res[1] = 480;
+	} else {
+		base_res[0] = 1024;
+		base_res[1] = 768;
+	}
+
 	if(check_base_res(base_w, base_h)) {
 		base_res[0] = base_w;
 		base_res[1] = base_h;
