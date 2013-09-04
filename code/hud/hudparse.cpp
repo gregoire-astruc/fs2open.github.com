@@ -4996,8 +4996,8 @@ void load_gauge_flight_path(int base_w, int base_h, int font, SCP_vector<int>* s
 	}
 
 	if (!parse_font(font_num)) {
-		if ( hud_font >=0 ) {
-			font_num = hud_font;
+		if ( font >=0 ) {
+			font_num = font;
 		}
 	}
 
