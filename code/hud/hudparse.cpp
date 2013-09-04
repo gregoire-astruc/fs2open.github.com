@@ -1201,9 +1201,7 @@ void load_gauge_custom(int base_w, int base_h, int hud_font, SCP_vector<int>* sh
 			lock_color = true;
 		}
 
-		if ( optional_string("Font:") ) {
-			stuff_int(&font_num);
-		} else {
+		if (!parse_font(font_num)) {
 			if ( hud_font >=0 ) {
 				font_num = hud_font;
 			}
@@ -2738,13 +2736,12 @@ void load_gauge_radar_dradis(int base_w, int base_h, int hud_font, SCP_vector<in
 		}
 	}
 
-	if ( optional_string("Font:") ) {
-		stuff_int(&font_num);
-	} else {
+	if (!parse_font(font_num)) {
 		if ( hud_font >=0 ) {
 			font_num = hud_font;
 		}
 	}
+
 	if(optional_string("Size:")) {
 		stuff_int_list(Radar_radius, 2);
 	}
@@ -4428,14 +4425,13 @@ void load_gauge_lock(int base_w, int base_h, int hud_font, SCP_vector<int>* ship
 		base_res[0] = base_w;
 		base_res[1] = base_h;
 	}
-
-	if ( optional_string("Font:") ) {
-		stuff_int(&font_num);
-	} else {
+	
+	if (!parse_font(font_num)) {
 		if ( hud_font >=0 ) {
 			font_num = hud_font;
 		}
 	}
+
 	if(optional_string("Lock Filename:")) {
 		stuff_string(fname_lock, F_NAME, MAX_FILENAME_LEN);
 	}
@@ -4514,9 +4510,7 @@ void load_gauge_offscreen(int base_w, int base_h, int hud_font, SCP_vector<int>*
 		base_res[1] = base_h;
 	}
 
-	if ( optional_string("Font:") ) {
-		stuff_int(&font_num);
-	} else {
+	if (!parse_font(font_num)) {
 		if ( hud_font >=0 ) {
 			font_num = hud_font;
 		}
@@ -4571,13 +4565,12 @@ void load_gauge_brackets(int base_w, int base_h, int hud_font, SCP_vector<int>* 
 		base_res[1] = base_h;
 	}
 
-	if ( optional_string("Font:") ) {
-		stuff_int(&font_num);
-	} else {
+	if (!parse_font(font_num)) {
 		if ( hud_font >=0 ) {
 			font_num = hud_font;
 		}
 	}
+
 	if(optional_string("Dot Filename:")) {
 		stuff_string(fname, F_NAME, MAX_FILENAME_LEN);
 	}
@@ -4804,13 +4797,12 @@ void load_gauge_lead(int base_w, int base_h, int hud_font, SCP_vector<int>* ship
 		base_res[1] = base_h;
 	}
 
-	if ( optional_string("Font:") ) {
-		stuff_int(&font_num);
-	} else {
+	if (!parse_font(font_num)) {
 		if ( hud_font >=0 ) {
 			font_num = hud_font;
 		}
 	}
+
 	if(optional_string("Filename:")) {
 		stuff_string(fname, F_NAME, MAX_FILENAME_LEN);
 	}
@@ -5003,13 +4995,12 @@ void load_gauge_flight_path(int base_w, int base_h, int font, SCP_vector<int>* s
 		lock_color = true;
 	}
 
-	if ( optional_string("Font:") ) {
-		stuff_int(&font_num);
-	} else {
-		if ( font >=0 ) {
-			font_num = font;
+	if (!parse_font(font_num)) {
+		if ( hud_font >=0 ) {
+			font_num = hud_font;
 		}
 	}
+
 	if(optional_string("Filename:")) {
 		stuff_string(fname, F_NAME, MAX_FILENAME_LEN);
 	}
