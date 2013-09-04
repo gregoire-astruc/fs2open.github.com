@@ -35,7 +35,7 @@ SCP_vector<FSFont*> FontManager::fonts;
 
 FSFont* FontManager::currentFont = NULL;
 
-FSFont* FontManager::getFont(SCP_string name)
+FSFont* FontManager::getFont(const SCP_string& name)
 {
 	for (SCP_vector<FSFont*>::iterator iter = fonts.begin(); iter != fonts.end(); iter++)
 	{
@@ -67,7 +67,7 @@ int FontManager::getCurrentFontIndex()
 	return FontManager::getFontIndex(currentFont);
 }
 
-int FontManager::getFontIndex(SCP_string name)
+int FontManager::getFontIndex(const SCP_string& name)
 {
 	int index = 0;
 
@@ -252,7 +252,7 @@ VFNTFont *FontManager::loadFontOld(char *typeface)
 	return font;
 }
 
-VFNTFont *FontManager::loadVFNTFont(SCP_string name)
+VFNTFont *FontManager::loadVFNTFont(const SCP_string& name)
 {
 	VFNTFont* font = FontManager::loadFontOld(const_cast<char*>(name.c_str()));
 
@@ -262,7 +262,7 @@ VFNTFont *FontManager::loadVFNTFont(SCP_string name)
 	return font;
 }
 
-FTGLFont *FontManager::loadFTGLFont(SCP_string fileName, int fontSize, FTGLFontType type)
+FTGLFont *FontManager::loadFTGLFont(const SCP_string& fileName, int fontSize, FTGLFontType type)
 {
 	TrueTypeFontData data;
 	
@@ -392,12 +392,12 @@ VFNTFont::~VFNTFont()
 	delete fontPtr;
 }
 
-FontType VFNTFont::getType()
+FontType VFNTFont::getType() const
 {
 	return VFNT_FONT;
 }
 
-int VFNTFont::getTextHeight()
+int VFNTFont::getTextHeight() const
 {
 	return fontPtr->h;
 }
@@ -407,7 +407,7 @@ font *VFNTFont::getFontData()
 	return this->fontPtr;
 }
 
-void VFNTFont::getStringSize(const char *text, int textLen, int *w1, int *h1)
+void VFNTFont::getStringSize(const char *text, int textLen, int *w1, int *h1) const
 {
 	int longest_width;
 	int width,spacing;
@@ -473,7 +473,7 @@ void VFNTFont::getStringSize(const char *text, int textLen, int *w1, int *h1)
 		*w1 = longest_width;
 }
 
-int VFNTFont::getCharWidth(ubyte c1, ubyte c2, int *width, int *spacing)
+int VFNTFont::getCharWidth(ubyte c1, ubyte c2, int *width, int *spacing) const
 {
 	int i, letter;
 
@@ -544,12 +544,12 @@ FTGLFont::~FTGLFont()
 	delete ftglFont;
 }
 
-FontType FTGLFont::getType()
+FontType FTGLFont::getType() const
 {
 	return FTGL_FONT;
 }
 
-int FTGLFont::getTextHeight()
+int FTGLFont::getTextHeight() const
 {
 	// Never return a value that is less than the actual height!
 	return fl2i(ceil(ftglFont->Ascender()));
@@ -560,12 +560,12 @@ FTFont *FTGLFont::getFontData()
 	return this->ftglFont;
 }
 
-float FTGLFont::getYOffset()
+float FTGLFont::getYOffset() const
 {
 	return yOffset;
 }
 
-void FTGLFont::getStringSize(const char *text, int textLen, int *width, int *height)
+void FTGLFont::getStringSize(const char *text, int textLen, int *width, int *height) const
 {		
 	FTFont *font = ftglFont;
 	bool checkLength = textLen >= 0;
@@ -640,12 +640,12 @@ void FTGLFont::getStringSize(const char *text, int textLen, int *width, int *hei
 		*width = fl2i(ceil(w));
 }
 
-FTGLFontType FTGLFont::getFontType()
+FTGLFontType FTGLFont::getFontType() const
 {
 	return fontType;
 }
 
-int FTGLFont::getStringWidth(const char *s, int maxLength)
+int FTGLFont::getStringWidth(const char *s, int maxLength) const
 {
 	int width;
 
@@ -654,7 +654,7 @@ int FTGLFont::getStringWidth(const char *s, int maxLength)
 	return width;
 }
 
-float FTGLFont::getLineWidth()
+float FTGLFont::getLineWidth() const
 {
 	if (this->fontType == OUTLINE)
 	{
@@ -671,12 +671,12 @@ float FTGLFont::getLineWidth()
 	}
 }
 
-float FTGLFont::getTabWidth()
+float FTGLFont::getTabWidth() const
 {
 	return this->tabWidth;
 }
 
-int FTGLFont::getTokenLength(const char *string, int maxLength)
+int FTGLFont::getTokenLength(const char *string, int maxLength) const
 {
 	Assert( string != NULL );
 
@@ -774,27 +774,27 @@ void FSFont::setTopOffset(int offset)
 	this->offsetTop = offset;
 }
 
-void FSFont::setName(SCP_string name)
+void FSFont::setName(const SCP_string& name)
 {
 	this->name = name;
 }
 
-int FSFont::getBottomOffset()
+int FSFont::getBottomOffset() const
 {
 	return this->offsetBottom;
 }
 
-int FSFont::getTopOffset()
+int FSFont::getTopOffset() const
 {
 	return this->offsetTop;
 }
 
-int FSFont::getHeight()
+int FSFont::getHeight() const
 {
 	return this->getTextHeight() + this->offsetTop + this->offsetBottom;	
 }
 
-SCP_string& FSFont::getName()
+const SCP_string& FSFont::getName() const
 {
 	return this->name;
 }

@@ -80,7 +80,7 @@ public:
      *
      * @param	name	The new name.
      */
-    void setName(SCP_string name);
+    void setName(const SCP_string& name);
 
     /**
      * @brief	Gets the name of this font.
@@ -89,7 +89,7 @@ public:
      *
      * @return	The name.
      */
-    SCP_string& getName();
+    const SCP_string& getName() const;
 
     /**
      * @brief	Gets the type of this font.
@@ -103,7 +103,7 @@ public:
      * @see FontType::VFNT_FONT
      * @see FontType::FTGL_FONT
      */
-    virtual FontType getType() = 0;
+    virtual FontType getType() const = 0;
 
     /**
      * @brief	Gets the height of this font in pixels with regard to font top and bottom offsets.
@@ -112,7 +112,7 @@ public:
      *
      * @return	The height.
      */
-    virtual int getHeight();
+    virtual int getHeight() const;
 
     /**
      * @brief	Gets the height of this font in pixels without the top and bottom offsets.
@@ -121,7 +121,7 @@ public:
      *
      * @return	The height.
      */
-    virtual int getTextHeight() = 0;
+    virtual int getTextHeight() const = 0;
 
     /**
      * @brief	Gets a string size.
@@ -134,7 +134,7 @@ public:
      * @param [out]	width 	If non-null, the width.
      * @param [out]	height	If non-null, the height.
      */
-    virtual void getStringSize(const char *text, int textLen = -1, int *width = NULL, int *height = NULL) = 0;
+    virtual void getStringSize(const char *text, int textLen = -1, int *width = NULL, int *height = NULL) const = 0;
 
     /**
      * @brief	Gets the offset of this font from the top of the drawing line
@@ -143,7 +143,7 @@ public:
      *
      * @return	The top offset.
      */
-    int getTopOffset();
+    int getTopOffset() const;
 
     /**
      * @brief	Gets the offset of this font from the bottom of the end of the text to where the next line will start.
@@ -152,7 +152,7 @@ public:
      *
      * @return	The bottom offset.
      */
-    int getBottomOffset();
+    int getBottomOffset() const;
 
 
     /**
@@ -225,7 +225,7 @@ public:
      *
      * @return	The type.
      */
-    virtual FontType getType();
+    virtual FontType getType() const;
 
     /**
      * @brief	Gets the height of this font
@@ -234,7 +234,7 @@ public:
      *
      * @return	The height.
      */
-    virtual int getTextHeight();
+    virtual int getTextHeight() const;
 
     /**
      * @brief	Gets the size of the specified string in pixels.
@@ -244,7 +244,7 @@ public:
      * @param [out]	width 	If non-null, the width.
      * @param [out]	height	If non-null, the height.
      */
-    virtual void getStringSize(const char *text, int textLen, int *width, int *height);
+    virtual void getStringSize(const char *text, int textLen, int *width, int *height) const;
 
     /**
      * @brief	Gets the width of an character.
@@ -258,7 +258,7 @@ public:
      *
      * @return	The character width.
      */
-    int getCharWidth(ubyte c1, ubyte c2, int *width, int* spaceing);
+    int getCharWidth(ubyte c1, ubyte c2, int *width, int* spaceing) const;
 
     /**
      * @brief	Sets the size of this font.
@@ -316,14 +316,14 @@ public:
      * Gets the Y offset to be applied when rendering text
      * @return The Y offset
      */
-    float getYOffset();
+    float getYOffset() const;
 
 
     /**
      * @brief Gets the type of this font. Always returns FontType::FTGL_FONT
      * @return FontType::FTGL_FONT
      */
-    virtual FontType getType();
+    virtual FontType getType() const;
 
     /**
      * @brief The text height of this font
@@ -332,7 +332,7 @@ public:
      *
      * @return The height in pixels
      */
-    virtual int getTextHeight();
+    virtual int getTextHeight() const;
 
     /**
      * @brief Gets the width of the string
@@ -343,7 +343,7 @@ public:
      * @param length
      * @return
      */
-    virtual int getStringWidth(const char *text, int length = -1);
+    virtual int getStringWidth(const char *text, int length = -1) const;
 
     /**
      * @brief Gets the size of a text
@@ -355,13 +355,13 @@ public:
      * @param [out] width Destination for width. May be NULL
      * @param [out] height Destination for height, may be NULL
      */
-    virtual void getStringSize(const char *text, int textLen, int *width, int *height);
+    virtual void getStringSize(const char *text, int textLen, int *width, int *height) const;
 
     /**
      * @brief The FTGL font type of this font
      * @return Font type
      */
-    FTGLFontType getFontType();
+    FTGLFontType getFontType() const;
 
     /**
      * @brief Gets the line width of the font
@@ -370,7 +370,7 @@ public:
      *
      * @return Line width
      */
-    float getLineWidth();
+    float getLineWidth() const;
 
     /**
      * @brief Gets the width of a tab character
@@ -378,9 +378,9 @@ public:
      * Retrieves the width a single tab character has in this font
      * @return The width of a tab character
      */
-    float getTabWidth();
+    float getTabWidth() const;
 
-    int getTokenLength(const char *string, int length = -1);
+    int getTokenLength(const char *string, int length = -1) const;
 
     //Setters
 
@@ -448,7 +448,7 @@ public:
      * @param name The name that should be searched for
      * @return The font pointer or @c NULL when font could not be found.
      */
-    static FSFont *getFont(SCP_string name);
+    static FSFont *getFont(const SCP_string& name);
 
     /**
      * @brief Returns a pointer to the font at the specified index
@@ -486,7 +486,7 @@ public:
      * @param name The name which should be searched
      * @return The index or -1 when font could not be found
      */
-    static int getFontIndex(SCP_string name);
+    static int getFontIndex(const SCP_string& name);
 
     /**
      * @brief Returns the index of the specified font pointer
@@ -530,7 +530,7 @@ public:
      * @param type The type of the font
      * @return A FTGLFont pointer or @c NULL when font could not be loaded
      */
-    static FTGLFont *loadFTGLFont(SCP_string fileName, int fontSize = 16, FTGLFontType type = TEXTURE);
+    static FTGLFont *loadFTGLFont(const SCP_string& fileName, int fontSize = 16, FTGLFontType type = TEXTURE);
 
     /**
      * @brief Loads an old VFNT font
@@ -540,7 +540,7 @@ public:
      * @param fileName The name of the font file
      * @return The font pointer or @c null on error
      */
-    static VFNTFont *loadVFNTFont(SCP_string fileName);
+    static VFNTFont *loadVFNTFont(const SCP_string& fileName);
 
     /**
      *	@brief Initializes the font system
