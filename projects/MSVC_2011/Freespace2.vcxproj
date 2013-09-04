@@ -141,7 +141,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <CustomBuildStep>
       <Message>Copying build...</Message>
-      <Command>copy /y "$(TargetPath)" "$(FS2PATH)\$(TargetFileName)"
+      <Command>copy /y "$(TargetPath)" "$(FS2_PATH)\$(TargetFileName)"
 </Command>
       <Outputs>$(FS2PATH)\$(TargetFileName);%(Outputs)</Outputs>
     </CustomBuildStep>
@@ -211,10 +211,12 @@
       </OutputFile>
     </Bscmake>
     <PostBuildEvent>
-      <Command>copy /y "$(TargetPath)" "$(FS2PATH)\$(TargetFileName)"</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
     <PostBuildEvent>
-      <Message>Copying build...</Message>
+      <Message>
+      </Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug SSE|Win32'">
