@@ -478,7 +478,7 @@ void fiction_viewer_load(char *filename, char *font_filename)
 	strcpy_s(Fiction_viewer_font_filename, font_filename);
 
 	// see if we have a matching font
-	Fiction_viewer_fontnum = gr_get_fontnum(Fiction_viewer_font_filename);
+	Fiction_viewer_fontnum = FontManager::getFontIndex(Fiction_viewer_font_filename);
 	if (Fiction_viewer_fontnum < 0 && !Fred_running)
 		strcpy_s(Fiction_viewer_font_filename, "");
 

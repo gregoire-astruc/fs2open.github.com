@@ -8385,15 +8385,15 @@ int detect_lang()
 {
 	uint file_checksum;
 	int idx;
-	char first_font[MAX_FILENAME_LEN];
+	SCP_string first_font;
 
 	// if the reg is set then let lcl_init() figure out what to do
 	if (os_config_read_string( NULL, NOX("Language"), NULL ) != NULL)
 		return -1;
 
 	// try and open the file to verify
-	gr_stuff_first_font(first_font, sizeof(first_font));
-	CFILE *detect = cfopen(first_font, "rb");
+	gr_stuff_first_font(first_font);
+	CFILE *detect = cfopen(const_cast<char*>(first_font.c_str()), "rb");
 
 	// will use default setting if something went wrong
 	if (!detect)

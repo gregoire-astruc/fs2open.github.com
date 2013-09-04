@@ -421,7 +421,7 @@ void HudGauge::initSlew(bool slew)
 
 void HudGauge::initFont(int font)
 {
-	if ( font >= 0 && font < Num_fonts) {
+	if ( font >= 0 && font < FontManager::numberOfFonts()) {
 		font_num = font;
 	}
 }

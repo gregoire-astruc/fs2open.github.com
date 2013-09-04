@@ -2752,15 +2752,9 @@ int check_sexp_syntax(int node, int return_type, int recursive, int *bad_node, i
 					return SEXP_CHECK_TYPE_MISMATCH;
 				}
 
-				for (i = 0; i < Num_fonts; i++) {
-					if (!stricmp(CTEXT(node), Fonts[i].filename)) {
-						break;
-					}
-				}
-
-				if (i == Num_fonts) {
+				if (FontManager::getFont(CTEXT(node)) == NULL)
 					return SEXP_CHECK_INVALID_FONT;
-				}
+
 				break;
 				
 			case OPF_SOUND_ENVIRONMENT:
@@ -20424,15 +20418,7 @@ void sexp_show_subtitle_text(int node)
 		char *font = CTEXT(n);
 		n = CDR(n);
 
-		// perform font lookup
-		for (int i = 0; i < Num_fonts; i++)
-		{
-			if (!stricmp(font, Fonts[i].filename))
-			{
-				fontnum = i;
-				break;
-			}
-		}
+		fontnum = FontManager::getFontIndex(font);
 	}
 
 	bool post_shaded = false;

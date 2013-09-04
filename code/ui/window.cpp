@@ -147,7 +147,7 @@ void UI_WINDOW::create( int _x, int _y, int _w, int _h, int _flags, int _f_id )
 	w = _w;
 	h = _h;
 	flags = _flags;
-	f_id = (_f_id >= 0 && _f_id < Num_fonts) ? _f_id : FONT1;
+	f_id = (FontManager::getFont(_f_id) != NULL) ? _f_id : FONT1;
 
 	first_gadget = NULL;
 	selected_gadget = NULL;
@@ -570,7 +570,7 @@ void UI_WINDOW::add_XSTR(UI_XSTR *xstr)
 
 void UI_WINDOW::draw_one_xstr(UI_XSTR *xs, int frame)
 {
-	font *f_backup = NULL;		
+	FSFont *f_backup = NULL;		
 	char str[255] = "";
 
 	// sanity
@@ -586,8 +586,8 @@ void UI_WINDOW::draw_one_xstr(UI_XSTR *xs, int frame)
 	// maybe set the font
 	if(xs->font_id >= 0){
 		// backup the current font
-		Assert(Current_font != NULL);
-		f_backup = Current_font;
+		Assert(gr_get_current_font() != NULL);
+		f_backup = gr_get_current_font();
 
 		// set the new font
 		gr_set_font(xs->font_id);
@@ -649,7 +649,7 @@ void UI_WINDOW::draw_one_xstr(UI_XSTR *xs, int frame)
 
 	// maybe restore the old font
 	if(f_backup != NULL){
-		Current_font = f_backup;
+		gr_set_font(f_backup);
 	}			
 }
 

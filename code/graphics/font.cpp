@@ -16,6 +16,8 @@
 
 #include <stdio.h>
 #include <stdarg.h>
+#include <string>
+#include <sstream>
 
 #include "graphics/2d.h"
 #include "cfile/cfile.h"
@@ -28,366 +30,109 @@
 #include "globalincs/systemvars.h"
 #include "globalincs/def_files.h"
 
+SCP_map<SCP_string, TrueTypeFontData> FontManager::allocatedData;
+SCP_vector<FSFont*> FontManager::fonts;
 
+FSFont* FontManager::currentFont = NULL;
 
-int Num_fonts = 0;
-font Fonts[MAX_FONTS];
-font *Current_font = NULL;
-
-
-/**
- * Crops a string if required to force it to not exceed max_width pixels when printed.
- * Does this by dropping characters at the end of the string and adding '...' to the end.
- *
- * @param str		string to crop.  Modifies this string directly
- * @param max_str	max characters allowed in str
- * @param max_width number of pixels to limit string to (less than or equal to).
- * @return			Returns same pointer passed in for str.
- */
-char *gr_force_fit_string(char *str, int max_str, int max_width)
+FSFont* FontManager::getFont(SCP_string name)
 {
-	int w;
-
-	gr_get_string_size(&w, NULL, str);
-	if (w > max_width) {
-		if ((int) strlen(str) > max_str - 3) {
-			Assert(max_str >= 3);
-			str[max_str - 3] = 0;
-		}
-
-		strcpy(str + strlen(str) - 1, "...");
-		gr_get_string_size(&w, NULL, str);
-		while (w > max_width) {
-			Assert(strlen(str) >= 4);  // if this is hit, a bad max_width was passed in and the calling function needs fixing.
-			strcpy(str + strlen(str) - 4, "...");
-			gr_get_string_size(&w, NULL, str);
-		}
+	for (SCP_vector<FSFont*>::iterator iter = fonts.begin(); iter != fonts.end(); iter++)
+	{
+		if (!(*iter)->getName().compare(name))
+			return (*iter);
 	}
 
-	return str;
+	return NULL;
 }
 
-/**
- * Takes the character BEFORE being offset into current font
- * @return the letter code
- */
-int get_char_width(ubyte c1,ubyte c2,int *width,int *spacing)
+FSFont* FontManager::getFont(int index)
 {
-	int i, letter;
+	if (index < 0 || index >= (int) fonts.size())
+		return NULL;
 
-	Assert ( Current_font != NULL );
-	letter = c1-Current_font->first_ascii;
+	return fonts[index];
+}
 
-	if (letter<0 || letter>=Current_font->num_chars) {				//not in font, draw as space
-		*width=0;
-		*spacing = Current_font->w;
+FSFont *FontManager::getCurrentFont()
+{
+	return currentFont;
+}
+
+int FontManager::getCurrentFontIndex()
+{
+	if (!FontManager::isReady())
 		return -1;
+
+	return FontManager::getFontIndex(currentFont);
+}
+
+int FontManager::getFontIndex(SCP_string name)
+{
+	int index = 0;
+
+	for (SCP_vector<FSFont*>::iterator iter = fonts.begin(); iter != fonts.end(); iter++, index++)
+	{
+		if (!(*iter)->getName().compare(name))
+			return index;
 	}
 
-	*width = Current_font->char_data[letter].byte_width;
-	*spacing = Current_font->char_data[letter].spacing;
-
-	i = Current_font->char_data[letter].kerning_entry;
-	if ( i > -1)  {
-		if (!(c2==0 || c2=='\n')) {
-			int letter2;
-
-			letter2 = c2-Current_font->first_ascii;
-
-			if ((letter2>=0) && (letter2<Current_font->num_chars) ) {				//not in font, draw as space
-				font_kernpair	*k = &Current_font->kern_data[i];
-				while( (k->c1 == (char)letter) && (k->c2<(char)letter2) && (i<Current_font->num_kern_pairs-1) )	{
-					i++;
-					k++;
-				}
-				if ( k->c2 == (char)letter2 )	{
-					*spacing += k->offset;
-				}
-			}
-		}
-	}
-	return letter;
+	return -1;
 }
 
-// NOTE: this returns an unscaled size for non-standard resolutions
-int get_centered_x(const char *s)
+int FontManager::getFontIndex(FSFont *font)
 {
-	int w,w2,s2;
+	if (font == NULL)
+		return -1;
 
-	for (w=0;*s!=0 && *s!='\n';s++) {
-		get_char_width(s[0],s[1],&w2,&s2);
-		w += s2;
+	int index = 0;
+
+	for (SCP_vector<FSFont*>::iterator iter = fonts.begin(); iter != fonts.end(); iter++, index++)
+	{
+		if ((*iter) == font)
+			return index;
 	}
 
-	return ((gr_screen.clip_width_unscaled - w) / 2);
+	return -1;
 }
 
-/**
- * Draws a character centered on x
- */
-void gr_char_centered(int x, int y, char chr)
+int FontManager::numberOfFonts()
 {
-	char str[2];
-	int w, sc;
-
-	sc = Lcl_special_chars;
-	if (chr == '1')
-		chr = (char)(sc + 1);
-
-	str[0] = chr;
-	str[1] = 0;
-	gr_get_string_size(&w, NULL, str);
-	gr_string(x - w / 2, y, str);
+	return (int) fonts.size();
 }
 
-void gr_print_timestamp(int x, int y, fix timestamp)
+bool FontManager::isReady()
 {
-	char h[2], m[3], s[3];
-	int w, c;
-
-	int time = (int)f2fl(timestamp);  // convert to seconds
-
-	// format the time information into strings
-	sprintf(h, "%.1d", (time / 3600));
-	sprintf(m, "%.2d", (time / 60) % 60);
-	sprintf(s, "%.2d", time % 60);
-
-	gr_get_string_size(&w, NULL, "0");
-	gr_get_string_size(&c, NULL, ":");
-
-	gr_string(x + w, y, ":");
-	gr_string(x + w * 3 + c, y, ":");
-
-	x += w / 2;
-	gr_char_centered(x, y, h[0]);
-	x += w + c;
-	gr_char_centered(x, y, m[0]);
-	x += w;
-	gr_char_centered(x, y, m[1]);
-	x += w + c;
-	gr_char_centered(x, y, s[0]);
-	x += w;
-	gr_char_centered(x, y, s[1]);
+	return currentFont != NULL;
 }
 
-int gr_get_font_height()
+void FontManager::setCurrentFont(FSFont *font)
 {
-	if (Current_font)	{
-		return Current_font->h;
-	} else {
-		return 16;
-	}
+	Assertion(font != NULL, "New font pointer may not be NULL!");
+	currentFont = font;
 }
 
-void gr_get_string_size(int *w1, int *h1, const char *text, int len)
-{
-	int longest_width;
-	int width,spacing;
-	int w, h;
-
-	if (!Current_font)	{
-		if ( w1)
-			*w1 = 16;
-
-		if ( h1 )
-			*h1 = 16;
-
-		return;
-	}	
-
-	w = 0;
-	h = 0;
-	longest_width = 0;
-
-	if (text != NULL ) {
-		h += Current_font->h;
-		while (*text && (len>0) ) {
-
-			// Process one or more 
-			while ((*text == '\n') && (len>0) ) {
-				text++;
-				len--;
-				if ( *text )	{
-					h += Current_font->h;
-				}
-				w = 0;
-			}
-
-			if (*text == 0)	{
-				break;
-			}
-
-			get_char_width(text[0], text[1], &width, &spacing);
-			w += spacing;
-			if (w > longest_width)
-				longest_width = w;
-
-			text++;
-			len--;
-		}
-	}
-
-	if ( h1 )
-		*h1 = h;
-
-	if ( w1 )
-		*w1 = longest_width;
-}
-
-
-MONITOR( FontChars )
-
-#ifdef _WIN32
-HFONT MyhFont = NULL;
-HDC hDibDC = NULL;
-
-void gr_string_win(int x, int y, char *s)
-{
-	int old_bitmap = gr_screen.current_bitmap; 
-	gr_set_font(FONT1);
-   	gr_string(x,y,s);
-	gr_screen.current_bitmap = old_bitmap; 
-}
-
-void gr_get_string_size_win(int *w, int *h, char *text)
-{
-	char *ptr;
-	SIZE size;
-
-	ptr = strchr(text, '\n');
-
-	if (MyhFont==NULL)	{
-		if (w) *w = 0;
-		if (h) *h = 0;
-		return;
-	}
-
-	SelectObject( hDibDC, MyhFont );
-
-	if (!ptr)	{
-		GetTextExtentPoint32( hDibDC, text, strlen(text), &size);
-		if (w) *w = size.cx;
-		if (h) *h = size.cy;
-		return;
-	}
-
-	GetTextExtentPoint32(hDibDC, text, ptr - text, &size);
-	gr_get_string_size_win(w, h, ptr+1);
-	if (w && (size.cx > *w) )
-		*w = size.cx;
-
-	if (h)
-		*h += size.cy;
-}
-#endif   // ifdef _WIN32
-
-char grx_printf_text[2048];	
-
-void _cdecl gr_printf( int x, int y, char * format, ... )
-{
-	va_list args;
-
-	if ( !Current_font ) return;
-	
-	va_start(args, format);
-	vsprintf(grx_printf_text,format,args);
-	va_end(args);
-
-	gr_string(x,y,grx_printf_text);
-}
-
-void _cdecl gr_printf_no_resize( int x, int y, char * format, ... )
-{
-	va_list args;
-
-	if ( !Current_font ) return;
-	
-	va_start(args, format);
-	vsprintf(grx_printf_text,format,args);
-	va_end(args);
-
-	gr_string(x,y,grx_printf_text,false);
-}
-
-void gr_font_close()
-{
-	font *fnt;
-	int i;
-
-	fnt = Fonts;
-
-	for (i=0; i<Num_fonts; i++) {
-		if (fnt->kern_data) {
-			vm_free(fnt->kern_data);
-			fnt->kern_data = NULL;
-		}
-
-		if (fnt->char_data) {
-			vm_free(fnt->char_data);
-			fnt->char_data = NULL;
-		}
-
-		if (fnt->pixel_data) {
-			vm_free(fnt->pixel_data);
-			fnt->pixel_data = NULL;
-		}
-
-		if (fnt->bm_data) {
-			vm_free(fnt->bm_data);
-			fnt->bm_data = NULL;
-		}
-
-		if (fnt->bm_u) {
-			vm_free(fnt->bm_u);
-			fnt->bm_u = NULL;
-		}
-
-		if (fnt->bm_v) {
-			vm_free(fnt->bm_v);
-			fnt->bm_v = NULL;
-		}
-
-		fnt++;
-	}
-}
-
-/**
- * @return -1 if couldn't init font, otherwise returns the font id number.
- */
-int gr_create_font(char * typeface)
+VFNTFont *FontManager::loadFontOld(char *typeface)
 {
 	CFILE *fp;
 	font *fnt;
-	int n, fontnum;
-
-	fnt = Fonts;
-	n = -1;
-	for (fontnum=0; fontnum<Num_fonts; fontnum++ )	{
-		if (fnt->id != 0 )	{
-			if ( !_strnicmp( fnt->filename, typeface, MAX_FILENAME_LEN ) )	{
-				return fontnum;
-			}
-		} else {
-			if ( n < 0 )	{
-				n = fontnum;
-			}				
-		}
-		fnt++;
+		
+	fnt = new font;
+	if (!fnt)
+	{
+		mprintf(("Unable to allocate memory for \"%s\"", typeface));
+		return NULL;
 	}
 
-	if ( fontnum == MAX_FONTS )	{
-		Warning( LOCATION, "Too many fonts!\nSee John, or change MAX_FONTS in Graphics\\Font.h\n" );
-		return -1;
-	}
-
-	if ( fontnum == Num_fonts )	{
-		Num_fonts++;
-	}
-	
 	bool localize = true;
 
 	fp = cfopen( typeface, "rb", CFILE_NORMAL, CF_TYPE_ANY, localize );
-	if ( fp == NULL ) return -1;
+	if ( fp == NULL ) 
+	{
+		mprintf(("Unable to find font file \"%s\".", typeface));
+		delete fnt;
+		return NULL;
+	}
 
 	strncpy( fnt->filename, typeface, MAX_FILENAME_LEN );
 	cfread( &fnt->id, 4, 1, fp );
@@ -448,11 +193,11 @@ int gr_create_font(char * typeface)
 	// This should probably be done at font generation time, not here.
 	int w, h;
 	if ( fnt->pixel_data_size*4 < 64*64 ) {
-		w = h = 64;
+ 		w = h = 64;
 	} else if ( fnt->pixel_data_size*4 < 128*128 ) {
-		w = h = 128;
+ 		w = h = 128;
 	} else if ( fnt->pixel_data_size*4 < 256*256 ) {
-		w = h = 256;
+ 		w = h = 256;
 	} else if ( fnt->pixel_data_size*4 < 512*512 ) {
 		w = h = 512;
 	} else {
@@ -475,7 +220,7 @@ int gr_create_font(char * typeface)
 		ubp = &fnt->pixel_data[fnt->char_data[i].offset];
 		if ( x + fnt->char_data[i].byte_width >= fnt->bm_w )	{
 			x = 0;
-			y += fnt->h + 2;
+			y += fnt->h;
 			if ( y+fnt->h > fnt->bm_h ) {
 				Error( LOCATION, "Font too big!\n" );
 			}
@@ -490,114 +235,1150 @@ int gr_create_font(char * typeface)
 				fnt->bm_data[(x+x1)+(y+y1)*fnt->bm_w] = (unsigned char)(c);	
 			}
 		}
-		x += fnt->char_data[i].byte_width + 2;
+		x += fnt->char_data[i].byte_width;
 	}
 
 	fnt->bitmap_id = bm_create( 8, fnt->bm_w, fnt->bm_h, fnt->bm_data, BMP_AABITMAP );
 
-	return fontnum;
+	VFNTFont *font = new VFNTFont(fnt);
+
+	if (font == NULL)
+	{
+		mprintf(("Allocation of memory for font \"%s\" failed!", typeface));
+		delete fnt;
+		return NULL;
+	}
+
+	return font;
+}
+
+VFNTFont *FontManager::loadVFNTFont(SCP_string name)
+{
+	VFNTFont* font = FontManager::loadFontOld(const_cast<char*>(name.c_str()));
+
+	if (font != NULL)
+		fonts.push_back(font);
+
+	return font;
+}
+
+FTGLFont *FontManager::loadFTGLFont(SCP_string fileName, int fontSize, FTGLFontType type)
+{
+	TrueTypeFontData data;
+	
+	if (allocatedData.find(fileName) != allocatedData.end())
+	{
+		data = allocatedData.find(fileName)->second;
+	}
+	else
+	{
+		CFILE *fontFile = cfopen(const_cast<char*>(fileName.c_str()), "rb", CFILE_NORMAL, CF_TYPE_ANY);
+
+		if (fontFile == NULL)
+		{
+			mprintf(("Couldn't open font file \"%s\"", fileName.c_str()));
+			return NULL;
+		}
+		ubyte *fontData = NULL;
+		int size = cfilelength(fontFile);
+
+		fontData = new ubyte[size];
+
+		if (!fontData)
+		{
+			mprintf(("Couldn't allocate %d bytes for reading font file \"%s\"!", size, fileName.c_str()));
+			return NULL;
+		}
+
+		if (!cfread(fontData, size, 1, fontFile))
+		{
+			mprintf(("Error while reading font data from \"%s\"", fileName.c_str()));
+			delete[] fontData;
+			return NULL;
+		}
+
+		cfclose(fontFile);
+
+		data.size = size;
+		data.data = fontData;
+
+		allocatedData[fileName] = data;
+	}
+
+	FTFont *fnt = NULL;
+
+	switch (type)
+	{
+	case PIXMAP:
+		fnt = new FTPixmapFont(data.data, data.size);
+		break;
+	case POLYGON:
+		fnt = new FTPolygonFont(data.data, data.size);
+		break;
+	case OUTLINE:
+		fnt = new FTOutlineFont(data.data, data.size);
+		break;
+	case TEXTURE:
+		fnt = new FTTextureFont(data.data, data.size);
+		break;
+	default:
+		Error(LOCATION, "Invalid FTGL font type passed to loadFTGLFont!");
+		fnt = new FTTextureFont(data.data, data.size);
+		break;
+	}
+
+	if (fnt == NULL)
+	{
+		mprintf(("Couldn't allocated memory for font object for file \"%s\"", fileName.c_str()));
+		return NULL;
+	}
+
+	if (fnt->Error())
+	{
+		mprintf(("Font loading of font \"%s\" ended with errors! Error code is %d.", fileName.c_str(), fnt->Error()));
+		delete fnt;
+		return NULL;
+	}
+
+	if (!fnt->FaceSize(fontSize))
+	{
+		mprintf(("Couldn't set face size of font \"%s\" to %d!", fileName.c_str(), fontSize));
+		delete fnt;
+		return NULL;
+	}
+	
+	fnt->UseDisplayList(true);
+
+	FTGLFont *fsFont = new FTGLFont(fnt, type);
+
+	fonts.push_back(fsFont);
+
+	return fsFont;
+}
+
+void FontManager::init()
+{
+}
+
+void FontManager::close()
+{
+	for (SCP_vector<FSFont*>::iterator iter = fonts.begin(); iter != fonts.end(); iter++)
+	{
+		delete (*iter);
+	}
+
+	for (SCP_map<SCP_string, TrueTypeFontData>::iterator iter = allocatedData.begin(); iter != allocatedData.end(); iter++)
+	{
+		delete[] iter->second.data;
+	}
+
+	allocatedData.clear();
+	fonts.clear();
+
+	currentFont = NULL;
+}
+
+VFNTFont::VFNTFont(font *fnt) : FSFont()
+{
+	Assertion( fnt != NULL, "Invalid font passed to constructor of VFNTFont!");
+
+	this->fontPtr = fnt;
+	
+	setName(SCP_string(fnt->filename));
+}
+
+VFNTFont::~VFNTFont()
+{
+	delete fontPtr;
+}
+
+FontType VFNTFont::getType()
+{
+	return VFNT_FONT;
+}
+
+int VFNTFont::getTextHeight()
+{
+	return fontPtr->h;
+}
+
+font *VFNTFont::getFontData()
+{
+	return this->fontPtr;
+}
+
+void VFNTFont::getStringSize(const char *text, int textLen, int *w1, int *h1)
+{
+	int longest_width;
+	int width,spacing;
+	int w, h;	
+
+	w = 0;
+	h = 0;
+	longest_width = 0;
+
+	bool checkLength = textLen >= 0;
+
+	if (text != NULL) {
+		h += this->getHeight();
+		while (*text)
+		{
+			// Process one or more 
+			while (*text == '\n')
+			{
+				text++;
+
+				if (checkLength)
+				{
+					if (textLen < 0)
+						break;
+
+					textLen--;
+				}
+
+				if (*text)
+				{
+					h += this->getHeight();
+				}
+
+				w = 0;
+			}
+
+			if (*text == 0)
+			{
+				break;
+			}
+
+			this->getCharWidth(text[0], text[1], &width, &spacing);
+			w += spacing;
+			if (w > longest_width)
+				longest_width = w;
+
+			text++;
+
+			if (checkLength)
+			{
+				if (textLen < 0)
+					break;
+
+				textLen--;
+			}
+		}
+	}
+
+	if ( h1 )
+		*h1 = h;
+
+	if ( w1 )
+		*w1 = longest_width;
+}
+
+int VFNTFont::getCharWidth(ubyte c1, ubyte c2, int *width, int *spacing)
+{
+	int i, letter;
+
+	letter = c1 - fontPtr->first_ascii;
+
+	//not in font, draw as space
+	if (letter < 0 || letter >= fontPtr->num_chars)
+	{				
+		*width = 0;
+		*spacing = fontPtr->w;
+		return -1;
+	}
+
+	*width = fontPtr->char_data[letter].byte_width;
+	*spacing = fontPtr->char_data[letter].spacing;
+
+	i = fontPtr->char_data[letter].kerning_entry;
+	if (i > -1)
+	{
+		if (!(c2 == 0 || c2 == '\n'))
+		{
+			int letter2;
+
+			letter2 = c2 - fontPtr->first_ascii;
+
+			if ((letter2 >= 0) && (letter2 < fontPtr->num_chars)) 
+			{
+				font_kernpair *k = &fontPtr->kern_data[i];
+				while((k->c1 == (char)letter) && (k->c2 < (char)letter2) && (i < fontPtr->num_kern_pairs))
+				{
+					i++;
+					k++;
+				}
+
+				if ( k->c2 == (char)letter2 )
+				{
+					*spacing += k->offset;
+				}
+			}
+		}
+	}
+
+	return letter;
+}
+
+bool VFNTFont::setSize(int newSize)
+{
+	Warning(LOCATION, "Setting size is not supported by VFNT bitmap fonts!");
+
+	return false;
+}
+
+FTGLFont::FTGLFont(FTFont *ftglFont, FTGLFontType type) : FSFont(), separators("\n\t")
+{
+	Assertion( ftglFont != NULL, "Invalid font passed to constructor of FTGLFont!");
+
+	this->ftglFont = ftglFont;
+	this->fontType = type;
+	this->lineWidth = 1.0f;
+
+	this->yOffset = ftglFont->Ascender() + ftglFont->Descender();
+
+	setTabWidth(1.0f);
+}
+
+FTGLFont::~FTGLFont()
+{
+	delete ftglFont;
+}
+
+FontType FTGLFont::getType()
+{
+	return FTGL_FONT;
+}
+
+int FTGLFont::getTextHeight()
+{
+	// Never return a value that is less than the actual height!
+	return fl2i(ceil(ftglFont->Ascender()));
+}
+
+FTFont *FTGLFont::getFontData()
+{
+	return this->ftglFont;
+}
+
+float FTGLFont::getYOffset()
+{
+	return yOffset;
+}
+
+void FTGLFont::getStringSize(const char *text, int textLen, int *width, int *height)
+{		
+	FTFont *font = ftglFont;
+	bool checkLength = textLen >= 0;
+
+	float w = 0.0f;
+	float h = i2fl(this->getHeight());
+
+	int tokenLength;
+
+	const char *s = text;
+	bool specialChar = false;
+	float lineWidth = 0.0f;
+
+	while ((tokenLength = this->getTokenLength(s, textLen)) > 0)
+	{
+		if (checkLength)
+		{
+			if (tokenLength > textLen)
+			{
+				tokenLength = textLen;
+			}
+		}
+
+		if (tokenLength == 1)
+		{
+			// We may have encoutered a special character
+			switch (*s)
+			{
+			case '\n':
+				specialChar = true;
+
+				h += this->getHeight();
+				lineWidth = 0.0f;
+				break;
+			case '\t':
+				specialChar = true;
+
+				lineWidth += this->getTabWidth();
+				break;
+			default:
+				specialChar = false;
+				break;
+			}
+		}
+
+		if (!specialChar)
+		{
+			lineWidth += font->Advance(s, tokenLength);
+		}
+		
+		w = MAX(w, lineWidth);
+		
+		specialChar = false;
+			
+		s = s + tokenLength;
+
+		if (checkLength)
+		{
+			textLen -= tokenLength;
+
+			if (textLen <= 0)
+			{
+				break;
+			}
+		}
+	}
+
+	if ( height )
+		*height = fl2i(ceil(h));
+
+	if ( width )
+		*width = fl2i(ceil(w));
+}
+
+FTGLFontType FTGLFont::getFontType()
+{
+	return fontType;
+}
+
+int FTGLFont::getStringWidth(const char *s, int maxLength)
+{
+	int width;
+
+	this->getStringSize(s, maxLength, &width, NULL);
+
+	return width;
+}
+
+float FTGLFont::getLineWidth()
+{
+	if (this->fontType == OUTLINE)
+	{
+		if (lineWidth <= 0.0f)
+		{
+			return 1.0f;
+		}
+
+		return lineWidth;
+	}
+	else
+	{
+		return -1.0f;
+	}
+}
+
+float FTGLFont::getTabWidth()
+{
+	return this->tabWidth;
+}
+
+int FTGLFont::getTokenLength(const char *string, int maxLength)
+{
+	Assert( string != NULL );
+
+	int length = -1;
+
+	if (maxLength < 0)
+	{
+		maxLength = strlen(string);
+	}
+
+	if (maxLength <= 0)
+		return 0;
+
+	char *nullPtr = strchr(const_cast<char*>(string), '\0');
+	char *nextToken = strpbrk(const_cast<char*>(string), this->separators);
+
+	if (nullPtr != NULL && (nextToken == NULL || nullPtr < nextToken))
+	{
+		length = nullPtr - string;
+	}
+	else if (nextToken != NULL)
+	{
+		if (nextToken == string)
+		{
+			length = 1;
+		}
+		else
+		{
+			length = nextToken - string;
+		}
+	}
+	else
+	{
+		length = strlen(string);
+	}
+
+	if (length > maxLength)
+	{
+		length = maxLength;
+	}
+
+	return length;
+}
+
+bool FTGLFont::setSize(int newSize)
+{
+	if (!ftglFont->FaceSize(newSize))
+	{
+		mprintf(("Setting size of font \"%s\" to %d failed! Error code: %d", getName().c_str(), newSize, ftglFont->Error()));
+		return false;
+	}
+
+	this->yOffset = ftglFont->Ascender() + ftglFont->Descender();
+
+	return true;
+}
+
+void FTGLFont::setLineWidth(float width)
+{
+	if (width <= 0.0f)
+	{
+		Error(LOCATION, "A line width of %f is not allowed! Must be greater than zero.", width);
+		width = 1.0f;
+	}
+
+	this->lineWidth = width;
+}
+
+void FTGLFont::setTabWidth(float spaceNum)
+{
+	Assert( spaceNum > 0.0f );
+
+	this->tabWidth = this->ftglFont->Advance(" ") * spaceNum;
+}
+
+FSFont::FSFont() : offsetBottom(0), offsetTop(0), name(SCP_string("<Invalid>"))
+{
+}
+
+FSFont::~FSFont()
+{
+}
+
+void FSFont::setBottomOffset(int offset)
+{
+	Assertion(offset >= 0, "Bottom offset for font %s has to be larger than zero but it is %d", this->getName().c_str(), offset);
+
+	this->offsetBottom = offset;
+}
+
+void FSFont::setTopOffset(int offset)
+{
+	Assertion(offset >= 0, "Top offset for font %s has to be larger than zero but it is %d", this->getName().c_str(), offset);
+
+	this->offsetTop = offset;
+}
+
+void FSFont::setName(SCP_string name)
+{
+	this->name = name;
+}
+
+int FSFont::getBottomOffset()
+{
+	return this->offsetBottom;
+}
+
+int FSFont::getTopOffset()
+{
+	return this->offsetTop;
+}
+
+int FSFont::getHeight()
+{
+	return this->getTextHeight() + this->offsetTop + this->offsetBottom;	
+}
+
+SCP_string& FSFont::getName()
+{
+	return this->name;
+}
+
+font::font() : kern_data(NULL),
+	char_data(NULL),
+	pixel_data(NULL), 
+	bm_data(NULL), 
+	bm_u(NULL), 
+	bm_v(NULL)
+{
+}
+
+font::~font()
+{
+	if (this->kern_data) {
+		vm_free(this->kern_data);
+		this->kern_data = NULL;
+	}
+
+	if (this->char_data) {
+		vm_free(this->char_data);
+		this->char_data = NULL;
+	}
+
+	if (this->pixel_data) {
+		vm_free(this->pixel_data);
+		this->pixel_data = NULL;
+	}
+
+	if (this->bm_data) {
+		vm_free(this->bm_data);
+		this->bm_data = NULL;
+	}
+
+	if (this->bm_u) {
+		vm_free(this->bm_u);
+		this->bm_u = NULL;
+	}
+
+	if (this->bm_v) {
+		vm_free(this->bm_v);
+		this->bm_v = NULL;
+	}
+}
+
+
+char *gr_force_fit_string(char *str, int max_str, int max_width)
+{
+	int w;
+
+	gr_get_string_size(&w, NULL, str);
+	if (w > max_width) {
+		if ((int) strlen(str) > max_str - 3) {
+			Assert(max_str >= 3);
+			str[max_str - 3] = 0;
+		}
+
+		strcpy(str + strlen(str) - 1, "...");
+		gr_get_string_size(&w, NULL, str);
+		while (w > max_width) {
+			Assert(strlen(str) >= 4);  // if this is hit, a bad max_width was passed in and the calling function needs fixing.
+			strcpy(str + strlen(str) - 4, "...");
+			gr_get_string_size(&w, NULL, str);
+		}
+	}
+
+	return str;
+}
+
+void gr_print_timestamp(int x, int y, int timestamp)
+{
+	char time[8];
+
+	// format the time information into strings
+	sprintf(time, "%.1d:%.2d:%.2d", (timestamp / 3600000) % 10, (timestamp / 60000) % 60, (timestamp / 1000) % 60);
+	time[7] = '\0';
+
+	gr_string(x, y, time);
+}
+
+int gr_get_font_height()
+{
+	if (FontManager::isReady())
+	{
+		return FontManager::getCurrentFont()->getHeight();
+	}
+	else
+	{
+		return 16;
+	}
+}
+
+void gr_get_string_size(int *w1, int *h1, const char *text, int len)
+{
+	if (!FontManager::isReady())
+	{
+		if ( w1)
+			*w1 = 16;
+
+		if ( h1 )
+			*h1 = 16;
+
+		return;
+	}
+
+	FontManager::getCurrentFont()->getStringSize(text, len, w1, h1);
+}
+
+// NOTE: this returns an unscaled size for non-standard resolutions
+int get_centered_x(const char *s)
+{
+	int w;
+	int length = -1;
+
+	char *nlPtr = strchr(const_cast<char*>(s), '\n');
+
+	if (nlPtr != NULL)
+	{
+		length = nlPtr - s + 1;
+	}
+
+	gr_get_string_size(&w, NULL, s, length);
+
+	return ((gr_screen.clip_width_unscaled - w) / 2);
+}
+
+MONITOR( FontChars )
+
+#ifdef _WIN32
+
+void gr_string_win(int x, int y, char *s)
+{
+	int old_bitmap = gr_screen.current_bitmap; 
+	gr_set_font(FONT1);
+   	gr_string(x,y,s);
+	gr_screen.current_bitmap = old_bitmap; 
+}
+
+#endif   // ifdef _WIN32
+
+char grx_printf_text[2048];	
+
+void _cdecl gr_printf(int x, int y, char * format, ...)
+{
+	if (!FontManager::isReady())
+		return;
+
+	va_list args;
+	
+	va_start(args, format);
+	vsprintf(grx_printf_text,format,args);
+	va_end(args);
+
+	gr_string(x,y,grx_printf_text);
+}
+
+void _cdecl gr_printf_no_resize(int x, int y, char * format, ...)
+{
+	va_list args;
+
+	if (!FontManager::isReady())
+		return;
+	
+	va_start(args, format);
+	vsprintf(grx_printf_text,format,args);
+	va_end(args);
+
+	gr_string(x,y,grx_printf_text,false);
+}
+
+void gr_font_close()
+{
+	FontManager::close();
 }
 
 int gr_get_current_fontnum()
 {
-	if (Current_font == NULL) {
-		return -1;
-	} else {
-		return (Current_font - &Fonts[0]);
-	}
+	return FontManager::getCurrentFontIndex();
 }
 
 int gr_get_fontnum(char *filename)
 {
-	int i;
-	for(i = 0; i < Num_fonts; i++)
-	{
-		if(!strextcmp(Fonts[i].filename, filename))
-			return i;
-	}
-
-	return -1;
+	return FontManager::getFontIndex(filename);
 }
 
 void gr_set_font(int fontnum)
+{	
+	FontManager::setCurrentFont(FontManager::getFont(fontnum));
+}
+
+void gr_set_font(FSFont* font)
 {
-	if ( fontnum < 0 ) {
-		Current_font = NULL;
-		return;
+	FontManager::setCurrentFont(font);
+}
+
+bool parse_type(FontType &type, SCP_string &fileName)
+{
+	int num = optional_string_either("$TrueType:", "$Font:");
+	if (num == 0)
+	{
+		type = FTGL_FONT;
+	}
+	else if (num == 1)
+	{
+		type = VFNT_FONT;
+	}
+	else
+	{
+		type = UNKNOWN_FONT;
 	}
 
-	if ( fontnum >= 0 && fontnum < Num_fonts) {
-		Current_font = &Fonts[fontnum];
+
+	if (type != UNKNOWN_FONT)
+	{
+		stuff_string(fileName, F_NAME);
+		return true;
+	}
+	else
+	{
+		return false;
 	}
 }
 
-void parse_fonts_tbl(char *only_parse_first_font, size_t only_parse_first_font_size)
+FTGLFontType parse_ftgl_type()
 {
-	int rval;
-	char *filename;
-	
-	// choose file name
-	// (this can be done within the function, as opposed to being passed as a parameter,
-	// because fonts.tbl doesn't have a modular counterpart)
-	if ( cf_exists_full("fonts.tbl", CF_TYPE_TABLES) ) {
-		filename = "fonts.tbl";
-	} else {
-		filename = NULL;
+	FTGLFontType type;
+
+	char value[64];
+
+	stuff_string(value, F_NAME, 64);
+
+	if (!stricmp(value, "Polygon"))
+	{
+		type = POLYGON;
+	}
+	else if (!stricmp(value, "Outline"))
+	{
+		type = OUTLINE;
+	}
+	else if (!stricmp(value, "Texture"))
+	{
+		type = TEXTURE;
+	}
+	else if (!stricmp(value, "Pixmap"))
+	{
+		type = PIXMAP;
+	}
+	else
+	{
+		Warning(LOCATION, "Illegal type value \"%s\".", value);
+		type = TEXTURE;
 	}
 
-	if ((rval = setjmp(parse_abort)) != 0) {
-		mprintf(("TABLES: Unable to parse '%s'!  Error code = %i.\n", (filename) ? filename : NOX("<default fonts.tbl>"), rval));
+	return type;
+}
+
+void parse_ftgl_font(SCP_string fontFilename)
+{
+	int size = 8;
+	FTGLFontType type = TEXTURE;
+	SCP_string fontStr;
+	bool hasName = false;
+		
+	if (optional_string("+Name:"))
+	{
+		stuff_string(fontStr, F_NAME);
+
+		hasName = true;
+	}
+
+	if (optional_string("+Size:"))
+	{
+		stuff_int(&size);
+
+		if (size <= 0)
+		{
+			Warning(LOCATION, "+Size has to be bigger than 0 for font \"%s\".", fontFilename.c_str());
+			size = 8;
+		}
+	}
+
+	if (optional_string("+Type:"))
+	{
+		type = parse_ftgl_type();
+	}
+
+	// Build name from existing values if no name is specified
+	if (!hasName)
+	{
+		SCP_stringstream ss;
+
+		switch(type)
+		{
+		case POLYGON:
+			ss << "Polygon-";
+			break;
+		case OUTLINE:
+			ss << "Outline-";
+			break;
+		case TEXTURE:
+			ss << "Texture-";
+			break;
+		case PIXMAP:
+			ss << "Pixmap-";
+			break;
+		default:
+			ss << "InvalidType-";
+			break;
+		}
+
+		ss << fontFilename << "-";
+
+		ss << size;
+
+		fontStr = ss.str();
+	}
+
+	if (FontManager::getFont(fontStr) != NULL)
+	{
+		if (hasName)
+		{
+			Warning(LOCATION, "Font with name \"%s\" is already present! Font names have to be unique!", fontStr.c_str());
+			return;
+		}
+		else
+		{
+			Warning(LOCATION, "Found font with same default name (\"%s\"). This is most likely a duplicate.", fontStr.c_str());
+			return;
+		}
+	}
+
+	FTGLFont *font = FontManager::loadFTGLFont(fontFilename, size, type);
+
+	if (font == NULL)
+	{
+		Warning(LOCATION, "Couldn't load font \"%s\".", fontFilename.c_str());
 		return;
 	}
 
-	if (filename != NULL) {
-		read_file_text(filename, CF_TYPE_TABLES);
-	} else {
-		read_file_text_from_array(defaults_get_file("fonts.tbl"));
+	if (optional_string("+Top offset:"))
+	{
+		int temp;
+
+		stuff_int(&temp);
+
+		font->setTopOffset(temp);
 	}
 
-	reset_parse();		
+	if (optional_string("+Bottom offset:"))
+	{
+		int temp;
+
+		stuff_int(&temp);
+
+		font->setBottomOffset(temp);
+	}
+
+	if (type == OUTLINE)
+	{
+		if (optional_string("+Line Width:"))
+		{
+			float width;
+			stuff_float(&width);
+
+			if (width <= 0.0f)
+			{
+				Warning(LOCATION, "Invalid value %f for line width. Must be greater than zero.", width);
+			}
+			else
+			{
+				font->setLineWidth(width);
+			}
+		}
+	}
+
+	if (optional_string("+Tab width:"))
+	{
+		float temp;
+		stuff_float(&temp);
+
+		if (temp < 0.0f)
+		{
+			Warning(LOCATION, "Invalid tab spacing %f. Has to be greater or equal to zero.");
+		}
+		else
+		{
+			font->setTabWidth(temp);
+		}
+	}
+
+	font->setName(fontStr);
+}
+
+void parse_vfnt_font(SCP_string fontFilename)
+{	
+	VFNTFont *font = FontManager::loadVFNTFont(fontFilename);
+
+	if (font == NULL)
+	{
+		Warning(LOCATION, "Couldn't load font\"%s\".", fontFilename.c_str());
+		return;
+	}
+
+	SCP_string fontName;
+
+	if (optional_string("+Name:"))
+	{
+		stuff_string(fontName, F_NAME);
+	}
+	else
+	{
+		fontName.assign(fontFilename);
+	}
+	
+	font->setName(fontName);
+
+	if (optional_string("+Top offset:"))
+	{
+		int temp;
+
+		stuff_int(&temp);
+
+		font->setTopOffset(temp);
+	}
+
+	if (optional_string("+Bottom offset:"))
+	{
+		int temp;
+
+		stuff_int(&temp);
+
+		font->setBottomOffset(temp);
+	}
+}
+
+void font_parse_setup(char *fileName)
+{
+	bool noTable = false;
+	if (!strcmp(fileName, "fonts.tbl"))
+	{
+		if (!cf_exists_full(fileName, CF_TYPE_TABLES))
+		{
+			noTable = true;
+		}
+	}
+	
+	int rval;
+	if ((rval = setjmp(parse_abort)) != 0)
+	{
+		mprintf(("TABLES: Unable to parse '%s'!  Error code = %i.\n", (noTable) ? NOX("<default fonts.tbl>") : fileName, rval));
+		return;
+	}
+
+	if (noTable)
+	{
+		read_file_text_from_array(defaults_get_file(fileName));
+	}
+	else
+	{
+		read_file_text(fileName, CF_TYPE_TABLES);
+	}
+
+	reset_parse();
 
 	// start parsing
 	required_string("#Fonts");
+}
 
-	// read fonts
-	while (required_string_either("#End","$Font:")) {
-		char font_filename[MAX_FILENAME_LEN];
+void parse_font_tbl(char *fileName)
+{
+	font_parse_setup(fileName);
 
-		// grab font
-		required_string("$Font:");
-		stuff_string(font_filename, F_NAME, MAX_FILENAME_LEN);
+	FontType type;
+	SCP_string fontName;
 
-		// if we only need the first font, copy it and bail
-		if (only_parse_first_font != NULL) {
-			strcpy_s(only_parse_first_font, only_parse_first_font_size, font_filename);
-			return;
-		}
-
-		// create font
-		int font_id = gr_create_font(font_filename);
-		if (font_id < 0) {
-			Warning(LOCATION, "Could not create font from typeface '%s'!", font_filename);
+	while(parse_type(type, fontName))
+	{
+		switch(type)
+		{
+		case VFNT_FONT:
+			parse_vfnt_font(fontName);
+			break;
+		case FTGL_FONT:
+			parse_ftgl_font(fontName);
+			break;
+		default:
+			Warning(LOCATION, "Unknown font type %d! Get a coder!", (int) type);
+			break;
 		}
 	}
 
 	// done parsing
 	required_string("#End");
+}
 
+void parse_fonts_tbl()
+{
+	//Parse main TBL first
+	parse_font_tbl("fonts.tbl");
+
+	//Then other ones
+	parse_modular_table("*-fnt.tbm", parse_font_tbl);
+	
 	// double check
-	if (Num_fonts < 3) {
-		Error(LOCATION, "There must be at least three fonts in %s!", (filename) ? filename : NOX("<default fonts.tbl>"));
+	if (FontManager::numberOfFonts() < 3) {
+		Error(LOCATION, "At least three fonts have to be loaded by only %d valid entries were found!", FontManager::numberOfFonts());
 	}
 }
 
-void gr_stuff_first_font(char *first_font, size_t first_font_size )
+void gr_stuff_first_font(SCP_string &firstFont)
 {
-	parse_fonts_tbl( first_font, first_font_size );
+	font_parse_setup("fonts.tbl");
+
+	FontType type;
+	parse_type(type, firstFont);
+}
+
+bool parse_font(int &destination, char *tag)
+{
+	if (optional_string(tag))
+	{
+		SCP_string input;
+		stuff_string(input, F_NAME);
+		SCP_stringstream ss(input);
+		
+		int fontNum;
+		ss >> fontNum;
+
+		if (ss.fail())
+		{
+			int fontNum = FontManager::getFontIndex(input);
+
+			if (fontNum < 0)
+			{
+				Warning(LOCATION, "Invalid font name \"%s\"!", input.c_str());
+				destination = -1;
+			}
+			else
+			{
+				destination = fontNum;
+			}
+		}
+		else
+		{
+			if (fontNum < 0 || fontNum >= FontManager::numberOfFonts())
+			{
+				Warning(LOCATION, "Invalid font number %d! must be greater or equal to zero and smaller than %d.", fontNum, FontManager::numberOfFonts());
+				destination = -1;
+			}
+			else
+			{
+				destination = fontNum;
+			}
+		}
+
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 void gr_font_init()
 {
-	parse_fonts_tbl( NULL, 0 );
+	FontManager::init();
+
+	parse_fonts_tbl();
+
 	gr_set_font(0);
+}
+
+FSFont *gr_get_current_font()
+{
+	return FontManager::getCurrentFont();
+}
+
+FSFont *gr_get_font(int fontNum)
+{
+	return FontManager::getFont(fontNum);
+}
+
+FSFont *gr_get_font(SCP_string name)
+{
+	return FontManager::getFont(name);
 }
