@@ -2313,6 +2313,12 @@ int hud_anim_render(hud_anim *ha, float frametime, int draw_alpha, int loop, int
  */
 void hud_num_make_mono(char *num_str)
 {
+	// Only use this if we're using a VFNT font
+	if (FontManager::getCurrentFont()->getType() != VFNT_FONT)
+	{
+		return;
+	}
+
 	int len, i, sc;
 	len = strlen(num_str);
 
