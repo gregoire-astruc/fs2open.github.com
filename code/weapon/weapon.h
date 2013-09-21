@@ -619,7 +619,7 @@ void weapon_set_tracking_info(int weapon_objnum, int parent_objnum, int target_o
 void weapon_maybe_spew_particle(object *obj);
 
 bool weapon_armed(weapon *wp, bool hit_target);
-void weapon_hit( object * weapon_obj, object * other_obj, vec3d * hitpos, int quadrant = -1 );
+void weapon_hit( object * weapon_obj, object * other_obj, vec3d * hitpos, int quadrant = -1, int submodel_num = -1, vec3d* hit_dir = NULL );
 int cmeasure_name_lookup(char *name);
 void spawn_child_weapons( object *objp );
 

@@ -5850,7 +5850,7 @@ bool weapon_armed(weapon *wp, bool hit_target)
  * Called when a weapon hits something (or, in the case of
  * missiles explodes for any particular reason)
  */
-void weapon_hit( object * weapon_obj, object * other_obj, vec3d * hitpos, int quadrant )
+void weapon_hit( object * weapon_obj, object * other_obj, vec3d * hitpos, int quadrant, int submodel_num, vec3d* hit_dir)
 {
 	Assert(weapon_obj != NULL);
 	if(weapon_obj == NULL){
@@ -6042,7 +6042,34 @@ void weapon_hit( object * weapon_obj, object * other_obj, vec3d * hitpos, int qu
 	// spawn weapons - note the change from FS 1 multiplayer.
 	if (wip->wi_flags & WIF_SPAWN){
 		spawn_child_weapons(weapon_obj);
-	}	
+	}
+
+	if (other_obj && other_obj->type == OBJ_SHIP && submodel_num >= 0 && hit_dir != NULL)
+	{
+		shipp = &Ships[other_objp->instance];
+
+		vec3d global_norm;
+		model_instance_find_world_dir(&global_norm, hit_dir, Ship_info[shipp->ship_info_index].model_num,
+			shipp->model_instance_num, submodel_num, &other_obj->orient, &other_obj->pos);
+
+		vec3d incoming = weapon_obj->phys_info.vel;
+
+		float dot = vm_vec_dot(&incoming, hit_dir);
+		vec3d temp = *hit_dir;
+
+		vec3d reflected;
+
+		vm_vec_scale(&temp, -2.0f * dot);
+		vm_vec_add(&reflected, &incoming, &temp);
+
+		matrix orient;
+		vm_vector_2_matrix(&orient, &reflected, &vmd_y_vector, NULL);
+
+		int weapon_num = weapon_create(hitpos, &orient, wp->weapon_info_index, -1, -1, 0, 0, 0.0f, wp->turret_subsys);
+
+		object* new_object = &Objects[weapon_num];
+		new_object->phys_info.vel = reflected;
+	}
 }
 
 void weapon_detonate(object *objp)

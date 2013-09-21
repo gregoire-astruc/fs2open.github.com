@@ -142,9 +142,9 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <CustomBuildStep>
       <Message>Copying build...</Message>
-      <Command>copy /y "$(TargetPath)" "$(FS2PATH)\$(TargetFileName)"
+      <Command>copy /y "$(TargetPath)" "$(FS2_PATH)\$(TargetFileName)"
 </Command>
-      <Outputs>$(FS2PATH)\$(TargetFileName);%(Outputs)</Outputs>
+      <Outputs>$(FS2_PATH)\$(TargetFileName);%(Outputs)</Outputs>
     </CustomBuildStep>
     <Midl>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -210,9 +210,9 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug SSE|Win32'">
     <CustomBuildStep>
       <Message>Copying build...</Message>
-      <Command>copy /y "$(TargetPath)" "$(FS2PATH)\$(TargetFileName)"
+      <Command>copy /y "$(TargetPath)" "$(FS2_PATH)\$(TargetFileName)"
 </Command>
-      <Outputs>$(FS2PATH)\$(TargetFileName);%(Outputs)</Outputs>
+      <Outputs>$(FS2_PATH)\$(TargetFileName);%(Outputs)</Outputs>
     </CustomBuildStep>
     <Midl>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -280,9 +280,9 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug SSE2|Win32'">
     <CustomBuildStep>
       <Message>Copying build...</Message>
-      <Command>copy /y "$(TargetPath)" "$(FS2PATH)\$(TargetFileName)"
+      <Command>copy /y "$(TargetPath)" "$(FS2_PATH)\$(TargetFileName)"
 </Command>
-      <Outputs>$(FS2PATH)\$(TargetFileName);%(Outputs)</Outputs>
+      <Outputs>$(FS2_PATH)\$(TargetFileName);%(Outputs)</Outputs>
     </CustomBuildStep>
     <Midl>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -350,9 +350,9 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <CustomBuildStep>
       <Message>Copying build...</Message>
-      <Command>copy /y "$(TargetPath)" "$(FS2PATH)\$(TargetFileName)"
+      <Command>copy /y "$(TargetPath)" "$(FS2_PATH)\$(TargetFileName)"
 </Command>
-      <Outputs>$(FS2PATH)\$(TargetFileName);%(Outputs)</Outputs>
+      <Outputs>$(FS2_PATH)\$(TargetFileName);%(Outputs)</Outputs>
     </CustomBuildStep>
     <Midl>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -423,9 +423,9 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release SSE|Win32'">
     <CustomBuildStep>
       <Message>Copying build...</Message>
-      <Command>copy /y "$(TargetPath)" "$(FS2PATH)\$(TargetFileName)"
+      <Command>copy /y "$(TargetPath)" "$(FS2_PATH)\$(TargetFileName)"
 </Command>
-      <Outputs>$(FS2PATH)\$(TargetFileName);%(Outputs)</Outputs>
+      <Outputs>$(FS2_PATH)\$(TargetFileName);%(Outputs)</Outputs>
     </CustomBuildStep>
     <Midl>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -497,9 +497,9 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release SSE2|Win32'">
     <CustomBuildStep>
       <Message>Copying build...</Message>
-      <Command>copy /y "$(TargetPath)" "$(FS2PATH)\$(TargetFileName)"
+      <Command>copy /y "$(TargetPath)" "$(FS2_PATH)\$(TargetFileName)"
 </Command>
-      <Outputs>$(FS2PATH)\$(TargetFileName);%(Outputs)</Outputs>
+      <Outputs>$(FS2_PATH)\$(TargetFileName);%(Outputs)</Outputs>
     </CustomBuildStep>
     <Midl>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
