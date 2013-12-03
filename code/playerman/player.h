@@ -81,18 +81,23 @@ typedef struct campaign_stats {
 	scoring_struct stats;
 } campaign_stats;
 
-typedef struct player {
+class player
+{
+public:
 	void reset();
+	void assign(const player *pl);
 
 	char				callsign[CALLSIGN_LEN + 1];
 	char				short_callsign[CALLSIGN_LEN + 1];	// callsign truncated to SHORT_CALLSIGN_PIXEL_W pixels
 	int				short_callsign_width;					// useful for mutliplayer chat boxes.
-	char				image_filename[MAX_FILENAME_LEN];	// filename of the image for this pilot
-	char				s_squad_filename[MAX_FILENAME_LEN];	// filename of the squad image for this pilot
+
+	char				image_filename[MAX_FILENAME_LEN+1];	// filename of the image for this pilot
+	char				s_squad_filename[MAX_FILENAME_LEN+1];	// filename of the squad image for this pilot
 	char				s_squad_name[NAME_LENGTH + 1];			// pilot's squadron name
-	char				m_squad_filename[MAX_FILENAME_LEN];	// filename of the squad image for this pilot (multiplayer)
+	char				m_squad_filename[MAX_FILENAME_LEN+1];	// filename of the squad image for this pilot (multiplayer)
 	char				m_squad_name[NAME_LENGTH + 1];			// pilot's squadron name (multiplayer)
-	char				current_campaign[MAX_FILENAME_LEN]; // Name of the currently active campaign, or zero-length string if none
+
+	char				current_campaign[MAX_FILENAME_LEN+1]; // Name of the currently active campaign, or zero-length string if none
 	int				readyroom_listing_mode;
 
 	int				flags;
@@ -132,16 +137,15 @@ typedef struct player {
 																		//	done so we don't check each frame
 
 	int				distance_warning_count;					// Number of distance warings 
-
 	int				distance_warning_time;					// Time at which distance warning was given
 																
 	int				allow_warn_timestamp;					// Timestamp used to regulate how often a player might receive
 																		// warning messages about ships attacking.
 	int				warn_count;									// number of attack warnings player has received this mission
 	float				damage_this_burst;						// amount of damage done this frame to friendly craft
+
 	int				repair_sound_loop;						// Sound id for ship repair looping sound, this is in the player 
 																		// file since the repair sound only plays when Player ship is getting repaired
-	
 	int				cargo_scan_loop;							// Sound id for scanning cargo looping sound
 
 	int				praise_count;								// number of praises received this mission
@@ -207,7 +211,7 @@ typedef struct player {
 	button_info		lua_bi_full;		// gets all the button controls, not just the ones usually allowed
 
 	int		player_was_multi;		// 1 if the player file was last used in Multiplayer
-} player;
+};
 
 extern player Players[MAX_PLAYERS];
 
@@ -249,10 +253,8 @@ void player_set_squad(player *p, char *squad_name);
 
 int player_inspect_cargo(float frametime, char *outstr);
 
-//#ifndef NDEBUG
 extern int use_descent;						// player is using descent-style physics
 extern void toggle_player_object();		// toggles between descent-style ship and player ship
-//#endif
 
 extern void read_player_controls( object *obj, float frametime);
 extern void player_control_reset_ci( control_info *ci );

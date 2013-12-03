@@ -171,6 +171,8 @@ done_1:
 	}
 	
 	mc_info mc;
+	mc_info_init(&mc);
+
 	mc.model_instance_num = Ships[objp->instance].model_instance_num;
 	mc.model_num = sip->model_num;
 	mc.orient = &objp->orient;
@@ -597,6 +599,9 @@ void ai_big_chase_attack(ai_info *aip, ship_info *sip, vec3d *enemy_pos, float d
 
 		// see if Pl_objp needs to reposition to get a good shot at subsystem which is being attacked
 		if ( ai_big_maybe_follow_subsys_path() ) {
+			if ((Pl_objp->phys_info.flags & PF_AFTERBURNER_ON) && !(aip->ai_flags & AIF_KAMIKAZE)) {
+				afterburners_stop(Pl_objp);
+			}
 			return;
 		}
 
@@ -626,11 +631,25 @@ void ai_big_chase_attack(ai_info *aip, ship_info *sip, vec3d *enemy_pos, float d
 		weapon_travel_dist = ai_get_weapon_dist(&Ships[Pl_objp->instance].weapons);
 
 		if ( aip->targeted_subsys != NULL ) {
-			if (dist_to_enemy > (weapon_travel_dist-20))
+			if (dist_to_enemy > (weapon_travel_dist-20)) {
 				accelerate_ship(aip, 1.0f);
-			else {
+				
+				ship	*shipp = &Ships[Pl_objp->instance];
+				if ((aip->ai_flags & AIF_FREE_AFTERBURNER_USE) && !(shipp->flags2 & SF2_AFTERBURNER_LOCKED) && (dot_to_enemy > 0.75f)) {
+					if (ai_maybe_fire_afterburner(Pl_objp, aip)) {
+						afterburners_start(Pl_objp);
+						aip->afterburner_stop_time = Missiontime + 3*F1_0;
+					}
+				} else if ((Pl_objp->phys_info.flags & PF_AFTERBURNER_ON) && !(aip->ai_flags & AIF_KAMIKAZE)) {
+					afterburners_stop(Pl_objp);
+				}
+			} else {
 				// AL 12-31-97: Move at least as quickly as your target is moving...
 				accelerate_ship(aip, MAX(1.0f - dot_to_enemy, Objects[aip->target_objnum].phys_info.fspeed/sip->max_speed));
+
+				if ((Pl_objp->phys_info.flags & PF_AFTERBURNER_ON) && !(aip->ai_flags & AIF_KAMIKAZE)) {
+					afterburners_stop(Pl_objp);
+				}
 			}
 
 		} else {
@@ -651,10 +670,22 @@ void ai_big_chase_attack(ai_info *aip, ship_info *sip, vec3d *enemy_pos, float d
 			if (dist_to_enemy < ATTACK_STOP_DISTANCE) {
 //				accelerate_ship(aip, accel * 0.5f);
 				accelerate_ship(aip, -1.0f);
+				if ((Pl_objp->phys_info.flags & PF_AFTERBURNER_ON) && !(aip->ai_flags & AIF_KAMIKAZE)) {
+					afterburners_stop(Pl_objp);
+				}
 			} else {
 				accelerate_ship(aip, accel);
-			}
 
+				ship	*shipp = &Ships[Pl_objp->instance];
+				if ((aip->ai_flags & AIF_FREE_AFTERBURNER_USE) && !(shipp->flags2 & SF2_AFTERBURNER_LOCKED) && (accel > 0.95f)) {
+					if (ai_maybe_fire_afterburner(Pl_objp, aip)) {
+						afterburners_start(Pl_objp);
+						aip->afterburner_stop_time = Missiontime + 3*F1_0;
+					}
+				} else if ((Pl_objp->phys_info.flags & PF_AFTERBURNER_ON) && !(aip->ai_flags & AIF_KAMIKAZE)) {
+					afterburners_stop(Pl_objp);
+				}
+			}
 		}
 	}
 }
@@ -761,28 +792,31 @@ void ai_big_maybe_fire_weapons(float dist_to_enemy, float dot_to_enemy, vec3d *f
 									//vm_vec_scale_add(&future_enemy_pos, enemy_pos, enemy_vel, dist_to_enemy/swip->max_speed);
 									//if (vm_vec_dist_quick(&future_enemy_pos, firing_pos) < firing_range * 0.8f) {
 										if (ai_fire_secondary_weapon(Pl_objp)) {
+
+											int current_bank_adjusted = MAX_SHIP_PRIMARY_BANKS + current_bank;
+
 											if ((aip->ai_flags & AIF_UNLOAD_SECONDARIES) || (swip->burst_flags & WBF_FAST_FIRING)) {
-												if (swip->burst_shots > swp->burst_counter[current_bank]) {
+												if (swip->burst_shots > swp->burst_counter[current_bank_adjusted]) {
 													t = swip->burst_delay;
-													swp->burst_counter[current_bank]++;
+													swp->burst_counter[current_bank_adjusted]++;
 												} else {
 													t = swip->fire_wait;
 													if ((swip->burst_shots > 0) && (swip->burst_flags & WBF_RANDOM_LENGTH)) {
-														swp->burst_counter[current_bank] = myrand() % swip->burst_shots;
+														swp->burst_counter[current_bank_adjusted] = myrand() % swip->burst_shots;
 													} else {
- 														swp->burst_counter[current_bank] = 0;
+ 														swp->burst_counter[current_bank_adjusted] = 0;
 													}
 												}
 											} else {
-												if (swip->burst_shots > swp->burst_counter[current_bank]) {
+												if (swip->burst_shots > swp->burst_counter[current_bank_adjusted]) {
 													t = set_secondary_fire_delay(aip, temp_shipp, swip, true);
-													swp->burst_counter[current_bank]++;
+													swp->burst_counter[current_bank_adjusted]++;
 												} else {
 													t = set_secondary_fire_delay(aip, temp_shipp, swip, false);
 													if ((swip->burst_shots > 0) && (swip->burst_flags & WBF_RANDOM_LENGTH)) {
-														swp->burst_counter[current_bank] = myrand() % swip->burst_shots;
+														swp->burst_counter[current_bank_adjusted] = myrand() % swip->burst_shots;
 													} else {
-														swp->burst_counter[current_bank] = 0;
+														swp->burst_counter[current_bank_adjusted] = 0;
 													}
 												}
 											}
@@ -861,6 +895,9 @@ void ai_big_chase()
 			aip->submode_parm0 = Missiontime;	// use parm0 as time strafe mode entered (i.e. MODE start time)
 			aip->submode = AIS_STRAFE_AVOID;
 			aip->submode_start_time = Missiontime;
+			if (Pl_objp->phys_info.flags & PF_AFTERBURNER_ON) {
+				afterburners_stop(Pl_objp);
+			}
 			return;
 		}
 	}
@@ -901,8 +938,12 @@ void ai_big_chase()
 	case SM_ATTACK:
 	case SM_SUPER_ATTACK:
 		if (vm_vec_dist_quick(&Pl_objp->pos, &predicted_enemy_pos) > 100.0f + En_objp->radius * 2.0f) {
-			if (maybe_avoid_big_ship(Pl_objp, En_objp, aip, &predicted_enemy_pos, 10.0f))
+			if (maybe_avoid_big_ship(Pl_objp, En_objp, aip, &predicted_enemy_pos, 10.0f)) {
+				if ((Pl_objp->phys_info.flags & PF_AFTERBURNER_ON) && !(aip->ai_flags & AIF_KAMIKAZE)) {
+					afterburners_stop(Pl_objp);
+				}
 				return;
+			}
 		}
 
 		if (aip->target_time < 2.0f)
@@ -918,6 +959,13 @@ void ai_big_chase()
 	//
 	//	Set turn and acceleration based on submode.
 	//
+
+	if (((aip->submode != SM_ATTACK) && (aip->submode != SM_SUPER_ATTACK) && (aip->submode != SM_ATTACK_FOREVER) && (aip->submode != SM_EVADE_WEAPON)) || (aip->mode == AIM_STRAFE)){
+		if ((Pl_objp->phys_info.flags & PF_AFTERBURNER_ON) && !(aip->ai_flags & AIF_KAMIKAZE)) {
+			afterburners_stop(Pl_objp);
+		}
+	}
+
 	switch (aip->submode) {
 	case SM_CONTINUOUS_TURN:
 		ai_big_chase_ct();

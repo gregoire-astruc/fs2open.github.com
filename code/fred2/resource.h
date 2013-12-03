@@ -963,6 +963,7 @@
 #define IDC_MAX_RESPAWN_DELAY_SPIN      1487
 #define IDC_NAV_NEEDSLINK               1488
 #define IDC_OBJ_TEAM                    1489
+#define IDC_SCRAMBLE_MESSAGES           1489
 #define IDC_CAMPAIGN_TYPE               1491
 #define IDC_SUPPORT_ALLOWED             1492
 #define IDC_SUBSPACE                    1493
@@ -1109,6 +1110,7 @@
 #define IDC_FLIP_ICON                   1578
 #define IDC_DISABLE_BUILTIN_SHIP        1579
 #define IDC_OTHER                       1579
+#define IDC_USE_WING_ICON               1579
 #define IDC_DISABLE_BUILTIN_COMMAND_MSGS 1580
 #define IDC_LBL_OTHER_SUFFIX            1580
 #define IDC_PRIMARIES_LOCKED            1581

@@ -246,10 +246,10 @@ int HudGaugeEscort::setGaugeColorEscort(int index, int team)
 	}
 	
 	// set flashing color
-	if (!timestamp_elapsed(shi->shield_hit_timers[HULL_HIT_OFFSET]))
+	if (!timestamp_elapsed(shi->shield_hit_timers[shi->hull_hit_index]))
 	{
 		is_flashing = 1;
-		if (shi->shield_show_bright & (1 << HULL_HIT_OFFSET))
+		if (shi->shield_show_bright & (1 << shi->hull_hit_index))
 		{
 			is_bright = 1;
 		}
@@ -449,12 +449,12 @@ void hud_escort_update_list()
 		{
 			shi = &Escort_ships[i].hit_info;
 
-			if (!timestamp_elapsed(shi->shield_hit_timers[HULL_HIT_OFFSET]))
+			if (!timestamp_elapsed(shi->shield_hit_timers[shi->hull_hit_index]))
 			{
-				if (timestamp_elapsed(shi->shield_hit_next_flash[HULL_HIT_OFFSET]))
+				if (timestamp_elapsed(shi->shield_hit_next_flash[shi->hull_hit_index]))
 				{
-					shi->shield_hit_next_flash[HULL_HIT_OFFSET] = timestamp(SHIELD_FLASH_INTERVAL);
-					shi->shield_show_bright ^= (1 << HULL_HIT_OFFSET);	// toggle between default and bright frames
+					shi->shield_hit_next_flash[shi->hull_hit_index] = timestamp(SHIELD_FLASH_INTERVAL);
+					shi->shield_show_bright ^= (1 << shi->hull_hit_index);	// toggle between default and bright frames
 				}
 			}
 		}
@@ -485,7 +485,7 @@ void hud_escort_clear_all(bool clear_flags)
 		}
 		Escort_ships[i].obj_signature = -99;
 		Escort_ships[i].np_id = -1;
-		shield_info_reset(&Escort_ships[i].hit_info);
+		shield_info_reset(NULL, &Escort_ships[i].hit_info);
 	}
 }
 
@@ -563,6 +563,7 @@ void hud_create_complete_escort_list(escort_info *escorts, int *num_escorts)
 				escorts[*num_escorts].obj_signature = -1;
 				escorts[*num_escorts].priority = -1;
 				escorts[*num_escorts].np_id = Net_players[idx].player_id;
+				shield_info_reset(&Objects[Net_players[idx].m_player->objnum], &escorts[*num_escorts].hit_info);
 				(*num_escorts)++;
 			}
 		}
@@ -624,6 +625,7 @@ void hud_create_complete_escort_list(escort_info *escorts, int *num_escorts)
 			escorts[*num_escorts].obj_signature = objp->signature;
 			escorts[*num_escorts].priority = Ships[objp->instance].escort_priority;
 			escorts[*num_escorts].np_id = -1;
+			shield_info_reset(&Objects[so->objnum], &escorts[*num_escorts].hit_info);
 			(*num_escorts)++;			
 		}
 	}
@@ -660,6 +662,7 @@ void hud_setup_escort_list(int level)
 		Escort_ships[Num_escort_ships].priority = complete_escorts[Num_escort_ships].priority;
 		Escort_ships[Num_escort_ships].objnum = complete_escorts[Num_escort_ships].objnum;
 		Escort_ships[Num_escort_ships].np_id = complete_escorts[Num_escort_ships].np_id;
+		Escort_ships[Num_escort_ships].hit_info = complete_escorts[Num_escort_ships].hit_info;
 	}
 
 	if(level){
@@ -720,7 +723,7 @@ void merge_escort_lists(escort_info *complete_escorts, int num_complete_escorts)
 				continue;
 			}
 			if ( !valid_hit_info[i] ) {
-				shield_info_reset(&Escort_ships[i].hit_info);
+				shield_info_reset(&Objects[objnum], &Escort_ships[i].hit_info);
 			}	
 		}
 	}
@@ -856,6 +859,7 @@ void hud_add_ship_to_escort(int objnum, int supress_feedback)
 		complete_escorts[num_complete_escorts].objnum = objnum;
 		complete_escorts[num_complete_escorts].obj_signature = Objects[objnum].signature;
 		complete_escorts[num_complete_escorts].priority = Ships[Objects[objnum].instance].escort_priority;
+		shield_info_reset(&Objects[objnum], &complete_escorts[num_complete_escorts].hit_info);
 
 		// add him to escort list
 		Ships[Objects[objnum].instance].flags |= SF_ESCORT;
@@ -986,7 +990,7 @@ void hud_escort_ship_hit(object *objp, int quadrant)
 				num = Quadrant_xlate[quadrant];
 				shi->shield_hit_timers[num] = timestamp(SHIELD_HIT_DURATION);
 			} else {
-				shi->shield_hit_timers[HULL_HIT_OFFSET] = timestamp(SHIELD_HIT_DURATION);
+				shi->shield_hit_timers[shi->hull_hit_index] = timestamp(SHIELD_HIT_DURATION);
 			}
 		}
 	}

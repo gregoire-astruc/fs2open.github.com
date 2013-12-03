@@ -151,7 +151,7 @@ void parse_thrust_glows(species_info *species, bool no_create)
 		generic_anim_init(&species->thruster_info.glow.afterburn, NULL);
 }
 
-void parse_species_tbl(char *filename)
+void parse_species_tbl(const char *filename)
 {
 	int i, rval;
 	char species_name[NAME_LENGTH];
@@ -339,6 +339,11 @@ void parse_species_tbl(char *filename)
 			Warning(LOCATION, "$AwacsMultiplier not specified for species %s in species_defs.tbl!  Defaulting to %.2d.\n", species->species_name, species->awacs_multiplier);
 		}
 
+		// Goober5000 - countermeasure type
+		// (we won't be able to resolve it until after we've parsed the weapons table)
+		if (optional_string("$Countermeasure type:"))
+			stuff_string(species->cmeasure_name, F_NAME, NAME_LENGTH);
+
 		// don't add new entry if this is just a modified one
 		if ( !no_create )
 			Species_info.push_back( new_species );
@@ -347,7 +352,7 @@ void parse_species_tbl(char *filename)
 	required_string("#END");
 
 	// add tbl/tbm to multiplayer validation list
-	extern void fs2netd_add_table_validation(char *tblname);
+	extern void fs2netd_add_table_validation(const char *tblname);
 	fs2netd_add_table_validation(filename);
 
 	// close localization
