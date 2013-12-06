@@ -1,0 +1,357 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug AVX|Win32">
+      <Configuration>Debug AVX</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug SSE|Win32">
+      <Configuration>Debug SSE</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release AVX|Win32">
+      <Configuration>Release AVX</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release SSE2|Win32">
+      <Configuration>Release SSE2</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release SSE|Win32">
+      <Configuration>Release SSE</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug SSE2|Win32">
+      <Configuration>Debug SSE2</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\trueType\ftgl\FTBuffer.cpp" />
+    <ClCompile Include="..\..\trueType\ftgl\FTCharmap.cpp" />
+    <ClCompile Include="..\..\trueType\ftgl\FTContour.cpp" />
+    <ClCompile Include="..\..\trueType\ftgl\FTFace.cpp" />
+    <ClCompile Include="..\..\trueType\ftgl\FTFont\FTBitmapFont.cpp" />
+    <ClCompile Include="..\..\trueType\ftgl\FTFont\FTBufferFont.cpp" />
+    <ClCompile Include="..\..\trueType\ftgl\FTFont\FTExtrudeFont.cpp" />
+    <ClCompile Include="..\..\trueType\ftgl\FTFont\FTFont.cpp" />
+    <ClCompile Include="..\..\trueType\ftgl\FTFont\FTFontGlue.cpp" />
+    <ClCompile Include="..\..\trueType\ftgl\FTFont\FTOutlineFont.cpp" />
+    <ClCompile Include="..\..\trueType\ftgl\FTFont\FTPixmapFont.cpp" />
+    <ClCompile Include="..\..\trueType\ftgl\FTFont\FTPolygonFont.cpp" />
+    <ClCompile Include="..\..\trueType\ftgl\FTFont\FTTextureFont.cpp" />
+    <ClCompile Include="..\..\trueType\ftgl\FTGlyphContainer.cpp" />
+    <ClCompile Include="..\..\trueType\ftgl\FTGlyph\FTBitmapGlyph.cpp" />
+    <ClCompile Include="..\..\trueType\ftgl\FTGlyph\FTBufferGlyph.cpp" />
+    <ClCompile Include="..\..\trueType\ftgl\FTGlyph\FTExtrudeGlyph.cpp" />
+    <ClCompile Include="..\..\trueType\ftgl\FTGlyph\FTGlyph.cpp" />
+    <ClCompile Include="..\..\trueType\ftgl\FTGlyph\FTGlyphGlue.cpp" />
+    <ClCompile Include="..\..\trueType\ftgl\FTGlyph\FTOutlineGlyph.cpp" />
+    <ClCompile Include="..\..\trueType\ftgl\FTGlyph\FTPixmapGlyph.cpp" />
+    <ClCompile Include="..\..\trueType\ftgl\FTGlyph\FTPolygonGlyph.cpp" />
+    <ClCompile Include="..\..\trueType\ftgl\FTGlyph\FTTextureGlyph.cpp" />
+    <ClCompile Include="..\..\trueType\ftgl\FTLayout\FTLayout.cpp" />
+    <ClCompile Include="..\..\trueType\ftgl\FTLayout\FTLayoutGlue.cpp" />
+    <ClCompile Include="..\..\trueType\ftgl\FTLayout\FTSimpleLayout.cpp" />
+    <ClCompile Include="..\..\trueType\ftgl\FTLibrary.cpp" />
+    <ClCompile Include="..\..\trueType\ftgl\FTPoint.cpp" />
+    <ClCompile Include="..\..\trueType\ftgl\FTSize.cpp" />
+    <ClCompile Include="..\..\trueType\ftgl\FTVectoriser.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\trueType\ftgl\config.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTCharmap.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTCharToGlyphIndexMap.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTContour.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTFace.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTFont\FTBitmapFontImpl.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTFont\FTBufferFontImpl.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTFont\FTExtrudeFontImpl.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTFont\FTFontImpl.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTFont\FTOutlineFontImpl.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTFont\FTPixmapFontImpl.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTFont\FTPolygonFontImpl.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTFont\FTTextureFontImpl.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTGlyphContainer.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTGlyph\FTBitmapGlyphImpl.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTGlyph\FTBufferGlyphImpl.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTGlyph\FTExtrudeGlyphImpl.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTGlyph\FTGlyphImpl.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTGlyph\FTOutlineGlyphImpl.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTGlyph\FTPixmapGlyphImpl.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTGlyph\FTPolygonGlyphImpl.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTGlyph\FTTextureGlyphImpl.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTGL\FTBBox.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTGL\FTBitmapGlyph.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTGL\FTBuffer.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTGL\FTBufferFont.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTGL\FTBufferGlyph.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTGL\FTExtrdGlyph.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTGL\FTFont.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTGL\ftgl.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTGL\FTGLBitmapFont.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTGL\FTGLExtrdFont.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTGL\FTGLOutlineFont.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTGL\FTGLPixmapFont.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTGL\FTGLPolygonFont.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTGL\FTGLTextureFont.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTGL\FTGlyph.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTGL\FTLayout.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTGL\FTOutlineGlyph.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTGL\FTPixmapGlyph.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTGL\FTPoint.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTGL\FTPolyGlyph.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTGL\FTSimpleLayout.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTGL\FTTextureGlyph.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTInternals.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTLayout\FTLayoutImpl.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTLayout\FTSimpleLayoutImpl.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTLibrary.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTList.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTSize.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTUnicode.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTVector.h" />
+    <ClInclude Include="..\..\trueType\ftgl\FTVectoriser.h" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{1D758EEA-59C3-46E4-BEF5-16DCCA8C0B21}</ProjectGuid>
+    <RootNamespace>ftgl_static</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectName>ftgl</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v120_xp</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release SSE|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v120_xp</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v120_xp</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug SSE|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v120_xp</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug SSE2|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v120_xp</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug AVX|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v120_xp</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release SSE2|Win32'">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v120_xp</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release AVX|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v120_xp</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release SSE|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug SSE|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug SSE2|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug AVX|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug SSE|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug SSE2|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug AVX|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug SSE|Win32'">$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug SSE2|Win32'">$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug AVX|Win32'">$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release SSE|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release SSE|Win32'">$(Configuration)\$(ProjectName)\</IntDir>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug SSE|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug SSE2|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug AVX|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug SSE|Win32'" />
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug SSE2|Win32'" />
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug AVX|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug SSE|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug SSE2|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug AVX|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release SSE|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release SSE|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release SSE|Win32'" />
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">F:\Programmieren\libs\freetype-2.4.7\include;$(IncludePath)</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release SSE|Win32'">F:\Programmieren\libs\freetype-2.4.7\include;$(IncludePath)</IncludePath>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release SSE2|Win32'">$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release AVX|Win32'">$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>../../trueType/ftgl;../../trueType/FreeType/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;FTGL_LIBRARY_STATIC;DEBUG;_LIB;_CRT_SECURE_NO_DEPRECATE;_SECURE_SCL=0;_HAS_ITERATOR_DEBUGGING=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <MultiProcessorCompilation>
+      </MultiProcessorCompilation>
+    </ClCompile>
+    <Lib>
+      <OutputFile>$(OutDir)ftgl.lib</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug SSE|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>../../trueType/ftgl;../../trueType/FreeType/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;FTGL_LIBRARY_STATIC;DEBUG;_LIB;_CRT_SECURE_NO_DEPRECATE;_SECURE_SCL=0;_HAS_ITERATOR_DEBUGGING=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <MultiProcessorCompilation>
+      </MultiProcessorCompilation>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions</EnableEnhancedInstructionSet>
+    </ClCompile>
+    <Lib>
+      <OutputFile>$(OutDir)ftgl.lib</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug SSE2|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>../../trueType/ftgl;../../trueType/FreeType/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;FTGL_LIBRARY_STATIC;DEBUG;_LIB;_CRT_SECURE_NO_DEPRECATE;_SECURE_SCL=0;_HAS_ITERATOR_DEBUGGING=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <MultiProcessorCompilation>
+      </MultiProcessorCompilation>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+    </ClCompile>
+    <Lib>
+      <OutputFile>$(OutDir)ftgl.lib</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug AVX|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>../../trueType/ftgl;../../trueType/FreeType/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;FTGL_LIBRARY_STATIC;DEBUG;_LIB;_CRT_SECURE_NO_DEPRECATE;_SECURE_SCL=0;_HAS_ITERATOR_DEBUGGING=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <MultiProcessorCompilation>
+      </MultiProcessorCompilation>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
+    </ClCompile>
+    <Lib>
+      <OutputFile>$(OutDir)ftgl.lib</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>../../trueType/ftgl;../../trueType/FreeType/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;FTGL_LIBRARY_STATIC;NDEBUG;_LIB;_CRT_SECURE_NO_DEPRECATE;_SECURE_SCL=0;_HAS_ITERATOR_DEBUGGING=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Lib>
+      <OutputFile>$(OutDir)ftgl.lib</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release SSE|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>../../trueType/ftgl;../../trueType/FreeType/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;FTGL_LIBRARY_STATIC;NDEBUG;_LIB;_CRT_SECURE_NO_DEPRECATE;_SECURE_SCL=0;_HAS_ITERATOR_DEBUGGING=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions</EnableEnhancedInstructionSet>
+    </ClCompile>
+    <Lib>
+      <OutputFile>$(OutDir)ftgl.lib</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release SSE2|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;FTGL_LIBRARY_STATIC;NDEBUG;_LIB;_CRT_SECURE_NO_DEPRECATE;_SECURE_SCL=0;_HAS_ITERATOR_DEBUGGING=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../trueType/ftgl;../../trueType/FreeType/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release AVX|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;FTGL_LIBRARY_STATIC;NDEBUG;_LIB;_CRT_SECURE_NO_DEPRECATE;_SECURE_SCL=0;_HAS_ITERATOR_DEBUGGING=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../trueType/ftgl;../../trueType/FreeType/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
