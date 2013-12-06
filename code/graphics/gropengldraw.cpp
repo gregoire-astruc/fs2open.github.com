@@ -312,6 +312,8 @@ void gr_opengl_string(int sx, int sy, const char *s, bool resize)
 {
 	GL_CHECK_FOR_ERRORS("start of string()");
 
+	Assertion(s != NULL, "NULL pointer passed to gr_string!");
+
 	if ( !FontManager::isReady() || (*s == '\0') ) {
 		return;
 	}
