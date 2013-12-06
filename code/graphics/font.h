@@ -456,11 +456,15 @@ public:
      * Returns the font pointer which is located as the specified index or @c NULL when the specified index is invald
      *
      * @param index The index that should be returns
-     * @return Font pointer or @c NULL on error
+     * @return Font pointer
      */
-    static FSFont *getFont(int index);
+	inline static FSFont *getFont(int index)
+	{
+		Assertion(index >= 0 && index < (int)fonts.size(), "Invalid font index %d given!", index);
 
-
+		return fonts[index];
+	}
+	
     /**
      * @brief Returns the index of the currently used font
      *
@@ -510,6 +514,12 @@ public:
      * @return @c true if ready (there is a current font), @c false if not
      */
     static bool isReady();
+
+	/**
+	* @brief Checks if the specified number is a valid font ID
+	* @return @c true if the number can be used with #getFont(int), @c false otherwise
+	*/
+	static bool isFontNumberValid(int fontNumber);
 
     /**
      * @brief Sets the currently active font
@@ -670,14 +680,20 @@ int get_centered_x(const char *s);
  * Sets the current font to the specified FSFont pointer
  * @param font The font that should be set. May not be NULL
  */
-void gr_set_font(FSFont *font);
+inline void gr_set_font(FSFont* font)
+{
+	FontManager::setCurrentFont(font);
+}
 
 /**
  * Retrieves the font which is located at index @c font_num and sets this font
  * as the current font
  * @param font_num The new font number, may not be an illegal font number
  */
-void gr_set_font(int font_num);
+inline void gr_set_font(int fontnum)
+{
+	FontManager::setCurrentFont(FontManager::getFont(fontnum));
+}
 
 /**
  * @brief Parses a font number
@@ -695,7 +711,10 @@ bool parse_font(int &destination, char *tag = "Font:");
  * @brief The currently active font index
  * @return The font index or -1 when the FontManager hasnt't been initialized yet
  */
-int gr_get_current_fontnum();
+inline int gr_get_current_fontnum()
+{
+	return FontManager::getCurrentFontIndex();
+}
 
 /**
  * @brief The current font object
@@ -712,7 +731,10 @@ FSFont *gr_get_current_font();
  * @param fontNum The index which should be returned
  * @return A font pointer or NULL of the index is not valid
  */
-FSFont *gr_get_font(int fontNum);
+inline FSFont *gr_get_font(int fontNum)
+{
+	return FontManager::getFont(fontNum);
+}
 
 /**
  * @brief Retrieves a font by name

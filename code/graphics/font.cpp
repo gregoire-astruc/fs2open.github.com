@@ -46,14 +46,6 @@ FSFont* FontManager::getFont(const SCP_string& name)
 	return NULL;
 }
 
-FSFont* FontManager::getFont(int index)
-{
-	if (index < 0 || index >= (int) fonts.size())
-		return NULL;
-
-	return fonts[index];
-}
-
 FSFont *FontManager::getCurrentFont()
 {
 	return currentFont;
@@ -104,6 +96,11 @@ int FontManager::numberOfFonts()
 bool FontManager::isReady()
 {
 	return currentFont != NULL;
+}
+
+bool FontManager::isFontNumberValid(int id)
+{
+	return id >= 0 && id < (int) fonts.size();
 }
 
 void FontManager::setCurrentFont(FSFont *font)
@@ -966,31 +963,6 @@ void _cdecl gr_printf_no_resize(int x, int y, char * format, ...)
 	gr_string(x,y,grx_printf_text,false);
 }
 
-void gr_font_close()
-{
-	FontManager::close();
-}
-
-int gr_get_current_fontnum()
-{
-	return FontManager::getCurrentFontIndex();
-}
-
-int gr_get_fontnum(char *filename)
-{
-	return FontManager::getFontIndex(filename);
-}
-
-void gr_set_font(int fontnum)
-{	
-	FontManager::setCurrentFont(FontManager::getFont(fontnum));
-}
-
-void gr_set_font(FSFont* font)
-{
-	FontManager::setCurrentFont(font);
-}
-
 bool parse_type(FontType &type, SCP_string &fileName)
 {
 	int num = optional_string_either("$TrueType:", "$Font:");
@@ -1231,7 +1203,7 @@ void parse_vfnt_font(SCP_string fontFilename)
 	}
 }
 
-void font_parse_setup(char *fileName)
+bool font_parse_setup(const char *fileName)
 {
 	bool noTable = false;
 	if (!strcmp(fileName, "fonts.tbl"))
@@ -1246,12 +1218,12 @@ void font_parse_setup(char *fileName)
 	if ((rval = setjmp(parse_abort)) != 0)
 	{
 		mprintf(("TABLES: Unable to parse '%s'!  Error code = %i.\n", (noTable) ? NOX("<default fonts.tbl>") : fileName, rval));
-		return;
+		return false;
 	}
 
 	if (noTable)
 	{
-		read_file_text_from_array(defaults_get_file(fileName));
+		read_file_text_from_array(defaults_get_file("fonts.tbl"));
 	}
 	else
 	{
@@ -1262,11 +1234,14 @@ void font_parse_setup(char *fileName)
 
 	// start parsing
 	required_string("#Fonts");
+
+	return true;
 }
 
-void parse_font_tbl(char *fileName)
+void parse_font_tbl(const char *fileName)
 {
-	font_parse_setup(fileName);
+	if (!font_parse_setup(fileName))
+		return;
 
 	FontType type;
 	SCP_string fontName;
@@ -1359,6 +1334,32 @@ bool parse_font(int &destination, char *tag)
 	}
 }
 
+void _cdecl gr_printf(int x, int y, const char * format, ...)
+{
+	va_list args;
+
+	if (!FontManager::isReady()) return;
+
+	va_start(args, format);
+	vsprintf(grx_printf_text, format, args);
+	va_end(args);
+
+	gr_string(x, y, grx_printf_text);
+}
+
+void _cdecl gr_printf_no_resize(int x, int y, const char * format, ...)
+{
+	va_list args;
+
+	if (!FontManager::isReady()) return;
+
+	va_start(args, format);
+	vsprintf(grx_printf_text, format, args);
+	va_end(args);
+
+	gr_string(x, y, grx_printf_text, false);
+}
+
 void gr_font_init()
 {
 	FontManager::init();
@@ -1371,11 +1372,6 @@ void gr_font_init()
 FSFont *gr_get_current_font()
 {
 	return FontManager::getCurrentFont();
-}
-
-FSFont *gr_get_font(int fontNum)
-{
-	return FontManager::getFont(fontNum);
 }
 
 FSFont *gr_get_font(SCP_string name)
