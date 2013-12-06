@@ -253,7 +253,7 @@ void gr_close()
 			Int3();		// Invalid graphics mode
 	}
 
-	gr_font_close();
+	FontManager::close();
 
 	Gr_inited = 0;
 }
