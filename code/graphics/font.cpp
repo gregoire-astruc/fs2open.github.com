@@ -190,11 +190,11 @@ VFNTFont *FontManager::loadFontOld(char *typeface)
 	// This should probably be done at font generation time, not here.
 	int w, h;
 	if ( fnt->pixel_data_size*4 < 64*64 ) {
- 		w = h = 64;
+		w = h = 64;
 	} else if ( fnt->pixel_data_size*4 < 128*128 ) {
- 		w = h = 128;
+		w = h = 128;
 	} else if ( fnt->pixel_data_size*4 < 256*256 ) {
- 		w = h = 256;
+		w = h = 256;
 	} else if ( fnt->pixel_data_size*4 < 512*512 ) {
 		w = h = 512;
 	} else {
@@ -927,7 +927,7 @@ void gr_string_win(int x, int y, char *s)
 {
 	int old_bitmap = gr_screen.current_bitmap; 
 	gr_set_font(FONT1);
-   	gr_string(x,y,s);
+	gr_string(x,y,s);
 	gr_screen.current_bitmap = old_bitmap; 
 }
 
@@ -1282,7 +1282,11 @@ void parse_fonts_tbl()
 
 void gr_stuff_first_font(SCP_string &firstFont)
 {
-	font_parse_setup("fonts.tbl");
+	if (!font_parse_setup("fonts.tbl"))
+	{
+		Error(LOCATION, "Failed to setup font parsing. This may be caused by an empty fonts.tbl file.");
+		return;
+	}
 
 	FontType type;
 	parse_type(type, firstFont);
