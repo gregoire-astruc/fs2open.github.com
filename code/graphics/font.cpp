@@ -31,6 +31,7 @@
 #include "globalincs/def_files.h"
 
 SCP_map<SCP_string, TrueTypeFontData> FontManager::allocatedData;
+SCP_map<SCP_string, font*> FontManager::vfntFontData;
 SCP_vector<FSFont*> FontManager::fonts;
 
 FSFont* FontManager::currentFont = NULL;
@@ -111,9 +112,19 @@ void FontManager::setCurrentFont(FSFont *font)
 
 VFNTFont *FontManager::loadFontOld(char *typeface)
 {
+	SCP_string typefaceString(typeface);
+	if (vfntFontData.find(typefaceString) != vfntFontData.end())
+	{
+		font* data = vfntFontData[typefaceString];
+
+		Assert(data != NULL);
+
+		return new VFNTFont(data);
+	}
+
 	CFILE *fp;
 	font *fnt;
-		
+
 	fnt = new font;
 	if (!fnt)
 	{
@@ -237,16 +248,9 @@ VFNTFont *FontManager::loadFontOld(char *typeface)
 
 	fnt->bitmap_id = bm_create( 8, fnt->bm_w, fnt->bm_h, fnt->bm_data, BMP_AABITMAP );
 
-	VFNTFont *font = new VFNTFont(fnt);
+	vfntFontData[typefaceString] = fnt;
 
-	if (font == NULL)
-	{
-		mprintf(("Allocation of memory for font \"%s\" failed!", typeface));
-		delete fnt;
-		return NULL;
-	}
-
-	return font;
+	return new VFNTFont(fnt);
 }
 
 VFNTFont *FontManager::loadVFNTFont(const SCP_string& name)
@@ -369,7 +373,13 @@ void FontManager::close()
 		delete[] iter->second.data;
 	}
 
+	for (SCP_map<SCP_string, font*>::iterator iter = vfntFontData.begin(); iter != vfntFontData.end(); iter++)
+	{
+		delete iter->second;
+	}
+
 	allocatedData.clear();
+	vfntFontData.clear();
 	fonts.clear();
 
 	currentFont = NULL;
@@ -386,7 +396,6 @@ VFNTFont::VFNTFont(font *fnt) : FSFont()
 
 VFNTFont::~VFNTFont()
 {
-	delete fontPtr;
 }
 
 FontType VFNTFont::getType() const
@@ -1030,7 +1039,7 @@ void parse_ftgl_font(SCP_string fontFilename)
 	FTGLFontType type = TEXTURE;
 	SCP_string fontStr;
 	bool hasName = false;
-		
+	
 	if (optional_string("+Name:"))
 	{
 		stuff_string(fontStr, F_NAME);
