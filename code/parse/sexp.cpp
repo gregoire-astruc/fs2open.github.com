@@ -20700,7 +20700,7 @@ void sexp_show_subtitle_text(int node)
 		char *font_name = CTEXT(n);
 		n = CDR(n);
 
-		fontnum = FontManager::getFontIndex(font);
+		fontnum = FontManager::getFontIndex(font_name);
 	}
 
 	bool post_shaded = false;
