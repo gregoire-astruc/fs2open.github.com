@@ -150,6 +150,8 @@ $RECYCLE.BIN/
 Debug
 Debug SSE
 Debug SSE2
+Debug AVX
 Release
 Release SSE
 Release SSE2
+Release AVX
