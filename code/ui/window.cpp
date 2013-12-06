@@ -147,7 +147,7 @@ void UI_WINDOW::create( int _x, int _y, int _w, int _h, int _flags, int _f_id )
 	w = _w;
 	h = _h;
 	flags = _flags;
-	f_id = (FontManager::getFont(_f_id) != NULL) ? _f_id : FONT1;
+	f_id = (FontManager::isFontNumberValid(_f_id) != NULL) ? _f_id : FONT1;
 
 	first_gadget = NULL;
 	selected_gadget = NULL;
