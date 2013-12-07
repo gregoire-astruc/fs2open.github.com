@@ -33,6 +33,7 @@
 #include "graphics/gropenglshader.h"
 #include "graphics/gropenglpostprocessing.h"
 #include "freespace2/freespace.h"
+#include "localization/localize.h"
 
 GLuint Scene_framebuffer;
 GLuint Scene_color_texture;
@@ -308,8 +309,8 @@ void gr_opengl_aabitmap(int x, int y, bool resize, bool mirror)
 
 struct v4 { GLfloat x, y, u, v; };
 
-extern int font_get_char_width_old(font* fnt, char c1, char c2, int *width, int* spacing);
-void gr_opengl_string_old(int sx, int sy, const char*s, bool resize, font* fontData, int top, int height, int textHeight)
+extern int font_get_char_width_old(font* fnt, ubyte c1, ubyte c2, int *width, int* spacing);
+void gr_opengl_string_old(int sx, int sy, const char*s, bool resize, font* fontData, int top, int height, int textHeight, int tokenLength)
 {
 	int width, spacing, letter;
 	int x, y, do_resize;
@@ -376,7 +377,8 @@ void gr_opengl_string_old(int sx, int sy, const char*s, bool resize, font* fontD
 	GLboolean cull_face = GL_state.CullFace(GL_FALSE);
 
 	// pick out letter coords, draw it, goto next letter and do the same
-	while (*s)	{
+	for (int i = 0; i < tokenLength && *s; i++)
+	{
 		x += spacing;
 
 		while (*s == '\n')	{
@@ -539,7 +541,8 @@ void gr_opengl_string(int sx, int sy, const char *s, bool resize)
 		VFNTFont *fnt = static_cast<VFNTFont*>(currentFont);
 		font *fontData = fnt->getFontData();
 
-		gr_opengl_string_old(sx, sy, s, resize, fontData, fnt->getTopOffset(), fnt->getHeight(), fnt->getTextHeight());
+		gr_opengl_string_old(sx, sy, s, resize, fontData, fnt->getTopOffset(),
+			fnt->getHeight(), fnt->getTextHeight(), strlen(s));
 	}
 	else if (currentFont->getType() == FTGL_FONT)
 	{
@@ -611,33 +614,45 @@ void gr_opengl_string(int sx, int sy, const char *s, bool resize)
 
 		while ((tokenLength = ftglFont->getTokenLength(text)) > 0)
 		{
+			doRender = true;
+			specialChar = false;
 			if (tokenLength == 1)
 			{
 				// We may have encoutered a special character
 				switch (*text)
 				{
 				case '\n':
-					specialChar = true;
+					doRender = false;
 
 					yOffset += ftglFont->getHeight();
 					xOffset = 0;
 					break;
 				case '\t':
-					specialChar = true;
+					doRender = false;
 
 					xOffset += fl2i(ceil(ftglFont->getTabWidth()));
 					break;
 				default:
-					specialChar = false;
+					if (*text >= Lcl_special_chars || *text < 0)
+					{
+						specialChar = true;
+					}
+					else
+					{
+						doRender = true;
+					}
+
 					break;
 				}
 			}
-		
-			doRender = !specialChar;
-
-			specialChar = false;
 			
-			if (doRender)
+			if (specialChar)
+			{
+				gr_opengl_string_old(sx + xOffset, sy + yOffset, s, resize,
+					ftglFont->getSpecialCharacterFont(), ftglFont->getTopOffset(),
+					ftglFont->getHeight(), ftglFont->getTextHeight(), tokenLength);
+			}
+			else if (doRender)
 			{
 				y = sy + yOffset;
 

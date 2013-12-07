@@ -421,7 +421,7 @@ font *VFNTFont::getFontData()
 	return this->fontPtr;
 }
 
-extern int font_get_char_width_old(font* fnt, char c1, char c2, int *width, int* spacing);
+extern int font_get_char_width_old(font* fnt, ubyte c1, ubyte c2, int *width, int* spacing);
 void VFNTFont::getStringSize(const char *text, int textLen, int *w1, int *h1) const
 {
 	int longest_width;
@@ -659,9 +659,13 @@ int FTGLFont::getTokenLength(const char *string, int maxLength) const
 	if (maxLength <= 0)
 		return 0;
 
+	if (*string >= Lcl_special_chars || *string < 0)
+		return 1;
+
 	const char *nullPtr = strchr(const_cast<char*>(string), '\0');
 	const char *nextToken = strpbrk(const_cast<char*>(string), this->separators);
 
+	// WOHOO! Pointer arithmetic!!!
 	if (nullPtr != NULL && (nextToken == NULL || nullPtr < nextToken))
 	{
 		length = nullPtr - string;
@@ -685,6 +689,15 @@ int FTGLFont::getTokenLength(const char *string, int maxLength) const
 	if (length > maxLength)
 	{
 		length = maxLength;
+	}
+
+	for (int i = 0; i < length; i++)
+	{
+		if (string[i] >= Lcl_special_chars || string[i] < 0)
+		{
+			// Special character needs to be handled seperately
+			return i;
+		}
 	}
 
 	return length;
@@ -1390,7 +1403,7 @@ FSFont *gr_get_font(const SCP_string& name)
  *
  * @return	The character width.
  */
-int font_get_char_width_old(font* fnt, char c1, char c2, int *width, int* spacing)
+int font_get_char_width_old(font* fnt, ubyte c1, ubyte c2, int *width, int* spacing)
 {
 	int i, letter;
 
