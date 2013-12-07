@@ -247,20 +247,6 @@ public:
     virtual void getStringSize(const char *text, int textLen, int *width, int *height) const;
 
     /**
-     * @brief	Gets the width of an character.
-     *
-     * Returns the width of the specified charachter also taking account of kerning.
-     *
-     * @param	c1					The character that should be checked.
-     * @param	c2					The character which follows this character. Used to compute the kerning
-     * @param [out]	width   	If non-null, the width.
-     * @param [out]	spaceing	If non-null, the spaceing.
-     *
-     * @return	The character width.
-     */
-    int getCharWidth(ubyte c1, ubyte c2, int *width, int* spaceing) const;
-
-    /**
      * @brief	Sets the size of this font.
      *
      * Sets the size of this font but as VFNT fonts are raster fonts this will have no effect.
@@ -287,6 +273,9 @@ private:
     float tabWidth;			//<! The width of one tab (\t) character
 
     const char* separators;
+
+	font* specialCharacterData; //<! Data used for rendering special characters
+	SCP_string specialFontName; //<! Name of the font used for special characters
 
 public:
     /**
@@ -382,6 +371,16 @@ public:
 
     int getTokenLength(const char *string, int length = -1) const;
 
+	font* getSpecialCharacterFont() const
+	{
+		return specialCharacterData;
+	}
+
+	const SCP_string& getSpecialFontName() const
+	{
+		return specialFontName;
+	}
+
     //Setters
 
     /**
@@ -406,7 +405,13 @@ public:
      * @brief Sets the width of a tab character
      * @param width New width of a tab character
      */
-    void setTabWidth(float width);
+	void setTabWidth(float width);
+
+	void setSpecialCharacterFont(const SCP_string& fontName, font* fontData)
+	{
+		specialCharacterData = fontData;
+		specialFontName = fontName;
+	}
 };
 
 /**
@@ -597,6 +602,11 @@ public:
 	static VFNTFont *loadVFNTFont(const SCP_string& fileName);
 
 	/**
+	* @brief Loads old volition font data
+	*/
+	static font *loadFontOld(char *name);
+
+	/**
 	*	@brief Initializes the font system
 	*/
 	static void init();
@@ -612,8 +622,6 @@ private:
 	FontManager(const FontManager&) {};
 
 	~FontManager();
-
-	static VFNTFont *loadFontOld(char *name);
 
 	static SCP_map<SCP_string, TrueTypeFontData> allocatedData;
 	static SCP_map<SCP_string, font*> vfntFontData;

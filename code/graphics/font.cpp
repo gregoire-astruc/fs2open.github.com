@@ -110,7 +110,7 @@ void FontManager::setCurrentFont(FSFont *font)
 	currentFont = font;
 }
 
-VFNTFont *FontManager::loadFontOld(char *typeface)
+font *FontManager::loadFontOld(char *typeface)
 {
 	SCP_string typefaceString(typeface);
 	if (vfntFontData.find(typefaceString) != vfntFontData.end())
@@ -119,7 +119,7 @@ VFNTFont *FontManager::loadFontOld(char *typeface)
 
 		Assert(data != NULL);
 
-		return new VFNTFont(data);
+		return data;
 	}
 
 	CFILE *fp;
@@ -250,17 +250,25 @@ VFNTFont *FontManager::loadFontOld(char *typeface)
 
 	vfntFontData[typefaceString] = fnt;
 
-	return new VFNTFont(fnt);
+	return fnt;
 }
 
 VFNTFont *FontManager::loadVFNTFont(const SCP_string& name)
 {
-	VFNTFont* font = FontManager::loadFontOld(const_cast<char*>(name.c_str()));
+	font* font = FontManager::loadFontOld(const_cast<char*>(name.c_str()));
 
-	if (font != NULL)
-		fonts.push_back(font);
+	if (font == NULL)
+	{
+		return NULL;
+	}
+	else
+	{
+		VFNTFont* vfnt = new VFNTFont(font);
 
-	return font;
+		fonts.push_back(vfnt);
+
+		return vfnt;
+	}
 }
 
 FTGLFont *FontManager::loadFTGLFont(const SCP_string& fileName, int fontSize, FTGLFontType type)
@@ -413,6 +421,7 @@ font *VFNTFont::getFontData()
 	return this->fontPtr;
 }
 
+extern int font_get_char_width_old(font* fnt, char c1, char c2, int *width, int* spacing);
 void VFNTFont::getStringSize(const char *text, int textLen, int *w1, int *h1) const
 {
 	int longest_width;
@@ -455,7 +464,7 @@ void VFNTFont::getStringSize(const char *text, int textLen, int *w1, int *h1) co
 				break;
 			}
 
-			this->getCharWidth(text[0], text[1], &width, &spacing);
+			font_get_char_width_old(fontPtr, text[0], text[1], &width, &spacing);
 			w += spacing;
 			if (w > longest_width)
 				longest_width = w;
@@ -477,52 +486,6 @@ void VFNTFont::getStringSize(const char *text, int textLen, int *w1, int *h1) co
 
 	if ( w1 )
 		*w1 = longest_width;
-}
-
-int VFNTFont::getCharWidth(ubyte c1, ubyte c2, int *width, int *spacing) const
-{
-	int i, letter;
-
-	letter = c1 - fontPtr->first_ascii;
-
-	//not in font, draw as space
-	if (letter < 0 || letter >= fontPtr->num_chars)
-	{				
-		*width = 0;
-		*spacing = fontPtr->w;
-		return -1;
-	}
-
-	*width = fontPtr->char_data[letter].byte_width;
-	*spacing = fontPtr->char_data[letter].spacing;
-
-	i = fontPtr->char_data[letter].kerning_entry;
-	if (i > -1)
-	{
-		if (!(c2 == 0 || c2 == '\n'))
-		{
-			int letter2;
-
-			letter2 = c2 - fontPtr->first_ascii;
-
-			if ((letter2 >= 0) && (letter2 < fontPtr->num_chars)) 
-			{
-				font_kernpair *k = &fontPtr->kern_data[i];
-				while((k->c1 == (char)letter) && (k->c2 < (char)letter2) && (i < fontPtr->num_kern_pairs))
-				{
-					i++;
-					k++;
-				}
-
-				if ( k->c2 == (char)letter2 )
-				{
-					*spacing += k->offset;
-				}
-			}
-		}
-	}
-
-	return letter;
 }
 
 bool VFNTFont::setSize(int newSize)
@@ -696,8 +659,8 @@ int FTGLFont::getTokenLength(const char *string, int maxLength) const
 	if (maxLength <= 0)
 		return 0;
 
-	char *nullPtr = strchr(const_cast<char*>(string), '\0');
-	char *nextToken = strpbrk(const_cast<char*>(string), this->separators);
+	const char *nullPtr = strchr(const_cast<char*>(string), '\0');
+	const char *nextToken = strpbrk(const_cast<char*>(string), this->separators);
 
 	if (nullPtr != NULL && (nextToken == NULL || nullPtr < nextToken))
 	{
@@ -1033,7 +996,7 @@ FTGLFontType parse_ftgl_type()
 	return type;
 }
 
-void parse_ftgl_font(SCP_string fontFilename)
+void parse_ftgl_font(const SCP_string& fontFilename)
 {
 	int size = 8;
 	FTGLFontType type = TEXTURE;
@@ -1108,9 +1071,9 @@ void parse_ftgl_font(SCP_string fontFilename)
 		}
 	}
 
-	FTGLFont *font = FontManager::loadFTGLFont(fontFilename, size, type);
+	FTGLFont *ftglFont = FontManager::loadFTGLFont(fontFilename, size, type);
 
-	if (font == NULL)
+	if (ftglFont == NULL)
 	{
 		Warning(LOCATION, "Couldn't load font \"%s\".", fontFilename.c_str());
 		return;
@@ -1122,7 +1085,7 @@ void parse_ftgl_font(SCP_string fontFilename)
 
 		stuff_int(&temp);
 
-		font->setTopOffset(temp);
+		ftglFont->setTopOffset(temp);
 	}
 
 	if (optional_string("+Bottom offset:"))
@@ -1131,7 +1094,7 @@ void parse_ftgl_font(SCP_string fontFilename)
 
 		stuff_int(&temp);
 
-		font->setBottomOffset(temp);
+		ftglFont->setBottomOffset(temp);
 	}
 
 	if (type == OUTLINE)
@@ -1147,7 +1110,7 @@ void parse_ftgl_font(SCP_string fontFilename)
 			}
 			else
 			{
-				font->setLineWidth(width);
+				ftglFont->setLineWidth(width);
 			}
 		}
 	}
@@ -1163,14 +1126,36 @@ void parse_ftgl_font(SCP_string fontFilename)
 		}
 		else
 		{
-			font->setTabWidth(temp);
+			ftglFont->setTabWidth(temp);
 		}
 	}
 
-	font->setName(fontStr);
+	if (optional_string("+Special Character Font:"))
+	{
+		SCP_string fontName;
+		stuff_string(fontName, F_NAME);
+
+		font* fontData = FontManager::loadFontOld(const_cast<char*>(fontName.c_str()));
+
+		if (fontData == NULL)
+		{
+			Warning(LOCATION, "Failed to load font \"%s\" for special characters of font \"%s\"!", fontName.c_str(), fontFilename.c_str());
+		}
+		else
+		{
+			ftglFont->setSpecialCharacterFont(fontName, fontData);
+		}
+	}
+	else
+	{
+		font* fontData = FontManager::loadFontOld("font01.vf");
+		ftglFont->setSpecialCharacterFont(SCP_string("font01.vf"), fontData);
+	}
+
+	ftglFont->setName(fontStr);
 }
 
-void parse_vfnt_font(SCP_string fontFilename)
+void parse_vfnt_font(const SCP_string& fontFilename)
 {	
 	VFNTFont *font = FontManager::loadVFNTFont(fontFilename);
 
@@ -1387,7 +1372,66 @@ FSFont *gr_get_current_font()
 	return FontManager::getCurrentFont();
 }
 
-FSFont *gr_get_font(SCP_string name)
+FSFont *gr_get_font(const SCP_string& name)
 {
 	return FontManager::getFont(name);
+}
+
+/**
+ * @brief	Gets the width of an character.
+ *
+ * Returns the width of the specified charachter also taking account of kerning.
+ * 
+ * @param fnt				The font data
+ * @param c1				The character that should be checked.
+ * @param c2				The character which follows this character. Used to compute the kerning
+ * @param [out]	width   	If non-null, the width.
+ * @param [out]	spaceing	If non-null, the spaceing.
+ *
+ * @return	The character width.
+ */
+int font_get_char_width_old(font* fnt, char c1, char c2, int *width, int* spacing)
+{
+	int i, letter;
+
+	letter = c1 - fnt->first_ascii;
+
+	//not in font, draw as space
+	if (letter < 0 || letter >= fnt->num_chars)
+	{
+		*width = 0;
+		*spacing = fnt->w;
+		return -1;
+	}
+
+	*width = fnt->char_data[letter].byte_width;
+	*spacing = fnt->char_data[letter].spacing;
+
+	i = fnt->char_data[letter].kerning_entry;
+	if (i > -1)
+	{
+		if (!(c2 == 0 || c2 == '\n'))
+		{
+			int letter2;
+
+			letter2 = c2 - fnt->first_ascii;
+
+			if ((letter2 >= 0) && (letter2 < fnt->num_chars))
+			{
+				font_kernpair *k = &fnt->kern_data[i];
+				while ((k->c1 == (char)letter) && (k->c2 < (char)letter2) && (i < fnt->num_kern_pairs))
+				{
+					i++;
+					k++;
+				}
+
+				if (k->c2 == (char)letter2)
+				{
+					*spacing += k->offset;
+				}
+			}
+		}
+	}
+
+	return letter;
 }
