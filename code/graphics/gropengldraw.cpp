@@ -570,19 +570,7 @@ void gr_opengl_string(int sx, int sy, const char *s, bool resize)
 
 		bool doRender = true;
 
-		if (do_resize)
-		{
-			gr_resize_screen_posf(&scale_x, &scale_y);
-		}
-
 		x = sx;
-
-		if (ftglFont->getFontType() == TEXTURE)
-		{
-			glEnable(GL_TEXTURE_2D);
-		}
-	
-		glPushAttrib(GL_CURRENT_BIT);
 		
 		if (ftglFont->getFontType() == POLYGON)
 		{
@@ -739,13 +727,6 @@ void gr_opengl_string(int sx, int sy, const char *s, bool resize)
 		}
 
 		GL_state.CullFace(cull_face);
-				
-		glPopAttrib();
-	
-		if (ftglFont->getFontType() == TEXTURE)
-		{
-			glDisable(GL_TEXTURE_2D);
-		}
 	}
 	else
 	{
