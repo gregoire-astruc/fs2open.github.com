@@ -3079,7 +3079,23 @@ int check_sexp_syntax(int node, int return_type, int recursive, int *bad_node, i
 					return SEXP_CHECK_INVALID_SHIP_EFFECT;
 				}
 				break;
-				
+
+			case OPF_GAME_SND:
+				if (type2 == SEXP_ATOM_NUMBER)
+				{
+					if (gamesnd_get_by_tbl_index(eval_num(node)) < 0)
+					{
+						return SEXP_CHECK_INVALID_GAME_SND;
+					}
+				}
+				else
+				{
+					if (gamesnd_get_by_name(CTEXT(node)) < 0)
+					{
+						return SEXP_CHECK_INVALID_GAME_SND;
+					}
+				}
+				break;
 
 			default:
 				Error(LOCATION, "Unhandled argument format");
@@ -10384,7 +10400,22 @@ void sexp_explosion_effect(int n)
 	}
 	n = CDR(n);
 
-	sound_index = eval_num(n);
+	const char* sound_name = CTEXT(n);
+	if (!stricmp(sound_name, SEXP_NONE_STRING))
+	{
+		sound_index = -1;
+	}
+	else
+	{
+		sound_index = gamesnd_get_by_name(sound_name);
+
+		if (sound_index < 0)
+		{
+			Warning(LOCATION, "explosion-effect sound name \"%s\" is no valid sound name!", sound_name);
+			return;
+		}
+	}
+
 	n = CDR(n);
 
 	// optional EMP
@@ -25813,6 +25844,8 @@ int query_operator_argument_type(int op, int argnum)
 		case OP_EXPLOSION_EFFECT:
 			if (argnum <= 2)
 				return OPF_NUMBER;
+			else if (argnum == 10)
+				return OPF_GAME_SND;
 			else
 				return OPF_POSITIVE;
 
@@ -27443,6 +27476,9 @@ char *sexp_error_message(int num)
 
 		case SEXP_CHECK_INVALID_SHIP_FLAG:
 			return "Invalid ship flag";
+
+		case SEXP_CHECK_INVALID_GAME_SND:
+			return "Invalid game sound name";
 
 		default:
 			Warning(LOCATION, "Unhandled sexp error code %d!", num);

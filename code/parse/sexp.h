@@ -111,6 +111,7 @@ class waypoint_list;
 #define OPF_SHIP_FLAG			84		// Karajorma - The name of a ship flag
 #define OPF_TEAM_COLOR			85		// The E - Color settings as defined in Colors.tbl
 #define OPF_NEBULA_PATTERN		86		// Axem - Full Nebula Background Patterns, as defined in nebula.tbl
+#define OPF_GAME_SND			87		// m!m - A game sound
 
 // Operand return types
 #define	OPR_NUMBER				1	// returns number
@@ -976,6 +977,7 @@ char *CTEXT(int n);
 #define SEXP_CHECK_INVALID_MISSION_MOOD			-155
 #define SEXP_CHECK_INVALID_SHIP_FLAG			-156
 #define SEXP_CHECK_INVALID_TEAM_COLOR			-157
+#define SEXP_CHECK_INVALID_GAME_SND				-158
 
 #define TRAINING_CONTEXT_SPEED		(1<<0)
 #define TRAINING_CONTEXT_FLY_PATH	(1<<1)

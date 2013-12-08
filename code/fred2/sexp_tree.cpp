@@ -2783,6 +2783,9 @@ int sexp_tree::query_default_argument_available(int op, int i)
 		case OPF_TEAM_COLOR:
 			return 1;
 
+		case OPF_GAME_SND:
+			return !Snds.empty() ? 1 : 0;
+
 		default:
 			Int3();
 
@@ -4443,6 +4446,10 @@ sexp_list_item *sexp_tree::get_listing_opf(int opf, int parent_node, int arg_ind
 			list = get_listing_opf_nebula_patterns();
 			break;
 
+		case OPF_GAME_SND:
+			list = get_listing_opf_game_snds();
+			break;
+
 		default:
 			Int3();  // unknown OPF code
 			list = NULL;
@@ -5983,7 +5990,18 @@ sexp_list_item *sexp_tree::get_listing_opf_nebula_patterns()
 	return head.next;
 }
 
+sexp_list_item *sexp_tree::get_listing_opf_game_snds()
+{
+	sexp_list_item head;
 
+	head.add_data(SEXP_NONE_STRING);
+
+	for (SCP_vector<game_snd>::iterator iter = Snds.begin(); iter != Snds.end(); iter++) {
+		head.add_data(iter->name.c_str());
+	}
+
+	return head.next;
+}
 
 // Deletes sexp_variable from sexp_tree.
 // resets tree to not include given variable, and resets text and type
