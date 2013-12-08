@@ -575,7 +575,16 @@ void FTGLFont::getStringSize(const char *text, int textLen, int *width, int *hei
 				lineWidth += this->getTabWidth();
 				break;
 			default:
-				specialChar = false;
+				if (*s >= Lcl_special_chars || *s < 0)
+				{
+					specialChar = true;
+
+					int width;
+					int spacing;
+					font_get_char_width_old(this->specialCharacterData, *s, '\0', &width, &spacing);
+
+					lineWidth += i2fl(spacing);
+				}
 				break;
 			}
 		}

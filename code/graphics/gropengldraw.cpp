@@ -330,7 +330,7 @@ void gr_opengl_string_old(int sx, int sy, const char*s, bool resize, font* fontD
 	}
 
 	// conversion from quads to triangles requires six vertices per quad
-	struct v4 *glVert = (struct v4*) vm_malloc(sizeof(struct v4) * strlen(s) * 6);
+	struct v4 *glVert = (struct v4*) vm_malloc(sizeof(struct v4) * MIN(strlen(s), (size_t) tokenLength) * 6);
 	int curChar = 0;
 
 	int ibw, ibh;
@@ -568,6 +568,11 @@ void gr_opengl_string(int sx, int sy, const char *s, bool resize)
 		float scale_x = 1.0f;
 		float scale_y = 1.0f;
 
+		if (do_resize)
+		{
+			gr_resize_screen_posf(&scale_x, &scale_y);
+		}
+
 		bool doRender = true;
 
 		x = sx;
@@ -636,9 +641,15 @@ void gr_opengl_string(int sx, int sy, const char *s, bool resize)
 			
 			if (specialChar)
 			{
-				gr_opengl_string_old(sx + xOffset, sy + yOffset, s, resize,
+				gr_opengl_string_old(sx + xOffset, sy + yOffset, text, resize,
 					ftglFont->getSpecialCharacterFont(), ftglFont->getTopOffset(),
 					ftglFont->getHeight(), ftglFont->getTextHeight(), tokenLength);
+
+				int width;
+				int spacing;
+				font_get_char_width_old(ftglFont->getSpecialCharacterFont(), *text, '\0', &width, &spacing);
+
+				xOffset += spacing;
 			}
 			else if (doRender)
 			{
