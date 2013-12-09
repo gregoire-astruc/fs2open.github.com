@@ -3083,10 +3083,8 @@ int check_sexp_syntax(int node, int return_type, int recursive, int *bad_node, i
 			case OPF_GAME_SND:
 				if (type2 == SEXP_ATOM_NUMBER)
 				{
-					if (gamesnd_get_by_tbl_index(eval_num(node)) < 0)
-					{
-						return SEXP_CHECK_INVALID_GAME_SND;
-					}
+					// We can't determine the actual number so just assume that the number is valid
+					return 1;
 				}
 				else
 				{
@@ -10325,6 +10323,26 @@ void sexp_set_explosion_option(int node)
 	}
 }
 
+int sexp_get_sound_index(int node)
+{
+	const char* sound_name = CTEXT(node);
+	if (!stricmp(sound_name, SEXP_NONE_STRING))
+	{
+		return -1;
+	}
+	else
+	{
+		int sound_index = gamesnd_get_by_name(sound_name);
+
+		if (sound_index < 0)
+		{
+			Warning(LOCATION, "explosion-effect sound name \"%s\" is no valid sound name!", sound_name);
+		}
+
+		return sound_index;
+	}
+}
+
 // Goober5000
 void sexp_explosion_effect(int n)
 /* From the SEXP help...
@@ -10400,21 +10418,7 @@ void sexp_explosion_effect(int n)
 	}
 	n = CDR(n);
 
-	const char* sound_name = CTEXT(n);
-	if (!stricmp(sound_name, SEXP_NONE_STRING))
-	{
-		sound_index = -1;
-	}
-	else
-	{
-		sound_index = gamesnd_get_by_name(sound_name);
-
-		if (sound_index < 0)
-		{
-			Warning(LOCATION, "explosion-effect sound name \"%s\" is no valid sound name!", sound_name);
-			return;
-		}
-	}
+	sound_index = sexp_get_sound_index(n);
 
 	n = CDR(n);
 
