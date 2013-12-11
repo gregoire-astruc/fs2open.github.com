@@ -25753,7 +25753,10 @@ int query_operator_argument_type(int op, int argnum)
 			return OPF_SOUNDTRACK_NAME;
 
 		case OP_PLAY_SOUND_FROM_TABLE:
-			return OPF_POSITIVE;
+			if (argnum == 3)
+				return OPF_GAME_SND;
+			else
+				return OPF_POSITIVE;
 
 		case OP_PLAY_SOUND_FROM_FILE:
 			if (argnum==0)
@@ -25856,6 +25859,8 @@ int query_operator_argument_type(int op, int argnum)
 		case OP_WARP_EFFECT:
 			if (argnum <= 5)
 				return OPF_NUMBER;
+			else if (argnum == 8 || argnum == 9)
+				return OPF_GAME_SND;
 			else
 				return OPF_POSITIVE;
 
