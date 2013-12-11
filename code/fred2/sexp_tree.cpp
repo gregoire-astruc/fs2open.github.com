@@ -5997,7 +5997,10 @@ sexp_list_item *sexp_tree::get_listing_opf_game_snds()
 	head.add_data(SEXP_NONE_STRING);
 
 	for (SCP_vector<game_snd>::iterator iter = Snds.begin(); iter != Snds.end(); iter++) {
-		head.add_data(iter->name.c_str());
+		if (!can_construe_as_integer(iter->name.c_str()))
+		{
+			head.add_data(iter->name.c_str());
+		}
 	}
 
 	return head.next;
