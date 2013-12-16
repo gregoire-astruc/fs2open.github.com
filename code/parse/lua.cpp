@@ -1464,19 +1464,6 @@ ADE_VIRTVAR(BottomOffset, l_Font, "number", "The space (in pixels) this font ski
 	return ade_set_args(L, "i", fh->Get()->getBottomOffset());
 }
 
-ADE_FUNC(setSize, l_Font, "number", "Sets the size of this font.<br><b>Warning:</b> If you do this with a font which is not set to scaleable then this function will take longer.", "boolean", "true if succeeded, false otherwise")
-{
-	font_h *fh = NULL;
-	int newsize = -1;
-	if(!ade_get_args(L, "oi", l_Font.GetPtr(&fh), &newsize))
-		return ADE_RETURN_FALSE;
-	
-	if (!fh->isValid())
-		return ADE_RETURN_FALSE;
-
-	return ade_set_args(L, "b", fh->Get()->setSize(newsize));
-}
-
 ADE_FUNC(isValid, l_Font, NULL, "True if valid, false or nil if not", "boolean", "Detects whether handle is valid")
 {
 	font_h *fh;

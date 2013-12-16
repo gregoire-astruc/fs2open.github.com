@@ -116,6 +116,8 @@ class SCP_list : public std::list< T, SCP_vm_allocator< T > > { };
 
 typedef std::basic_string<char, std::char_traits<char>, SCP_vm_allocator<char> > SCP_string;
 
+typedef std::basic_string<wchar_t, std::char_traits<wchar_t>, SCP_vm_allocator<wchar_t> > SCP_wstring;
+
 typedef std::basic_stringstream<char, std::char_traits<char>, SCP_vm_allocator<char> > SCP_stringstream;
 
 template< typename T, typename U >
@@ -141,6 +143,7 @@ bool operator!=(const SCP_vm_allocator<T1>&, const SCP_vm_allocator<T2>&) throw(
 
 #else
 #define SCP_string std::string
+#define SCP_wstring std::wstring
 #define SCP_stringstream std::stringstream
 #define SCP_map std::map
 #define SCP_multimap std::multimap

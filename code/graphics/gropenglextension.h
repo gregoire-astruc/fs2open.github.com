@@ -76,7 +76,7 @@ extern ogl_function GL_EXT_Special[];
 #define OGL_ARB_FLOATING_POINT_TEXTURES		25
 #define OGL_ARB_DRAW_ELEMENTS_BASE_VERTEX	26
 
-#define NUM_OGL_EXTENSIONS					27
+#define NUM_OGL_EXTENSIONS					28
 
 
 // Functions
@@ -147,8 +147,10 @@ extern ogl_function GL_EXT_Special[];
 #define OGL_DRAW_RANGE_ELEMENTS_BASE_VERTEX			60
 #define OGL_DRAW_ELEMENTS_INSTANCED_BASE_VERTEX		61
 #define OGL_MULTI_DRAW_ELEMENTS_BASE_VERTEX			62
+#define OGL_BLEND_COLOR						63
+#define OGL_GET_SHADER_IV					64
 
-#define NUM_OGL_FUNCTIONS					63
+#define NUM_OGL_FUNCTIONS					65
 
 
 // special extensions/functions (OS specific, non-GL stuff)
@@ -163,8 +165,7 @@ extern ogl_function GL_EXT_Special[];
 void opengl_extensions_init();
 
 
-#define GLEXT_CALL(i, x) if (GL_Functions[i].function_ptr) \
-							((x)GL_Functions[i].function_ptr)
+#define GLEXT_CALL(i, x) ((GL_Functions[i].function_ptr) ? ((x)GL_Functions[i].function_ptr) : (x)NULL)
 
 // the same as GLEXT_CALL() except that it can be used with a cast or in an if statement
 // this doesn't do NULL ptr checking so you have to be careful with it!
@@ -246,6 +247,7 @@ typedef void (* glDrawRangeElementsProcPtr) (GLenum mode, GLuint start, GLuint e
 #define PFNGLDRAWRANGEELEMENTSBASEVERTEXPROC    glDrawRangeElementsBaseVertexProcPtr
 #define PFNGLDRAWELEMENTSINSTANCEDBASEVERTEXPROC glDrawElementsInstancedBaseVertexProcPtr
 #define PFNGLMULTIDRAWELEMENTSBASEVERTEXPROC    glMultiDrawElementsBaseVertexProcPtr
+#define PFNGLBLENDCOLORPROC						glBlendColorProcPtr
 #endif	// __APPLE__
 
 #define vglFogCoordfEXT					GLEXT_CALL( OGL_FOG_COORDF, PFNGLFOGCOORDFEXTPROC )
@@ -315,6 +317,8 @@ typedef void (* glDrawRangeElementsProcPtr) (GLenum mode, GLuint start, GLuint e
 #define vglDrawRangeElementsBaseVertex	GLEXT_CALL( OGL_DRAW_RANGE_ELEMENTS_BASE_VERTEX, PFNGLDRAWRANGEELEMENTSBASEVERTEXPROC )
 #define vglDrawElementsInstancedBaseVertex		GLEXT_CALL( OGL_DRAW_ELEMENTS_INSTANCED_BASE_VERTEX, PFNGLDRAWELEMENTSINSTANCEDBASEVERTEXPROC )
 #define vglMultiDrawElementsBaseVertex	GLEXT_CALL( OGL_MULTI_DRAW_ELEMENTS_BASE_VERTEX, PFNGLMULTIDRAWELEMENTSBASEVERTEXPROC )
+#define vglBlendColor					GLEXT_CALL( OGL_BLEND_COLOR, PFNGLBLENDCOLORPROC )
+#define vglGetShaderiv					GLEXT_CALL( OGL_GET_SHADER_IV, PFNGLGETSHADERIVPROC )
 
 // special extensions
 #define vwglSwapIntervalEXT			GLEXT_SPC_CALL( OGL_SPC_WGL_SWAP_INTERVAL, PFNWGLSWAPINTERVALEXTPROC )

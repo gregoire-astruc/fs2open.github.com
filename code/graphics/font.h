@@ -14,8 +14,8 @@
 
 #include "globalincs/pstypes.h"
 
-#include <FTGL/ftgl.h>
-
+#include <freetype-gl.h>
+#include <text-buffer.h>
 
 /**
  * @brief Enum to specify the type of a font
@@ -173,17 +173,6 @@ public:
      * @param	newOffset The new bottom offset for this font
      */
     void setBottomOffset(int newOffset);
-
-    /**
-     * @brief	Sets a new size for this font. This operation will fail for font types of type FontType::VFNT_FONT.
-     *
-     * @date	23.11.2011
-     *
-     * @param	newSize	Size of the new.
-     *
-     * @return	true if it succeeds, false if it fails.
-     */
-    virtual bool setSize(int newSize) = 0;
 };
 
 struct font;
@@ -245,17 +234,6 @@ public:
      * @param [out]	height	If non-null, the height.
      */
     virtual void getStringSize(const char *text, int textLen, int *width, int *height) const;
-
-    /**
-     * @brief	Sets the size of this font.
-     *
-     * Sets the size of this font but as VFNT fonts are raster fonts this will have no effect.
-     *
-     * @param	newSize	The new size.
-     *
-     * @return	always false, VFNT fonts are not scalable
-     */
-    virtual bool setSize(int newSize);
 };
 
 /**
@@ -266,7 +244,8 @@ public:
 class FTGLFont : public FSFont
 {
 private:
-    FTFont *ftglFont;		//<! The font pointer of the actual FTGL font
+    texture_font_t *ftglFont;		//<! The font pointer of the actual FTGL font
+	text_buffer_t *textBuffer;		//<! The font pointer of the actual FTGL font
     float yOffset;			//<! An offset to be applied to the y coordinate to compensate for mirroring the text
     FTGLFontType fontType;	//<! The type of font this is
     float lineWidth;		//<! The width for the lines when the type of FTGLFontType::Outline
@@ -286,7 +265,7 @@ public:
      * @param ftglFont The FTGL font pointer
      * @param type The type this font has
      */
-    FTGLFont(FTFont *ftglFont, FTGLFontType type);
+	FTGLFont(text_buffer_t* textBuffer, texture_font_t *ftglFont, FTGLFontType type);
 
     /**
      * @brief Deallocates the FTGL font pointer
@@ -299,7 +278,9 @@ public:
      * @brief Gets the FTGL font pointer
      * @return The font pointer
      */
-    FTFont *getFontData();
+	texture_font_t *getFontData() { return ftglFont; }
+
+	text_buffer_t *getTextBuffer() { return textBuffer; }
 
     /**
      * Gets the Y offset to be applied when rendering text
@@ -369,7 +350,7 @@ public:
      */
     float getTabWidth() const;
 
-    int getTokenLength(const char *string, int length = -1) const;
+    size_t getTokenLength(const char *string, int length = -1) const;
 
 	font* getSpecialCharacterFont() const
 	{
@@ -390,16 +371,6 @@ public:
      * @param width The new line width
      */
     void setLineWidth(float width);
-
-    /**
-     * @brief Sets a new size
-     *
-     * Sets the size of this font to a new value.
-     * @warning This function may cause performance problems depending on the font type
-     * @param newSize The new size value
-     * @return True if size was set, false otherwise
-     */
-    virtual bool setSize(int newSize);
 
     /**
      * @brief Sets the width of a tab character
@@ -427,7 +398,7 @@ public:
 
 struct TrueTypeFontData
 {
-    int size;		//<! Size of allocated memory
+    size_t size;		//<! Size of allocated memory
     ubyte *data;	//<! Allocated font data
 };
 
@@ -589,7 +560,7 @@ public:
 	* @param type The type of the font
 	* @return A FTGLFont pointer or @c NULL when font could not be loaded
 	*/
-	static FTGLFont *loadFTGLFont(const SCP_string& fileName, int fontSize = 16, FTGLFontType type = TEXTURE);
+	static FTGLFont *loadFTGLFont(const SCP_string& fileName, float fontSize = 12.0f, FTGLFontType type = TEXTURE);
 
 	/**
 	* @brief Loads an old VFNT font

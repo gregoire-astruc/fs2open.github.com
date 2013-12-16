@@ -7,13 +7,6 @@
  *
 */ 
 
-
-
-#ifdef _WIN32
-#include <windows.h>
-#include <windowsx.h>
-#endif
-
 #include <stdio.h>
 #include <stdarg.h>
 #include <string>
@@ -29,6 +22,11 @@
 #include "parse/parselo.h"
 #include "globalincs/systemvars.h"
 #include "globalincs/def_files.h"
+#include "graphics/gropenglextension.h"
+
+#include <text-buffer.h>
+#include <callbacks.h>
+#include <ext_funcs.h>
 
 SCP_map<SCP_string, TrueTypeFontData> FontManager::allocatedData;
 SCP_map<SCP_string, font*> FontManager::vfntFontData;
@@ -271,7 +269,7 @@ VFNTFont *FontManager::loadVFNTFont(const SCP_string& name)
 	}
 }
 
-FTGLFont *FontManager::loadFTGLFont(const SCP_string& fileName, int fontSize, FTGLFontType type)
+FTGLFont *FontManager::loadFTGLFont(const SCP_string& fileName, float fontSize, FTGLFontType type)
 {
 	TrueTypeFontData data;
 	
@@ -289,7 +287,7 @@ FTGLFont *FontManager::loadFTGLFont(const SCP_string& fileName, int fontSize, FT
 			return NULL;
 		}
 		ubyte *fontData = NULL;
-		int size = cfilelength(fontFile);
+		size_t size = cfilelength(fontFile);
 
 		fontData = new ubyte[size];
 
@@ -299,7 +297,7 @@ FTGLFont *FontManager::loadFTGLFont(const SCP_string& fileName, int fontSize, FT
 			return NULL;
 		}
 
-		if (!cfread(fontData, size, 1, fontFile))
+		if (!cfread(fontData, (int) size, 1, fontFile))
 		{
 			mprintf(("Error while reading font data from \"%s\"", fileName.c_str()));
 			delete[] fontData;
@@ -314,59 +312,108 @@ FTGLFont *FontManager::loadFTGLFont(const SCP_string& fileName, int fontSize, FT
 		allocatedData[fileName] = data;
 	}
 
-	FTFont *fnt = NULL;
+	text_buffer_t *text_buffer = text_buffer_new(LCD_FILTERING_ON, "text-vert.sdr", "text-frag.sdr");
 
-	switch (type)
+	if (text_buffer == NULL)
 	{
-	case PIXMAP:
-		fnt = new FTPixmapFont(data.data, data.size);
-		break;
-	case POLYGON:
-		fnt = new FTPolygonFont(data.data, data.size);
-		break;
-	case OUTLINE:
-		fnt = new FTOutlineFont(data.data, data.size);
-		break;
-	case TEXTURE:
-		fnt = new FTTextureFont(data.data, data.size);
-		break;
-	default:
-		Error(LOCATION, "Invalid FTGL font type passed to loadFTGLFont!");
-		fnt = new FTTextureFont(data.data, data.size);
-		break;
-	}
-
-	if (fnt == NULL)
-	{
-		mprintf(("Couldn't allocated memory for font object for file \"%s\"", fileName.c_str()));
 		return NULL;
 	}
 
-	if (fnt->Error())
+	texture_font_t* font = texture_font_new_from_memory(text_buffer->manager->atlas, fontSize, data.data, data.size);
+
+	if (font == NULL)
 	{
-		mprintf(("Font loading of font \"%s\" ended with errors! Error code is %d.", fileName.c_str(), fnt->Error()));
-		delete fnt;
+		text_buffer_delete(text_buffer);
 		return NULL;
 	}
 
-	if (!fnt->FaceSize(fontSize))
-	{
-		mprintf(("Couldn't set face size of font \"%s\" to %d!", fileName.c_str(), fontSize));
-		delete fnt;
-		return NULL;
-	}
-	
-	fnt->UseDisplayList(true);
-
-	FTGLFont *fsFont = new FTGLFont(fnt, type);
+	FTGLFont *fsFont = new FTGLFont(text_buffer, font, type);
 
 	fonts.push_back(fsFont);
 
 	return fsFont;
 }
 
+void freetypeMessageCallback(message_type_t type, const char* message)
+{
+	switch (type)
+	{
+	case MESSAGE_ERROR:
+		mprintf(("Font error: %s", message));
+		break;
+	case MESSAGE_WARNING:
+		mprintf(("Font warning: %s", message));
+		break;
+	case MESSAGE_INFO:
+		mprintf(("Font info: %s", message));
+		break;
+	}
+}
+
+int freetypeFilesystemCallback(const char* filename, void* data, size_t* size)
+{
+	if (data == NULL && size == NULL)
+	{
+		return NULL;
+	}
+
+	CFILE* file = cfopen(filename, "r");
+
+	if (!file)
+	{
+		return 0;
+	}
+
+	size_t fileSize = cfilelength(file);
+	if (size != NULL)
+	{
+		*size = fileSize;
+	}
+
+	if (data != NULL)
+	{
+		// Read one element with the size of the whole file
+		cfread(data, fileSize, 1, file);
+	}
+
+	cfclose(file);
+
+	return 1;
+}
+
 void FontManager::init()
 {
+	freetype_gl_set_message_callback(freetypeMessageCallback);
+	freetype_gl_set_filesystem_callback(freetypeFilesystemCallback);
+
+	freetype_gl_init_gl_func(FUNC_GL_DELETEBUFFERS, vglDeleteBuffersARB);
+	freetype_gl_init_gl_func(FUNC_GL_GENBUFFERS, vglGenBuffersARB);
+	freetype_gl_init_gl_func(FUNC_GL_BINDBUFFER, vglBindBufferARB);
+	freetype_gl_init_gl_func(FUNC_GL_BUFFERDATA, vglBufferDataARB);
+	freetype_gl_init_gl_func(FUNC_GL_BUFFERSUBDATA, vglBufferSubDataARB);
+
+	freetype_gl_init_gl_func(FUNC_GL_GETATTRIBLOCATION, vglGetAttribLocationARB);
+	freetype_gl_init_gl_func(FUNC_GL_ENABLEVERTEXATTRIBARRAY, vglEnableVertexAttribArrayARB);
+	freetype_gl_init_gl_func(FUNC_GL_VERTEXATTRIBPOINTER, vglVertexAttribPointerARB);
+
+	freetype_gl_init_gl_func(FUNC_GL_GETUNIFORMLOCATION, vglGetUniformLocationARB);
+	freetype_gl_init_gl_func(FUNC_GL_BLENDCOLOR, vglBlendColor);
+	freetype_gl_init_gl_func(FUNC_GL_USEPROGRAM, vglUseProgramObjectARB); // According to the internetz this should be the same
+	freetype_gl_init_gl_func(FUNC_GL_UNIFORM1F, vglUniform1fARB);
+	freetype_gl_init_gl_func(FUNC_GL_UNIFORM3F, vglUniform3fARB);
+
+	freetype_gl_init_gl_func(FUNC_GL_CREATESHADER, vglCreateShaderObjectARB); // According to the internetz this should be the same
+	freetype_gl_init_gl_func(FUNC_GL_SHADERSOURCE, vglShaderSourceARB);
+	freetype_gl_init_gl_func(FUNC_GL_COMPILESHADER, vglCompileShaderARB);
+	freetype_gl_init_gl_func(FUNC_GL_GETSHADERIV, vglGetShaderiv);
+	freetype_gl_init_gl_func(FUNC_GL_GETSHADERINFOLOG, vglGetShader);
+	freetype_gl_init_gl_func(FUNC_GL_DELETESHADER, vglGenBuffersARB);
+	freetype_gl_init_gl_func(FUNC_GL_CREATEPROGRAM, vglGenBuffersARB);
+	freetype_gl_init_gl_func(FUNC_GL_ATTACHSHADER, vglGenBuffersARB);
+	freetype_gl_init_gl_func(FUNC_GL_LINKPROGRAM, vglGenBuffersARB);
+	freetype_gl_init_gl_func(FUNC_GL_GETPROGRAMIV, vglGenBuffersARB);
+	freetype_gl_init_gl_func(FUNC_GL_GETPROGRAMINFOLOG, vglGenBuffersARB);
+	freetype_gl_init_gl_func(FUNC_GL_DELETEPROGRAM, vglGenBuffersARB);
 }
 
 void FontManager::close()
@@ -488,22 +535,13 @@ void VFNTFont::getStringSize(const char *text, int textLen, int *w1, int *h1) co
 		*w1 = longest_width;
 }
 
-bool VFNTFont::setSize(int newSize)
+FTGLFont::FTGLFont(text_buffer_t* textBuffer, texture_font_t *ftglFont, FTGLFontType type) :
+ftglFont(ftglFont), textBuffer(textBuffer), lineWidth(1.0f)
 {
-	Warning(LOCATION, "Setting size is not supported by VFNT bitmap fonts!");
-
-	return false;
-}
-
-FTGLFont::FTGLFont(FTFont *ftglFont, FTGLFontType type) : FSFont(), separators("\n\t")
-{
-	Assertion( ftglFont != NULL, "Invalid font passed to constructor of FTGLFont!");
-
-	this->ftglFont = ftglFont;
-	this->fontType = type;
-	this->lineWidth = 1.0f;
-
-	this->yOffset = ftglFont->Ascender() + ftglFont->Descender();
+	Assertion(ftglFont != NULL, "Invalid font passed to constructor of FTGLFont!");
+	Assertion(textBuffer != NULL, "Invalid font passed to constructor of FTGLFont!");
+	
+	this->yOffset = ftglFont->ascender + ftglFont->descender;
 
 	setTabWidth(1.0f);
 }
@@ -521,12 +559,7 @@ FontType FTGLFont::getType() const
 int FTGLFont::getTextHeight() const
 {
 	// Never return a value that is less than the actual height!
-	return fl2i(ceil(ftglFont->Ascender()));
-}
-
-FTFont *FTGLFont::getFontData()
-{
-	return this->ftglFont;
+	return fl2i(ceilf(ftglFont->height));
 }
 
 float FTGLFont::getYOffset() const
@@ -536,25 +569,26 @@ float FTGLFont::getYOffset() const
 
 void FTGLFont::getStringSize(const char *text, int textLen, int *width, int *height) const
 {		
-	FTFont *font = ftglFont;
 	bool checkLength = textLen >= 0;
 
 	float w = 0.0f;
 	float h = i2fl(this->getHeight());
 
-	int tokenLength;
+	size_t tokenLength;
 
 	const char *s = text;
 	bool specialChar = false;
 	float lineWidth = 0.0f;
 
+	SCP_wstring convertBuffer;
+
 	while ((tokenLength = this->getTokenLength(s, textLen)) > 0)
 	{
 		if (checkLength)
 		{
-			if (tokenLength > textLen)
+			if (tokenLength > (size_t) textLen)
 			{
-				tokenLength = textLen;
+				tokenLength = (size_t) textLen;
 			}
 		}
 
@@ -591,7 +625,19 @@ void FTGLFont::getStringSize(const char *text, int textLen, int *width, int *hei
 
 		if (!specialChar)
 		{
-			lineWidth += font->Advance(s, tokenLength);
+			// Don't create too much overhead here although the
+			// documentation says that reserve() will probably optimize it anyway
+			if (tokenLength > convertBuffer.capacity())
+			{
+				convertBuffer.reserve(tokenLength);
+			}
+
+			mbstowcs(&convertBuffer[0], text, tokenLength);
+
+			float width;
+			texture_font_measure(ftglFont, 0.0f, convertBuffer.c_str(), tokenLength, &width, NULL);
+
+			lineWidth += width;
 		}
 		
 		w = MAX(w, lineWidth);
@@ -654,11 +700,11 @@ float FTGLFont::getTabWidth() const
 	return this->tabWidth;
 }
 
-int FTGLFont::getTokenLength(const char *string, int maxLength) const
+size_t FTGLFont::getTokenLength(const char *string, int maxLength) const
 {
 	Assert( string != NULL );
 
-	int length = -1;
+	size_t length = 0;
 
 	if (maxLength < 0)
 	{
@@ -695,12 +741,12 @@ int FTGLFont::getTokenLength(const char *string, int maxLength) const
 		length = strlen(string);
 	}
 
-	if (length > maxLength)
+	if (length > (size_t) maxLength)
 	{
-		length = maxLength;
+		length = (size_t) maxLength;
 	}
 
-	for (int i = 0; i < length; i++)
+	for (size_t i = 0; i < length; i++)
 	{
 		if (string[i] >= Lcl_special_chars || string[i] < 0)
 		{
@@ -710,19 +756,6 @@ int FTGLFont::getTokenLength(const char *string, int maxLength) const
 	}
 
 	return length;
-}
-
-bool FTGLFont::setSize(int newSize)
-{
-	if (!ftglFont->FaceSize(newSize))
-	{
-		mprintf(("Setting size of font \"%s\" to %d failed! Error code: %d", getName().c_str(), newSize, ftglFont->Error()));
-		return false;
-	}
-
-	this->yOffset = ftglFont->Ascender() + ftglFont->Descender();
-
-	return true;
 }
 
 void FTGLFont::setLineWidth(float width)
@@ -740,7 +773,10 @@ void FTGLFont::setTabWidth(float spaceNum)
 {
 	Assert( spaceNum > 0.0f );
 
-	this->tabWidth = this->ftglFont->Advance(" ") * spaceNum;
+	float width;
+	texture_font_measure(ftglFont, 0.0f, L" ", 1, &width, NULL);
+
+	this->tabWidth = width * spaceNum;
 }
 
 FSFont::FSFont() : offsetBottom(0), offsetTop(0), name(SCP_string("<Invalid>"))
@@ -1020,7 +1056,7 @@ FTGLFontType parse_ftgl_type()
 
 void parse_ftgl_font(const SCP_string& fontFilename)
 {
-	int size = 8;
+	float size = 8.0f;
 	FTGLFontType type = TEXTURE;
 	SCP_string fontStr;
 	bool hasName = false;
@@ -1034,7 +1070,7 @@ void parse_ftgl_font(const SCP_string& fontFilename)
 
 	if (optional_string("+Size:"))
 	{
-		stuff_int(&size);
+		stuff_float(&size);
 
 		if (size <= 0)
 		{

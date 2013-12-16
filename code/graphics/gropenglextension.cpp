@@ -150,7 +150,9 @@ ogl_extension GL_Extensions[NUM_OGL_EXTENSIONS] =
 	{ false, false, 1, { "GL_ARB_texture_float" }, 0, { NULL } },
 
 	{ false, false, 1, { "GL_ARB_draw_elements_base_vertex" }, 4, { "glDrawElementsBaseVertex", "glDrawRangeElementsBaseVertex", 
-		"glDrawElementsInstancedBaseVertex", "glMultiDrawElementsBaseVertex" } }
+		"glDrawElementsInstancedBaseVertex", "glMultiDrawElementsBaseVertex" } },
+
+	{ false, false, 1, { "GL_ARB_imaging" }, 1, { "glBlendColor" } },
 };
 
 // ogl_funcion is:
@@ -226,7 +228,9 @@ ogl_function GL_Functions[NUM_OGL_FUNCTIONS] =
 	{ "glDrawElementsBaseVertex", 0	},
 	{ "glDrawRangeElementsBaseVertex", 0 }, 
 	{ "glDrawElementsInstancedBaseVertex", 0 },
-	{ "glMultiDrawElementsBaseVertex", 0 }
+	{ "glMultiDrawElementsBaseVertex", 0 },
+	{ "glBlendColor", 0 },
+	{ "glGetShaderiv", 0 }
 };
 
 // special extensions (only special functions are supported at the moment)
