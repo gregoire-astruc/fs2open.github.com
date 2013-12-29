@@ -32,7 +32,7 @@
 #include "nebula/neb.h"
 #include "graphics/gropenglshader.h"
 #include "graphics/gropenglpostprocessing.h"
-#include "freespace2/freespace.h"
+#include "freespace.h"
 #include "localization/localize.h"
 
 GLuint Scene_framebuffer;

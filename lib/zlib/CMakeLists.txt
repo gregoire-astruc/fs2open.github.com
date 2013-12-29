@@ -1,0 +1,69 @@
+
+IF(NOT FSO_BUILD_INCLUDED_LIBS)
+	FIND_PACKAGE(ZLIB QUIET)
+ENDIF(NOT FSO_BUILD_INCLUDED_LIBS)
+
+IF (FSO_BUILD_INCLUDED_LIBS OR NOT ZLIB_FOUND)
+	MESSAGE(STATUS "Could not find zlib libraries on system, using included source")
+	
+	SET(ZLIB_SOURCES
+		adler32.c
+		compress.c
+		crc32.c
+		deflate.c
+		infback.c
+		inffast.c
+		inflate.c
+		inftrees.c
+		trees.c
+		uncompr.c
+		zutil.c
+		crc32.h
+		deflate.h
+		inffast.h
+		inffixed.h
+		inflate.h
+		inftrees.h
+		trees.h
+		zconf.h
+		zlib.h
+		zutil.h)
+
+	ADD_LIBRARY(zlib ${ZLIB_SOURCES})
+	
+	INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+	IF(BUILD_SHARED_LIBS)
+		ADD_DEFINITIONS(-DZLIB_DLL)
+	ENDIF(BUILD_SHARED_LIBS)
+	
+	set_target_properties(zlib
+		PROPERTIES
+			FOLDER "3rdparty"
+	)
+	
+	IF(MSVC)
+		set_target_properties(zlib
+			PROPERTIES
+				STATIC_LIBRARY_FLAGS "/LTCG"
+		)
+	ENDIF(MSVC)
+	
+	SET(ZLIB_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR} CACHE INTERNAL "ZLIB include directory")
+	
+	SET(ZLIB_LIBRARIES zlib CACHE INTERNAL "ZLIB library")
+
+	IF(FSO_COPY_EXE AND BUILD_SHARED_LIBS)
+		INSTALL(
+			TARGETS zlib
+			RUNTIME DESTINATION ${BINARY_DESTINATION}
+			LIBRARY DESTINATION ${BINARY_DESTINATION}
+			CONFIGURATIONS Debug Release
+			)
+	ENDIF(FSO_COPY_EXE AND BUILD_SHARED_LIBS)
+ELSE(FSO_BUILD_INCLUDED_LIBS OR NOT ZLIB_FOUND)
+	INCLUDE(util)
+
+	MAKE_CACHE_INTERNAL(ZLIB_INCLUDE_DIR)
+	MAKE_CACHE_INTERNAL(ZLIB_LIBRARIES)
+ENDIF(FSO_BUILD_INCLUDED_LIBS OR NOT ZLIB_FOUND)

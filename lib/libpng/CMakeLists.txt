@@ -1,0 +1,80 @@
+
+IF(NOT FSO_BUILD_INCLUDED_LIBS)
+	FIND_PACKAGE(PNG QUIET)
+ENDIF(NOT FSO_BUILD_INCLUDED_LIBS)
+
+IF (FSO_BUILD_INCLUDED_LIBS OR NOT PNG_FOUND)
+	MESSAGE(STATUS "Could not find png libraries on system, using included source")
+	
+	SET(PNG_SOURCES
+		png.c
+		pngerror.c
+		pngget.c
+		pngmem.c
+		pngpread.c
+		pngread.c
+		pngrio.c
+		pngrtran.c
+		pngrutil.c
+		pngset.c
+		pngtrans.c
+		pngwio.c
+		pngwrite.c
+		pngwtran.c
+		pngwutil.c
+		png.h
+		pngconf.h
+		pngdebug.h
+		pnginfo.h
+		pnglibconf.h
+		pngpriv.h
+		pngstruct.h)
+
+	ADD_LIBRARY(png ${PNG_SOURCES})
+	
+	INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+	IF(BUILD_SHARED_LIBS)
+		ADD_DEFINITIONS(-DPNG_BUILD_DLL)
+		ADD_DEFINITIONS(-DZLIB_DLL)
+	ENDIF(BUILD_SHARED_LIBS)
+	
+	set_target_properties(png
+		PROPERTIES
+			COMPILE_DEFINITIONS _CRT_SECURE_NO_WARNINGS
+			COMPILE_DEFINITIONS_DEBUG PNG_DEBUG=1
+	)
+
+	set_target_properties(png
+		PROPERTIES
+			FOLDER "3rdparty"
+	)
+	
+	IF(MSVC)
+		set_target_properties(png
+			PROPERTIES
+				STATIC_LIBRARY_FLAGS "/LTCG"
+		)
+	ENDIF(MSVC)
+	
+	INCLUDE_DIRECTORIES(${ZLIB_INCLUDE_DIR})
+	target_link_libraries(png ${ZLIB_LIBRARIES})
+	
+	SET(PNG_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR} CACHE INTERNAL "PNG include directory")
+	
+	SET(PNG_LIBRARIES png ${ZLIB_LIBRARIES} CACHE INTERNAL "PNG library")
+
+	IF(FSO_COPY_EXE AND BUILD_SHARED_LIBS)
+		INSTALL(
+			TARGETS png
+			RUNTIME DESTINATION ${BINARY_DESTINATION}
+			LIBRARY DESTINATION ${BINARY_DESTINATION}
+			CONFIGURATIONS Debug Release
+			)
+	ENDIF(FSO_COPY_EXE AND BUILD_SHARED_LIBS)
+ELSE(FSO_BUILD_INCLUDED_LIBS OR NOT PNG_FOUND)
+	INCLUDE(util)
+
+	MAKE_CACHE_INTERNAL(PNG_INCLUDE_DIR)
+	MAKE_CACHE_INTERNAL(PNG_LIBRARIES)
+ENDIF(FSO_BUILD_INCLUDED_LIBS OR NOT PNG_FOUND)
