@@ -7,8 +7,8 @@ option(MSVC_USE_RUNTIME_DLL "Use the dynamically linked version of the runtime" 
 MARK_AS_ADVANCED(FORCE MSVC_USE_RUNTIME_DLL)
 
 # Base
-set(CMAKE_C_FLAGS "/MP /GS- /analyze- /Zc:wchar_t /errorReport:prompt /WX- /Zc:forScope /Gd /EHsc /nologo")
-set(CMAKE_CXX_FLAGS "/MP  /GS- /analyze- /Zc:wchar_t /errorReport:prompt /WX- /Zc:forScope /Gd /EHsc /nologo")
+set(CMAKE_C_FLAGS "/GS- /analyze- /Zc:wchar_t /errorReport:prompt /WX- /Zc:forScope /Gd /EHsc /nologo")
+set(CMAKE_CXX_FLAGS "/GS- /analyze- /Zc:wchar_t /errorReport:prompt /WX- /Zc:forScope /Gd /EHsc /nologo")
 set(CMAKE_EXE_LINKER_FLAGS "/MANIFEST /DYNAMICBASE:NO /MAPINFO:EXPORTS /SAFESEH:NO /MANIFESTUAC:NO /ERRORREPORT:PROMPT /NOLOGO /FORCE:MULTIPLE")
 
 IF (NOT FSO_INSTRUCTION_SET STREQUAL "")
@@ -47,6 +47,8 @@ IF (NOT FSO_INSTRUCTION_SET STREQUAL "")
 	set(CMAKE_CXX_FLAGS_DEBUG_SSE "${CMAKE_CXX_FLAGS_DEBUG} /arch:${FSO_INSTRUCTION_SET}")
 	set(CMAKE_EXE_LINKER_FLAGS_DEBUG_SSE "${CMAKE_EXE_LINKER_FLAGS_DEBUG}")
 ENDIF(NOT FSO_INSTRUCTION_SET STREQUAL "")
+
+INCLUDE(MSVCMultipleProcessCompile)
 
 add_definitions(
 	-D_CRT_SECURE_NO_DEPRECATE

@@ -34,8 +34,6 @@ enum FontType
  */
 enum FTGLFontType
 {
-    PIXMAP,		//!< A font which gets painted directly onto the viewport
-    POLYGON,	//!< A font which consists of polygons
     OUTLINE,	//!< A font where only the outlines of the characters are visible
     TEXTURE,	//!< A font where each character gets saved as a texture. Gives the best visual results but changing size is expensive
 };
@@ -55,7 +53,6 @@ private:
 protected:
     int offsetTop;		//!< The offset at the top of a line of text
     int offsetBottom;	//!< The offset at the bottom of a line of text
-
 
 public:
 

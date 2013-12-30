@@ -139,6 +139,8 @@ SET(file_root_def_files
 	${CMAKE_CURRENT_SOURCE_DIR}/def_files/post-v.sdr
 	${CMAKE_CURRENT_SOURCE_DIR}/def_files/post_processing.tbl
 	${CMAKE_CURRENT_SOURCE_DIR}/def_files/species_defs.tbl
+	${CMAKE_CURRENT_SOURCE_DIR}/def_files/text-frag.sdr
+	${CMAKE_CURRENT_SOURCE_DIR}/def_files/text-vert.sdr
 	${CMAKE_CURRENT_SOURCE_DIR}/def_files/video-f.sdr
 	${CMAKE_CURRENT_SOURCE_DIR}/def_files/video-v.sdr)
 

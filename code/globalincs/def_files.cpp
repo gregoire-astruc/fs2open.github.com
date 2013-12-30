@@ -66,6 +66,10 @@ typedef struct def_file
 
 #include "def_files/species_defs.tbl.h"
 
+#include "def_files/text-frag.sdr.h"
+
+#include "def_files/text-vert.sdr.h"
+
 #include "def_files/video-f.sdr.h"
 
 #include "def_files/video-v.sdr.h"
@@ -95,13 +99,15 @@ def_file Default_files[] =
 	{ "post_processing.tbl",	Default_post_processing_tbl},
 	{ "species_defs.tbl",		Default_species_defs_tbl},
 	{ "video-f.sdr",			Default_video_f_sdr},
-	{ "video-v.sdr",			Default_video_v_sdr},
+	{ "video-v.sdr",			Default_video_v_sdr },
+	{ "text-frag.sdr",			Default_text_frag_sdr },
+	{ "text-vert.sdr",			Default_text_vert_sdr },
 };
 
 static int Num_default_files = sizeof(Default_files) / sizeof(def_file);
 //**********
 
-char *defaults_get_file(char *filename)
+char *defaults_get_file(const char *filename, bool optional)
 {
 	for(int i = 0; i < Num_default_files; i++)
 	{
@@ -111,8 +117,12 @@ char *defaults_get_file(char *filename)
 		}
 	}
 
-	//WMC - This is really bad, because it means we have a default table missing.
-	Error(LOCATION, "Default table '%s' missing from executable - contact a coder.", filename);
+	if (!optional)
+	{
+		//WMC - This is really bad, because it means we have a default table missing.
+		Error(LOCATION, "Default table '%s' missing from executable - contact a coder.", filename);
+	}
+
 	return NULL;
 }
 

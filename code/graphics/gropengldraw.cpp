@@ -35,6 +35,8 @@
 #include "freespace.h"
 #include "localization/localize.h"
 
+#include <mat4.h>
+
 GLuint Scene_framebuffer;
 GLuint Scene_color_texture;
 GLuint Scene_luminance_texture;
@@ -546,7 +548,190 @@ void gr_opengl_string(int sx, int sy, const char *s, bool resize)
 	}
 	else if (currentFont->getType() == FTGL_FONT)
 	{
-		
+		bool do_resize;
+		if (resize && (gr_screen.custom_size || (gr_screen.rendering_to_texture != -1))) {
+			do_resize = true;
+		}
+		else {
+			do_resize = false;
+		}
+
+		int clip_left = ((do_resize) ? gr_screen.clip_left_unscaled : gr_screen.clip_left);
+		int clip_right = ((do_resize) ? gr_screen.clip_right_unscaled : gr_screen.clip_right);
+		int clip_top = ((do_resize) ? gr_screen.clip_top_unscaled : gr_screen.clip_top);
+		int clip_bottom = ((do_resize) ? gr_screen.clip_bottom_unscaled : gr_screen.clip_bottom);
+
+		FTGLFont *ftglFont = static_cast<FTGLFont*>(currentFont);
+		texture_font_t *font = ftglFont->getFontData();
+		text_buffer_t *buffer = ftglFont->getTextBuffer();
+
+		SCP_wstring convertBuffer;
+		convertBuffer.reserve(strlen(s));
+		mbstowcs(&convertBuffer[0], s, convertBuffer.capacity());
+
+		int x, y;
+		int yOffset = 0;
+		int xOffset = 0;
+
+		float scale_x = 1.0f;
+		float scale_y = 1.0f;
+
+		if (do_resize)
+		{
+			gr_resize_screen_posf(&scale_x, &scale_y);
+		}
+
+		bool doRender = true;
+
+		x = sx;
+		GL_state.SetTextureSource(TEXTURE_SOURCE_NO_FILTERING);
+
+		GL_state.SetAlphaBlendMode(ALPHA_BLEND_ALPHA_BLEND_ALPHA);
+		GL_state.SetZbufferType(ZBUFFER_TYPE_NONE);
+
+		markup_t markup;
+		memset(&markup, 0, sizeof(markup));
+		markup.font = font;
+
+		vec4 color;
+		if (gr_screen.current_color.is_alphacolor) {
+			color.color1.r = gr_screen.current_color.red;
+			color.color1.g = gr_screen.current_color.green;
+			color.color1.b = gr_screen.current_color.blue;
+			color.color1.a = gr_screen.current_color.alpha;
+		}
+		else {
+			color.color1.r = gr_screen.current_color.red;
+			color.color1.g = gr_screen.current_color.green;
+			color.color1.b = gr_screen.current_color.blue;
+			color.color1.a = 1.0f;
+		}
+		markup.foreground_color = color;
+
+		GLboolean cull_face = GL_state.CullFace(GL_FALSE);
+
+		int tokenLength;
+
+		const char *text = s;
+		bool specialChar = false;
+
+		mat4 model;
+		glGetFloatv(GL_MODELVIEW_MATRIX, ptr)
+
+		while ((tokenLength = ftglFont->getTokenLength(text)) > 0)
+		{
+			doRender = true;
+			specialChar = false;
+			if (tokenLength == 1)
+			{
+				// We may have encoutered a special character
+				switch (*text)
+				{
+				case '\n':
+					doRender = false;
+
+					yOffset += ftglFont->getHeight();
+					xOffset = 0;
+					break;
+				case '\t':
+					doRender = false;
+
+					xOffset += fl2i(ceil(ftglFont->getTabWidth()));
+					break;
+				default:
+					if (*text >= Lcl_special_chars || *text < 0)
+					{
+						specialChar = true;
+					}
+					else
+					{
+						doRender = true;
+					}
+
+					break;
+				}
+			}
+
+			if (specialChar)
+			{
+				gr_opengl_string_old(sx + xOffset, sy + yOffset, text, resize,
+					ftglFont->getSpecialCharacterFont(), ftglFont->getTopOffset(),
+					ftglFont->getHeight(), ftglFont->getTextHeight(), tokenLength);
+
+				int width;
+				int spacing;
+				font_get_char_width_old(ftglFont->getSpecialCharacterFont(), *text, '\0', &width, &spacing);
+
+				xOffset += spacing;
+			}
+			else if (doRender)
+			{
+				y = sy + yOffset;
+
+				if (sx == 0x8000)
+				{
+					x = get_centered_x(text);
+				}
+				else
+				{
+					x = sx + xOffset;
+				}
+
+				if ((x + ftglFont->getStringWidth(text, tokenLength)) < clip_left)
+				{
+					doRender = false;
+				}
+
+				if ((y + ftglFont->getHeight()) < clip_top)
+				{
+					doRender = false;
+				}
+
+				if (x > clip_right)
+				{
+					doRender = false;
+				}
+
+				if (y > clip_bottom)
+				{
+					doRender = false;
+				}
+
+				x += ((do_resize) ? gr_screen.offset_x_unscaled : gr_screen.offset_x);
+				y += ((do_resize) ? gr_screen.offset_y_unscaled : gr_screen.offset_y) + currentFont->getTopOffset();
+
+				if (do_resize)
+				{
+					gr_resize_screen_pos(&x, &y);
+				}
+
+				if (doRender && tokenLength > 0)
+				{
+					//glScalef(scale_x, -scale_y, 1.0f);
+
+					// This will give us the index into the wchar_t array
+					int index = text - s;
+
+					vec2 pen;
+					pen.coords.x = i2fl(x);
+					pen.coords.y = i2fl(y) + ftglFont->getYOffset();
+
+					text_buffer_add_text(buffer, &pen, &markup, &convertBuffer[index], tokenLength);
+
+					xOffset += static_cast<int>(pen.coords.x - i2fl(x));
+				}
+			}
+
+			text = text + tokenLength;
+		}
+
+		glPushAttrib(GL_ENABLE_BIT);
+		//text_buffer_render(buffer);
+		glPopAttrib();
+
+		text_buffer_clear(buffer);
+
+		GL_state.CullFace(cull_face);
 	}
 	else
 	{

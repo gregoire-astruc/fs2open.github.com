@@ -131,10 +131,11 @@ ogl_extension GL_Extensions[NUM_OGL_EXTENSIONS] =
 	{ false, false, 1, { "GL_ARB_shading_language_100" }, 0, { NULL } },
 
 	// shader objects and program object management
-	{ false, false, 1, { "GL_ARB_shader_objects" }, 18, { "glDeleteObjectARB", "glCreateShaderObjectARB", "glShaderSourceARB",
+	{ false, false, 1, { "GL_ARB_shader_objects" }, 24, { "glDeleteObjectARB", "glCreateShaderObjectARB", "glShaderSourceARB",
 		"glCompileShaderARB", "glGetObjectParameterivARB", "glGetInfoLogARB", "glCreateProgramObjectARB",
 		"glAttachObjectARB", "glLinkProgramARB", "glUseProgramObjectARB", "glValidateProgramARB", "glGetUniformLocationARB",
-		"glGetUniformivARB", "glUniform1fARB", "glUniform2fARB", "glUniform3fARB", "glUniform1iARB", "glUniformMatrix4fvARB" } },
+		"glGetUniformivARB", "glUniform1fARB", "glUniform2fARB", "glUniform3fARB", "glUniform1iARB", "glUniformMatrix4fvARB",
+		"glGetProgramiv", "glGetProgramInfoLog", "glDeleteProgram", "glGetShaderiv", "glGetShaderInfoLog", "glDeleteShader" } },
 
 	// programmable vertex level processing
 	// some of functions are provided by GL_ARB_vertex_program
@@ -230,7 +231,12 @@ ogl_function GL_Functions[NUM_OGL_FUNCTIONS] =
 	{ "glDrawElementsInstancedBaseVertex", 0 },
 	{ "glMultiDrawElementsBaseVertex", 0 },
 	{ "glBlendColor", 0 },
-	{ "glGetShaderiv", 0 }
+	{ "glGetShaderiv", 0 },
+	{ "glGetShaderInfoLog", 0 },
+	{ "glDeleteShader", 0 },
+	{ "glGetProgramiv", 0 },
+	{ "glGetProgramInfoLog", 0 },
+	{ "glDeleteProgram", 0 }
 };
 
 // special extensions (only special functions are supported at the moment)

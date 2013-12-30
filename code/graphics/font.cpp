@@ -357,11 +357,30 @@ int freetypeFilesystemCallback(const char* filename, void* data, size_t* size)
 		return NULL;
 	}
 
-	CFILE* file = cfopen(filename, "r");
+	CFILE* file = cfopen(filename, "r", CFILE_NORMAL, CF_TYPE_ANY);
 
 	if (!file)
 	{
-		return 0;
+		// Try the default files
+		char* fileData = defaults_get_file(const_cast<char*>(filename), true);
+
+		if (fileData == NULL)
+		{
+			return 0;
+		}
+
+		size_t length = strlen(fileData);
+		if (size != NULL)
+		{
+			*size = length;
+		}
+
+		if (data != NULL)
+		{
+			memcpy(data, fileData, length);
+		}
+
+		return 1;
 	}
 
 	size_t fileSize = cfilelength(file);
@@ -381,39 +400,41 @@ int freetypeFilesystemCallback(const char* filename, void* data, size_t* size)
 	return 1;
 }
 
+#define INIT_FUNC(enum_val, func) Assertion(func != NULL, "OpenGL Function %s is null!", #func); ftgl_init_gl_func(enum_val, func)
+
 void FontManager::init()
 {
-	freetype_gl_set_message_callback(freetypeMessageCallback);
-	freetype_gl_set_filesystem_callback(freetypeFilesystemCallback);
+	ftgl_set_message_callback(freetypeMessageCallback);
+	ftgl_set_filesystem_callback(freetypeFilesystemCallback);
 
-	freetype_gl_init_gl_func(FUNC_GL_DELETEBUFFERS, vglDeleteBuffersARB);
-	freetype_gl_init_gl_func(FUNC_GL_GENBUFFERS, vglGenBuffersARB);
-	freetype_gl_init_gl_func(FUNC_GL_BINDBUFFER, vglBindBufferARB);
-	freetype_gl_init_gl_func(FUNC_GL_BUFFERDATA, vglBufferDataARB);
-	freetype_gl_init_gl_func(FUNC_GL_BUFFERSUBDATA, vglBufferSubDataARB);
+	INIT_FUNC(FUNC_GL_DELETEBUFFERS, vglDeleteBuffersARB);
+	INIT_FUNC(FUNC_GL_GENBUFFERS, vglGenBuffersARB);
+	INIT_FUNC(FUNC_GL_BINDBUFFER, vglBindBufferARB);
+	INIT_FUNC(FUNC_GL_BUFFERDATA, vglBufferDataARB);
+	INIT_FUNC(FUNC_GL_BUFFERSUBDATA, vglBufferSubDataARB);
 
-	freetype_gl_init_gl_func(FUNC_GL_GETATTRIBLOCATION, vglGetAttribLocationARB);
-	freetype_gl_init_gl_func(FUNC_GL_ENABLEVERTEXATTRIBARRAY, vglEnableVertexAttribArrayARB);
-	freetype_gl_init_gl_func(FUNC_GL_VERTEXATTRIBPOINTER, vglVertexAttribPointerARB);
+	INIT_FUNC(FUNC_GL_GETATTRIBLOCATION, vglGetAttribLocationARB);
+	INIT_FUNC(FUNC_GL_ENABLEVERTEXATTRIBARRAY, vglEnableVertexAttribArrayARB);
+	INIT_FUNC(FUNC_GL_VERTEXATTRIBPOINTER, vglVertexAttribPointerARB);
 
-	freetype_gl_init_gl_func(FUNC_GL_GETUNIFORMLOCATION, vglGetUniformLocationARB);
-	freetype_gl_init_gl_func(FUNC_GL_BLENDCOLOR, vglBlendColor);
-	freetype_gl_init_gl_func(FUNC_GL_USEPROGRAM, vglUseProgramObjectARB); // According to the internetz this should be the same
-	freetype_gl_init_gl_func(FUNC_GL_UNIFORM1F, vglUniform1fARB);
-	freetype_gl_init_gl_func(FUNC_GL_UNIFORM3F, vglUniform3fARB);
+	INIT_FUNC(FUNC_GL_GETUNIFORMLOCATION, vglGetUniformLocationARB);
+	INIT_FUNC(FUNC_GL_BLENDCOLOR, vglBlendColor);
+	INIT_FUNC(FUNC_GL_USEPROGRAM, vglUseProgramObjectARB); // According to the internetz this should be the same
+	INIT_FUNC(FUNC_GL_UNIFORM1F, vglUniform1fARB);
+	INIT_FUNC(FUNC_GL_UNIFORM3F, vglUniform3fARB);
 
-	freetype_gl_init_gl_func(FUNC_GL_CREATESHADER, vglCreateShaderObjectARB); // According to the internetz this should be the same
-	freetype_gl_init_gl_func(FUNC_GL_SHADERSOURCE, vglShaderSourceARB);
-	freetype_gl_init_gl_func(FUNC_GL_COMPILESHADER, vglCompileShaderARB);
-	freetype_gl_init_gl_func(FUNC_GL_GETSHADERIV, vglGetShaderiv);
-	freetype_gl_init_gl_func(FUNC_GL_GETSHADERINFOLOG, vglGetShader);
-	freetype_gl_init_gl_func(FUNC_GL_DELETESHADER, vglGenBuffersARB);
-	freetype_gl_init_gl_func(FUNC_GL_CREATEPROGRAM, vglGenBuffersARB);
-	freetype_gl_init_gl_func(FUNC_GL_ATTACHSHADER, vglGenBuffersARB);
-	freetype_gl_init_gl_func(FUNC_GL_LINKPROGRAM, vglGenBuffersARB);
-	freetype_gl_init_gl_func(FUNC_GL_GETPROGRAMIV, vglGenBuffersARB);
-	freetype_gl_init_gl_func(FUNC_GL_GETPROGRAMINFOLOG, vglGenBuffersARB);
-	freetype_gl_init_gl_func(FUNC_GL_DELETEPROGRAM, vglGenBuffersARB);
+	INIT_FUNC(FUNC_GL_CREATESHADER, vglCreateShaderObjectARB); // According to the internetz this should be the same
+	INIT_FUNC(FUNC_GL_SHADERSOURCE, vglShaderSourceARB);
+	INIT_FUNC(FUNC_GL_COMPILESHADER, vglCompileShaderARB);
+	INIT_FUNC(FUNC_GL_GETSHADERIV, vglGetShaderiv);
+	INIT_FUNC(FUNC_GL_GETSHADERINFOLOG, vglGetShaderInfolog);
+	INIT_FUNC(FUNC_GL_DELETESHADER, vglDeleteShader);
+	INIT_FUNC(FUNC_GL_CREATEPROGRAM, vglCreateProgramObjectARB);
+	INIT_FUNC(FUNC_GL_ATTACHSHADER, vglAttachObjectARB);
+	INIT_FUNC(FUNC_GL_LINKPROGRAM, vglLinkProgramARB);
+	INIT_FUNC(FUNC_GL_GETPROGRAMIV, vglGetProgramiv);
+	INIT_FUNC(FUNC_GL_GETPROGRAMINFOLOG, vglGetProgramInfoLog);
+	INIT_FUNC(FUNC_GL_DELETEPROGRAM, vglDeleteProgram);
 }
 
 void FontManager::close()
@@ -535,8 +556,8 @@ void VFNTFont::getStringSize(const char *text, int textLen, int *w1, int *h1) co
 		*w1 = longest_width;
 }
 
-FTGLFont::FTGLFont(text_buffer_t* textBuffer, texture_font_t *ftglFont, FTGLFontType type) :
-ftglFont(ftglFont), textBuffer(textBuffer), lineWidth(1.0f)
+FTGLFont::FTGLFont(text_buffer_t* textBuffer, texture_font_t *ftglFont, FTGLFontType type) : FSFont(),
+ftglFont(ftglFont), textBuffer(textBuffer), lineWidth(1.0f), separators("\n\t")
 {
 	Assertion(ftglFont != NULL, "Invalid font passed to constructor of FTGLFont!");
 	Assertion(textBuffer != NULL, "Invalid font passed to constructor of FTGLFont!");
@@ -1025,25 +1046,17 @@ FTGLFontType parse_ftgl_type()
 {
 	FTGLFontType type;
 
-	char value[64];
+	SCP_string value;
 
-	stuff_string(value, F_NAME, 64);
+	stuff_string(value, F_NAME);
 
-	if (!stricmp(value, "Polygon"))
-	{
-		type = POLYGON;
-	}
-	else if (!stricmp(value, "Outline"))
+	if (!stricmp(value.c_str(), "Outline"))
 	{
 		type = OUTLINE;
 	}
-	else if (!stricmp(value, "Texture"))
+	else if (!stricmp(value.c_str(), "Texture"))
 	{
 		type = TEXTURE;
-	}
-	else if (!stricmp(value, "Pixmap"))
-	{
-		type = PIXMAP;
 	}
 	else
 	{
@@ -1091,17 +1104,11 @@ void parse_ftgl_font(const SCP_string& fontFilename)
 
 		switch(type)
 		{
-		case POLYGON:
-			ss << "Polygon-";
-			break;
 		case OUTLINE:
 			ss << "Outline-";
 			break;
 		case TEXTURE:
 			ss << "Texture-";
-			break;
-		case PIXMAP:
-			ss << "Pixmap-";
 			break;
 		default:
 			ss << "InvalidType-";

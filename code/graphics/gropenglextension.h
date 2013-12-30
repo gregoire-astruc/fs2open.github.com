@@ -31,7 +31,7 @@ typedef struct ogl_extension {
 	int num_extensions;
 	const char *extension_name[3];
 	int num_functions;
-	const char *function_names[20];
+	const char *function_names[28];
 } ogl_extension;
 
 typedef struct ogl_function {
@@ -149,8 +149,13 @@ extern ogl_function GL_EXT_Special[];
 #define OGL_MULTI_DRAW_ELEMENTS_BASE_VERTEX			62
 #define OGL_BLEND_COLOR						63
 #define OGL_GET_SHADER_IV					64
+#define OGL_GET_SHADER_INFOLOG				65
+#define OGL_DELETE_SHADER					66
+#define OGL_GET_PROGRAM_IV					67
+#define OGL_GET_PROGRAMINFOLOG				68
+#define OGL_DELETE_PROGRAM					69
 
-#define NUM_OGL_FUNCTIONS					65
+#define NUM_OGL_FUNCTIONS					70
 
 
 // special extensions/functions (OS specific, non-GL stuff)
@@ -165,7 +170,7 @@ extern ogl_function GL_EXT_Special[];
 void opengl_extensions_init();
 
 
-#define GLEXT_CALL(i, x) ((GL_Functions[i].function_ptr) ? ((x)GL_Functions[i].function_ptr) : (x)NULL)
+#define GLEXT_CALL(i, x) ((x)(GL_Functions[i].function_ptr))
 
 // the same as GLEXT_CALL() except that it can be used with a cast or in an if statement
 // this doesn't do NULL ptr checking so you have to be careful with it!
@@ -319,6 +324,11 @@ typedef void (* glDrawRangeElementsProcPtr) (GLenum mode, GLuint start, GLuint e
 #define vglMultiDrawElementsBaseVertex	GLEXT_CALL( OGL_MULTI_DRAW_ELEMENTS_BASE_VERTEX, PFNGLMULTIDRAWELEMENTSBASEVERTEXPROC )
 #define vglBlendColor					GLEXT_CALL( OGL_BLEND_COLOR, PFNGLBLENDCOLORPROC )
 #define vglGetShaderiv					GLEXT_CALL( OGL_GET_SHADER_IV, PFNGLGETSHADERIVPROC )
+#define vglGetShaderInfolog				GLEXT_CALL( OGL_GET_SHADER_INFOLOG, PFNGLGETSHADERINFOLOGPROC )
+#define vglDeleteShader					GLEXT_CALL( OGL_DELETE_SHADER, PFNGLDELETESHADERPROC )
+#define vglGetProgramiv					GLEXT_CALL( OGL_GET_PROGRAM_IV, PFNGLGETPROGRAMIVPROC )
+#define vglGetProgramInfoLog			GLEXT_CALL( OGL_GET_PROGRAMINFOLOG, PFNGLGETPROGRAMINFOLOGPROC )
+#define vglDeleteProgram				GLEXT_CALL( OGL_DELETE_PROGRAM, PFNGLDELETEPROGRAMPROC )
 
 // special extensions
 #define vwglSwapIntervalEXT			GLEXT_SPC_CALL( OGL_SPC_WGL_SWAP_INTERVAL, PFNWGLSWAPINTERVALEXTPROC )
