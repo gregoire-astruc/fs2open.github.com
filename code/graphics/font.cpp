@@ -313,6 +313,9 @@ FTGLFont *FontManager::loadFTGLFont(const SCP_string& fileName, float fontSize, 
 	}
 
 	text_buffer_t *text_buffer = text_buffer_new(LCD_FILTERING_ON, "text-vert.sdr", "text-frag.sdr");
+	
+	vec4 black = { { 0.0, 0.0, 0.0, 1.0 } };
+	text_buffer->base_color = black;
 
 	if (text_buffer == NULL)
 	{

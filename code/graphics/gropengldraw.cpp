@@ -584,10 +584,6 @@ void gr_opengl_string(int sx, int sy, const char *s, bool resize)
 		bool doRender = true;
 
 		x = sx;
-		GL_state.SetTextureSource(TEXTURE_SOURCE_NO_FILTERING);
-
-		GL_state.SetAlphaBlendMode(ALPHA_BLEND_ALPHA_BLEND_ALPHA);
-		GL_state.SetZbufferType(ZBUFFER_TYPE_NONE);
 
 		markup_t markup;
 		memset(&markup, 0, sizeof(markup));
@@ -608,15 +604,25 @@ void gr_opengl_string(int sx, int sy, const char *s, bool resize)
 		}
 		markup.foreground_color = color;
 
-		GLboolean cull_face = GL_state.CullFace(GL_FALSE);
+		vec4 none = { { 1.0, 1.0, 1.0, 0.0 } };
+		vec4 black = { { 0.0, 0.0, 0.0, 1.0 } };
+		markup.rise = 0.0;
+		markup.spacing = 0.0;
+		markup.gamma = 1.0;
+		markup.background_color = none;
+		markup.underline = 0;
+		markup.underline_color = black;
+		markup.overline = 0;
+		markup.overline_color = black;
+		markup.strikethrough = 0;
+		markup.strikethrough_color = black;
 
 		int tokenLength;
 
 		const char *text = s;
 		bool specialChar = false;
 
-		mat4 model;
-		glGetFloatv(GL_MODELVIEW_MATRIX, ptr)
+		bool textRendered = false;
 
 		while ((tokenLength = ftglFont->getTokenLength(text)) > 0)
 		{
@@ -717,6 +723,7 @@ void gr_opengl_string(int sx, int sy, const char *s, bool resize)
 					pen.coords.y = i2fl(y) + ftglFont->getYOffset();
 
 					text_buffer_add_text(buffer, &pen, &markup, &convertBuffer[index], tokenLength);
+					textRendered = true;
 
 					xOffset += static_cast<int>(pen.coords.x - i2fl(x));
 				}
@@ -725,13 +732,16 @@ void gr_opengl_string(int sx, int sy, const char *s, bool resize)
 			text = text + tokenLength;
 		}
 
-		glPushAttrib(GL_ENABLE_BIT);
-		//text_buffer_render(buffer);
-		glPopAttrib();
+		if (textRendered)
+		{
+			//glPushAttrib(GL_ENABLE_BIT);
 
-		text_buffer_clear(buffer);
+			text_buffer_render(buffer);
 
-		GL_state.CullFace(cull_face);
+			//glPopAttrib();
+
+			text_buffer_clear(buffer);
+		}
 	}
 	else
 	{

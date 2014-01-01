@@ -1,6 +1,4 @@
 
-INCLUDE(DownloadProject)
-
 ADD_SUBDIRECTORY(FreeType)
 
 include(ExternalProject)
@@ -14,10 +12,10 @@ ENDIF(FSO_DEVELOPMENT_MODE)
 ExternalProject_Add(freetype-gl
 	PREFIX freetype-gl
 	# Downloading
-	GIT_REPOSITORY https://github.com/asarium/freetype-gl.git
-	GIT_TAG restructuring
+	#GIT_REPOSITORY https://github.com/asarium/freetype-gl.git
+	#GIT_TAG restructuring
 	
-	#SOURCE_DIR H:/Code/Github/freetype-gl
+	SOURCE_DIR H:/Code/Github/freetype-gl
 	CMAKE_CACHE_ARGS -DUSE_GLEW:BOOL=OFF -Dfreetype-gl_BUILD_DEMOS:BOOL=OFF
 					-DMSVC_STATIC_RUNTIME:BOOL=ON
 					-DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> -DCMAKE_BUILD_TYPE:STRING=${CONFIG}
