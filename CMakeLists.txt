@@ -56,13 +56,12 @@ IF (WIN32)
 	OPTION(FSO_BUILD_FRED2 "Build FRED2 binary" OFF)
 ENDIF(WIN32)
 
-OPTION(FSO_DEVELOPMENT_MODE "Generate binaries in development mode, only use if you know what you're doing!" OFF)
-
 OPTION(FSO_BUILD_WXFRED2 "Build wxFRED2 binary" OFF)
 
 OPTION(FSO_BUILD_INCLUDED_LIBS "Build and use the included libraries istead of using the system headers and libraries" OFF)
 
-SET(FSO_INSTRUCTION_SET "" CACHE STRING "The instruction set enhancement to use, possible options are SSE, SSE2 and AVX")
+SET(POSSIBLE_INSTUCTION_SETS "" SSE SSE2 AVX)
+SET(FSO_INSTRUCTION_SET "" CACHE STRING "The instruction set enhancement to use, possible options are ${POSSIBLE_INSTUCTION_SETS}")
 
 OPTION(FSO_USE_LUAJIT "Use LuaJIT for Lua scripting, needs a working internet connection!" OFF)
 
@@ -70,15 +69,14 @@ OPTION(FSO_USE_OPENALSOFT "Download and build OpenAL Soft instead of using the s
 
 SET(FSO_FREESPACE_PATH "${CMAKE_INSTALL_PREFIX}" CACHE FILEPATH "The path of the FreeSpace directory you want to use. Please note that you will have to change CMAKE_INSTALL_PREFIX if you change this at some point.")
 
-SET(FSO_RUN_ARGUMENTS "" CACHE STRING "Additional arguments passed to a generated executable when run with the generated build files.")
+LIST(FIND POSSIBLE_INSTUCTION_SETS "${FSO_INSTRUCTION_SET}" SET_INDEX)
 
-IF (NOT FSO_INSTRUCTION_SET STREQUAL "SSE" AND NOT FSO_INSTRUCTION_SET STREQUAL "SSE2"
-	AND NOT FSO_INSTRUCTION_SET STREQUAL "AVX" AND NOT FSO_INSTRUCTION_SET STREQUAL "")
+IF (SET_INDEX LESS 0)
 
-	MESSAGE(WARNING "Unrecognized instruction set '${FSO_INSTRUCTION_SET}'! Defaulting to no optionization")
+	MESSAGE(WARNING "Unrecognized instruction set '${FSO_INSTRUCTION_SET}'! Possible values: ${POSSIBLE_INSTUCTION_SETS}. Defaulting to no optionizations.")
 	
 	SET(FSO_INSTRUCTION_SET "")
-ENDIF()
+ENDIF(SET_INDEX LESS 0)
 
 OPTION(FSO_CMAKE_DEBUG "Enable cmake debugging in while generating build files" OFF)
 
@@ -86,7 +84,6 @@ MARK_AS_ADVANCED(FORCE FSO_CMAKE_DEBUG)
 MARK_AS_ADVANCED(FORCE FSO_BUILD_INCLUDED_LIBS)
 MARK_AS_ADVANCED(FORCE FSO_USE_OPENALSOFT)
 MARK_AS_ADVANCED(FORCE FSO_USE_LUAJIT)
-MARK_AS_ADVANCED(FORCE FSO_DEVELOPMENT_MODE)
 
 INCLUDE(globals)
 INCLUDE(toolchain)
@@ -95,6 +92,8 @@ INCLUDE(platforms)
 INCLUDE(headers)
 
 SET(GENERATED_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated_source)
+
+INCLUDE(compilerChecks)
 
 # This includes source code for some tools, either used in the build or also for something else
 ADD_SUBDIRECTORY(tools)
@@ -113,7 +112,7 @@ IF(FSO_BUILD_WXFRED2)
 	ADD_SUBDIRECTORY(wxfred2)
 ENDIF(FSO_BUILD_WXFRED2)
 
-IF(FSO_COPY_EXE)
+IF(MSVC_USE_RUNTIME_DLL)
 	SET(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION "${BINARY_DESTINATION}")
 
 	IF(FSO_BUILD_FRED2)
@@ -121,7 +120,7 @@ IF(FSO_COPY_EXE)
 	ENDIF(FSO_BUILD_FRED2)
 
 	INCLUDE(InstallRequiredSystemLibraries)
-ENDIF(FSO_COPY_EXE)
+ENDIF(MSVC_USE_RUNTIME_DLL)
 
 include(package)
 
