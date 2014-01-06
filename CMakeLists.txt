@@ -11,6 +11,7 @@ SET(FSO_PROJECT_DESCRIPTION "Open source project based on the original FreeSpace
 
 SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin CACHE PATH "Executable output path")
 SET(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin CACHE PATH "Library output path")
+SET(CMAKE_DEBUG_POSTFIX "_d")
 
 # CMAKE_INSTALL_PREFIX is defined but also overwritten by the PROJECT command so we need to set it later
 IF(NOT DEFINED CMAKE_INSTALL_PREFIX)

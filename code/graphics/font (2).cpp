@@ -7,6 +7,13 @@
  *
 */ 
 
+
+
+#ifdef _WIN32
+#include <windows.h>
+#include <windowsx.h>
+#endif
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <string>
@@ -264,7 +271,7 @@ VFNTFont *FontManager::loadVFNTFont(const SCP_string& name)
 	}
 }
 
-FTGLFont *FontManager::loadFTGLFont(const SCP_string& fileName, float fontSize, FTGLFontType type)
+FTGLFont *FontManager::loadFTGLFont(const SCP_string& fileName, int fontSize, FTGLFontType type)
 {
 	TrueTypeFontData data;
 	
@@ -282,7 +289,7 @@ FTGLFont *FontManager::loadFTGLFont(const SCP_string& fileName, float fontSize, 
 			return NULL;
 		}
 		ubyte *fontData = NULL;
-		size_t size = cfilelength(fontFile);
+		int size = cfilelength(fontFile);
 
 		fontData = new ubyte[size];
 
@@ -292,7 +299,7 @@ FTGLFont *FontManager::loadFTGLFont(const SCP_string& fileName, float fontSize, 
 			return NULL;
 		}
 
-		if (!cfread(fontData, (int) size, 1, fontFile))
+		if (!cfread(fontData, size, 1, fontFile))
 		{
 			mprintf(("Error while reading font data from \"%s\"", fileName.c_str()));
 			delete[] fontData;
@@ -311,6 +318,12 @@ FTGLFont *FontManager::loadFTGLFont(const SCP_string& fileName, float fontSize, 
 
 	switch (type)
 	{
+	case PIXMAP:
+		fnt = new FTPixmapFont(data.data, data.size);
+		break;
+	case POLYGON:
+		fnt = new FTPolygonFont(data.data, data.size);
+		break;
 	case OUTLINE:
 		fnt = new FTOutlineFont(data.data, data.size);
 		break;
@@ -336,13 +349,13 @@ FTGLFont *FontManager::loadFTGLFont(const SCP_string& fileName, float fontSize, 
 		return NULL;
 	}
 
-	if (!fnt->FaceSize(fl2i(fontSize)))
+	if (!fnt->FaceSize(fontSize))
 	{
 		mprintf(("Couldn't set face size of font \"%s\" to %d!", fileName.c_str(), fontSize));
 		delete fnt;
 		return NULL;
 	}
-
+	
 	fnt->UseDisplayList(true);
 
 	FTGLFont *fsFont = new FTGLFont(fnt, type);
@@ -351,6 +364,7 @@ FTGLFont *FontManager::loadFTGLFont(const SCP_string& fileName, float fontSize, 
 
 	return fsFont;
 }
+
 void FontManager::init()
 {
 }
@@ -474,19 +488,29 @@ void VFNTFont::getStringSize(const char *text, int textLen, int *w1, int *h1) co
 		*w1 = longest_width;
 }
 
-FTGLFont::FTGLFont(FTFont *ftFont, FTGLFontType type) : FSFont(), lineWidth(1.0f), separators("\n\t"), ftFont(ftFont)
+bool VFNTFont::setSize(int newSize)
 {
-	Assertion(ftFont != NULL, "Invalid font passed to constructor of FTGLFont!");
+	Warning(LOCATION, "Setting size is not supported by VFNT bitmap fonts!");
 
-	this->yOffset = ftFont->Ascender() + ftFont->Descender();
+	return false;
+}
+
+FTGLFont::FTGLFont(FTFont *ftglFont, FTGLFontType type) : FSFont(), separators("\n\t")
+{
+	Assertion( ftglFont != NULL, "Invalid font passed to constructor of FTGLFont!");
+
+	this->ftglFont = ftglFont;
+	this->fontType = type;
+	this->lineWidth = 1.0f;
+
+	this->yOffset = ftglFont->Ascender() + ftglFont->Descender();
 
 	setTabWidth(1.0f);
 }
 
 FTGLFont::~FTGLFont()
 {
-	delete ftFont;
-	ftFont = NULL;
+	delete ftglFont;
 }
 
 FontType FTGLFont::getType() const
@@ -496,7 +520,13 @@ FontType FTGLFont::getType() const
 
 int FTGLFont::getTextHeight() const
 {
-	return fl2i(ftFont->Ascender());
+	// Never return a value that is less than the actual height!
+	return fl2i(ceil(ftglFont->Ascender()));
+}
+
+FTFont *FTGLFont::getFontData()
+{
+	return this->ftglFont;
 }
 
 float FTGLFont::getYOffset() const
@@ -506,12 +536,13 @@ float FTGLFont::getYOffset() const
 
 void FTGLFont::getStringSize(const char *text, int textLen, int *width, int *height) const
 {		
+	FTFont *font = ftglFont;
 	bool checkLength = textLen >= 0;
 
 	float w = 0.0f;
 	float h = i2fl(this->getHeight());
 
-	size_t tokenLength;
+	int tokenLength;
 
 	const char *s = text;
 	bool specialChar = false;
@@ -521,9 +552,9 @@ void FTGLFont::getStringSize(const char *text, int textLen, int *width, int *hei
 	{
 		if (checkLength)
 		{
-			if (tokenLength > (size_t) textLen)
+			if (tokenLength > textLen)
 			{
-				tokenLength = (size_t) textLen;
+				tokenLength = textLen;
 			}
 		}
 
@@ -560,7 +591,7 @@ void FTGLFont::getStringSize(const char *text, int textLen, int *width, int *hei
 
 		if (!specialChar)
 		{
-			lineWidth += ftFont->Advance(s, tokenLength);
+			lineWidth += font->Advance(s, tokenLength);
 		}
 		
 		w = MAX(w, lineWidth);
@@ -623,11 +654,11 @@ float FTGLFont::getTabWidth() const
 	return this->tabWidth;
 }
 
-size_t FTGLFont::getTokenLength(const char *string, int maxLength) const
+int FTGLFont::getTokenLength(const char *string, int maxLength) const
 {
 	Assert( string != NULL );
 
-	size_t length = 0;
+	int length = -1;
 
 	if (maxLength < 0)
 	{
@@ -664,12 +695,12 @@ size_t FTGLFont::getTokenLength(const char *string, int maxLength) const
 		length = strlen(string);
 	}
 
-	if (length > (size_t) maxLength)
+	if (length > maxLength)
 	{
-		length = (size_t) maxLength;
+		length = maxLength;
 	}
 
-	for (size_t i = 0; i < length; i++)
+	for (int i = 0; i < length; i++)
 	{
 		if (string[i] >= Lcl_special_chars || string[i] < 0)
 		{
@@ -679,6 +710,19 @@ size_t FTGLFont::getTokenLength(const char *string, int maxLength) const
 	}
 
 	return length;
+}
+
+bool FTGLFont::setSize(int newSize)
+{
+	if (!ftglFont->FaceSize(newSize))
+	{
+		mprintf(("Setting size of font \"%s\" to %d failed! Error code: %d", getName().c_str(), newSize, ftglFont->Error()));
+		return false;
+	}
+
+	this->yOffset = ftglFont->Ascender() + ftglFont->Descender();
+
+	return true;
 }
 
 void FTGLFont::setLineWidth(float width)
@@ -696,7 +740,7 @@ void FTGLFont::setTabWidth(float spaceNum)
 {
 	Assert( spaceNum > 0.0f );
 
-	this->tabWidth = this->ftFont->Advance(" ") * spaceNum;
+	this->tabWidth = this->ftglFont->Advance(" ") * spaceNum;
 }
 
 FSFont::FSFont() : offsetBottom(0), offsetTop(0), name(SCP_string("<Invalid>"))
@@ -945,17 +989,25 @@ FTGLFontType parse_ftgl_type()
 {
 	FTGLFontType type;
 
-	SCP_string value;
+	char value[64];
 
-	stuff_string(value, F_NAME);
+	stuff_string(value, F_NAME, 64);
 
-	if (!stricmp(value.c_str(), "Outline"))
+	if (!stricmp(value, "Polygon"))
+	{
+		type = POLYGON;
+	}
+	else if (!stricmp(value, "Outline"))
 	{
 		type = OUTLINE;
 	}
-	else if (!stricmp(value.c_str(), "Texture"))
+	else if (!stricmp(value, "Texture"))
 	{
 		type = TEXTURE;
+	}
+	else if (!stricmp(value, "Pixmap"))
+	{
+		type = PIXMAP;
 	}
 	else
 	{
@@ -968,7 +1020,7 @@ FTGLFontType parse_ftgl_type()
 
 void parse_ftgl_font(const SCP_string& fontFilename)
 {
-	float size = 8.0f;
+	int size = 8;
 	FTGLFontType type = TEXTURE;
 	SCP_string fontStr;
 	bool hasName = false;
@@ -982,9 +1034,9 @@ void parse_ftgl_font(const SCP_string& fontFilename)
 
 	if (optional_string("+Size:"))
 	{
-		stuff_float(&size);
+		stuff_int(&size);
 
-		if (size <= 0.0f)
+		if (size <= 0)
 		{
 			Warning(LOCATION, "+Size has to be bigger than 0 for font \"%s\".", fontFilename.c_str());
 			size = 8;
@@ -1003,11 +1055,17 @@ void parse_ftgl_font(const SCP_string& fontFilename)
 
 		switch(type)
 		{
+		case POLYGON:
+			ss << "Polygon-";
+			break;
 		case OUTLINE:
 			ss << "Outline-";
 			break;
 		case TEXTURE:
 			ss << "Texture-";
+			break;
+		case PIXMAP:
+			ss << "Pixmap-";
 			break;
 		default:
 			ss << "InvalidType-";

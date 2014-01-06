@@ -14,8 +14,7 @@
 
 #include "globalincs/pstypes.h"
 
-#include <freetype-gl.h>
-#include <text-buffer.h>
+#include <FTGL/ftgl.h>
 
 /**
  * @brief Enum to specify the type of a font
@@ -241,8 +240,8 @@ public:
 class FTGLFont : public FSFont
 {
 private:
-    texture_font_t *ftglFont;		//<! The font pointer of the actual FTGL font
-	text_buffer_t *textBuffer;		//<! The font pointer of the actual FTGL font
+	FTFont *ftFont; //<! The font pointer of the actual FTGL font
+
     float yOffset;			//<! An offset to be applied to the y coordinate to compensate for mirroring the text
     FTGLFontType fontType;	//<! The type of font this is
     float lineWidth;		//<! The width for the lines when the type of FTGLFontType::Outline
@@ -262,7 +261,7 @@ public:
      * @param ftglFont The FTGL font pointer
      * @param type The type this font has
      */
-	FTGLFont(text_buffer_t* textBuffer, texture_font_t *ftglFont, FTGLFontType type);
+	FTGLFont(FTFont *ftFont, FTGLFontType type);
 
     /**
      * @brief Deallocates the FTGL font pointer
@@ -275,9 +274,7 @@ public:
      * @brief Gets the FTGL font pointer
      * @return The font pointer
      */
-	texture_font_t *getFontData() { return ftglFont; }
-
-	text_buffer_t *getTextBuffer() { return textBuffer; }
+	FTFont *getFTFont() { return ftFont; }
 
     /**
      * Gets the Y offset to be applied when rendering text

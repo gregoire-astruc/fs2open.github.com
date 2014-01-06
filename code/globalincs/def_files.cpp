@@ -66,10 +66,6 @@ typedef struct def_file
 
 #include "def_files/species_defs.tbl.h"
 
-#include "def_files/text-frag.sdr.h"
-
-#include "def_files/text-vert.sdr.h"
-
 #include "def_files/video-f.sdr.h"
 
 #include "def_files/video-v.sdr.h"
@@ -100,8 +96,6 @@ def_file Default_files[] =
 	{ "species_defs.tbl",		Default_species_defs_tbl},
 	{ "video-f.sdr",			Default_video_f_sdr},
 	{ "video-v.sdr",			Default_video_v_sdr },
-	{ "text-frag.sdr",			Default_text_frag_sdr },
-	{ "text-vert.sdr",			Default_text_vert_sdr },
 };
 
 static int Num_default_files = sizeof(Default_files) / sizeof(def_file);

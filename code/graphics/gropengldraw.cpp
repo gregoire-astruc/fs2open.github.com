@@ -35,8 +35,6 @@
 #include "freespace.h"
 #include "localization/localize.h"
 
-#include <mat4.h>
-
 GLuint Scene_framebuffer;
 GLuint Scene_color_texture;
 GLuint Scene_luminance_texture;
@@ -562,12 +560,7 @@ void gr_opengl_string(int sx, int sy, const char *s, bool resize)
 		int clip_bottom = ((do_resize) ? gr_screen.clip_bottom_unscaled : gr_screen.clip_bottom);
 
 		FTGLFont *ftglFont = static_cast<FTGLFont*>(currentFont);
-		texture_font_t *font = ftglFont->getFontData();
-		text_buffer_t *buffer = ftglFont->getTextBuffer();
-
-		SCP_wstring convertBuffer;
-		convertBuffer.reserve(strlen(s));
-		mbstowcs(&convertBuffer[0], s, convertBuffer.capacity());
+		FTFont* ftFont = ftglFont->getFTFont();
 
 		int x, y;
 		int yOffset = 0;
@@ -585,44 +578,32 @@ void gr_opengl_string(int sx, int sy, const char *s, bool resize)
 
 		x = sx;
 
-		markup_t markup;
-		memset(&markup, 0, sizeof(markup));
-		markup.font = font;
+		GL_state.SetTextureSource(TEXTURE_SOURCE_NO_FILTERING);
 
-		vec4 color;
+		GL_state.SetAlphaBlendMode(ALPHA_BLEND_ALPHA_BLEND_ALPHA);
+		GL_state.SetZbufferType(ZBUFFER_TYPE_NONE);
+
+		// set color!
 		if (gr_screen.current_color.is_alphacolor) {
-			color.color1.r = gr_screen.current_color.red;
-			color.color1.g = gr_screen.current_color.green;
-			color.color1.b = gr_screen.current_color.blue;
-			color.color1.a = gr_screen.current_color.alpha;
+			GL_state.Color(gr_screen.current_color.red, gr_screen.current_color.green, gr_screen.current_color.blue, gr_screen.current_color.alpha);
 		}
 		else {
-			color.color1.r = gr_screen.current_color.red;
-			color.color1.g = gr_screen.current_color.green;
-			color.color1.b = gr_screen.current_color.blue;
-			color.color1.a = 1.0f;
+			GL_state.Color(gr_screen.current_color.red, gr_screen.current_color.green, gr_screen.current_color.blue);
 		}
-		markup.foreground_color = color;
 
-		vec4 none = { { 1.0, 1.0, 1.0, 0.0 } };
-		vec4 black = { { 0.0, 0.0, 0.0, 1.0 } };
-		markup.rise = 0.0;
-		markup.spacing = 0.0;
-		markup.gamma = 1.0;
-		markup.background_color = none;
-		markup.underline = 0;
-		markup.underline_color = black;
-		markup.overline = 0;
-		markup.overline_color = black;
-		markup.strikethrough = 0;
-		markup.strikethrough_color = black;
+		GLboolean cull_face = GL_state.CullFace(GL_FALSE);
 
 		int tokenLength;
 
 		const char *text = s;
 		bool specialChar = false;
 
-		bool textRendered = false;
+		FTPoint advance;
+
+		if (ftglFont->getFontType() == OUTLINE)
+		{
+			glLineWidth(ftglFont->getLineWidth());
+		}
 
 		while ((tokenLength = ftglFont->getTokenLength(text)) > 0)
 		{
@@ -667,7 +648,7 @@ void gr_opengl_string(int sx, int sy, const char *s, bool resize)
 				int width;
 				int spacing;
 				font_get_char_width_old(ftglFont->getSpecialCharacterFont(), *text, '\0', &width, &spacing);
-
+					
 				xOffset += spacing;
 			}
 			else if (doRender)
@@ -713,35 +694,24 @@ void gr_opengl_string(int sx, int sy, const char *s, bool resize)
 
 				if (doRender && tokenLength > 0)
 				{
-					//glScalef(scale_x, -scale_y, 1.0f);
+					glPushMatrix();
 
-					// This will give us the index into the wchar_t array
-					int index = text - s;
+					glTranslatef(i2fl(x), i2fl(y) + ftglFont->getYOffset(), 0.0f);
 
-					vec2 pen;
-					pen.coords.x = i2fl(x);
-					pen.coords.y = i2fl(y) + ftglFont->getYOffset();
+					glScalef(scale_x, -scale_y, 1.0f);
 
-					text_buffer_add_text(buffer, &pen, &markup, &convertBuffer[index], tokenLength);
-					textRendered = true;
+					advance = ftFont->Render(text, tokenLength);
 
-					xOffset += static_cast<int>(pen.coords.x - i2fl(x));
+					glPopMatrix();
+
+					xOffset += fl2i(ceil(advance.Xf()));
 				}
 			}
 
 			text = text + tokenLength;
 		}
 
-		if (textRendered)
-		{
-			//glPushAttrib(GL_ENABLE_BIT);
-
-			text_buffer_render(buffer);
-
-			//glPopAttrib();
-
-			text_buffer_clear(buffer);
-		}
+		GL_state.CullFace(cull_face);
 	}
 	else
 	{

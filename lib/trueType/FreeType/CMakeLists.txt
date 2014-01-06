@@ -1,15 +1,19 @@
 
 IF(UNIX)
 	FIND_PACKAGE(FreeType REQUIRED)
+
+	ADD_IMPORTED_LIB(freetype ${FREETYPE_INCLUDE_DIRS} ${FREETYPE_LIBRARIES} SHARED)
+
+	SET(FREETYPE_LIBS freetype CACHE INTERNAL "freetype library" FORCE)
 ELSE(UNIX)
 	# Use precompiled libs for windows
-	
 	add_library(freetype STATIC IMPORTED GLOBAL)
 	set_target_properties(freetype
 		PROPERTIES
 			IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/lib/win32/freetype247MT.lib
+			INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/include
 	)
-	SET(FREETYPE_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include CACHE INTERNAL "FreeType include directory")
-	SET(FREETYPE_LIBRARIES freetype CACHE INTERNAL "FreeType library")
+	
+	SET(FREETYPE_LIBS freetype CACHE INTERNAL "FreeType library")
 ENDIF(UNIX)
 
