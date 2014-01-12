@@ -23,10 +23,6 @@
 
 #define DEFAULT_SHIELD_SECTIONS	4	//	Number of sections in standard shields.
 
-#ifndef NDEBUG
-#define OBJECT_CHECK 
-#endif
-
 //Object types
 #define OBJ_NONE				0		//unused object
 #define OBJ_SHIP				1		//a ship
@@ -47,8 +43,6 @@
 
 //Make sure to change Object_type_names in Object.c when adding another type!
 #define MAX_OBJECT_TYPES	16
-
-#define UNUSED_OBJNUM		(-MAX_OBJECTS*2)	//	Newer systems use this instead of -1 for invalid object.
 
 extern char	*Object_type_names[MAX_OBJECT_TYPES];
 
@@ -140,10 +134,9 @@ struct dock_instance;
 class object
 {
 public:
-	class object	*next, *prev;	// for linked lists of objects
 	int				signature;		// Every object ever has a unique signature...
 	char			type;				// what type of object this is... robot, weapon, hostage, powerup, fireball
-	int				parent;			// This object's parent.
+	object*			parent;			// This object's parent.
 	int				parent_sig;		// This object's parent's signature
 	char			parent_type;	// This object's parent's type
 	int				instance;		// which instance.  ie.. if type is Robot, then this indexes into the Robots array
@@ -187,17 +180,6 @@ typedef struct object_orient_pos {
 	matrix orient;
 } object_orient_pos;
 
-#ifdef OBJECT_CHECK
-typedef struct checkobject
-{
-	int	type;
-	int	signature;
-	uint	flags;
-	int	parent_sig;
-	int	parent_type;
-} checkobject;
-#endif
-
 /*
  *		VARIABLES
  */
@@ -206,18 +188,9 @@ extern int Object_inited;
 extern int Show_waypoints;
 
 // The next signature for the next newly created object. Zero is bogus
-extern int Object_next_signature;		
-extern int Num_objects;
+extern size_t Object_next_signature;
 
-extern object Objects[];
-extern int Highest_object_index;		//highest objnum
-extern int Highest_ever_object_index;
-extern object obj_free_list;
-extern object obj_used_list;
-extern object obj_create_list;
-
-extern int render_total;
-extern int render_order[MAX_OBJECTS];
+extern SCP_vector<object*> Objects;
 
 extern object *Viewer_obj;	// Which object is the viewer. Can be NULL.
 extern object *Player_obj;	// Which object is the player. Has to be valid.
@@ -225,7 +198,6 @@ extern object *Player_obj;	// Which object is the player. Has to be valid.
 // Use this instead of "objp - Objects" to get an object number
 // given it's pointer.  This way, we can replace it with a macro
 // to check that the pointer is valid for debugging.
-#define OBJ_INDEX(objp) (objp-Objects)
 
 /*
  *		FUNCTIONS

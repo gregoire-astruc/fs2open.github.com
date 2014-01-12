@@ -62,9 +62,6 @@ public:
 
 SCP_hash_map<uint, collider_pair> Collision_cached_pairs;
 
-struct checkobject;
-extern checkobject CheckObjects[MAX_OBJECTS];
-
 extern int Cmdline_old_collision_sys;
 
 void obj_pairs_close()
@@ -1155,14 +1152,6 @@ void obj_add_collider(int obj_index)
 {
 	object *objp = &Objects[obj_index];
 
-#ifdef OBJECT_CHECK 
-	CheckObjects[obj_index].type = objp->type;
-	CheckObjects[obj_index].signature = objp->signature;
-	CheckObjects[obj_index].flags = objp->flags & ~(OF_NOT_IN_COLL);
-	CheckObjects[obj_index].parent_sig = objp->parent_sig;
-	CheckObjects[obj_index].parent_type = objp->parent_type;
-#endif
-
 	if(!(objp->flags & OF_NOT_IN_COLL)){
 		return;
 	}
@@ -1174,10 +1163,6 @@ void obj_add_collider(int obj_index)
 
 void obj_remove_collider(int obj_index)
 {
-#ifdef OBJECT_CHECK 
-	CheckObjects[obj_index].flags |= OF_NOT_IN_COLL;
-#endif	
-
 	size_t i;
 
 	for ( i = 0; i < Collision_sort_list.size(); ++i ) {

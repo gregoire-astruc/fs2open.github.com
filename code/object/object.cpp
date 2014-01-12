@@ -42,11 +42,13 @@
 #include "weapon/swarm.h"
 #include "weapon/weapon.h"
 
-
+#include <boost/pool/object_pool.hpp>
+#include <boost/foreach.hpp>
 
 /*
  *  Global variables
  */
+
 
 object obj_free_list;
 object obj_used_list;
@@ -57,17 +59,13 @@ object *Viewer_obj = NULL;
 
 extern int Cmdline_old_collision_sys;
 
+boost::object_pool<object> objectPool;
+
 //Data for objects
-object Objects[MAX_OBJECTS];
+SCP_vector<object*> Objects;
+SCP_vector<object*> CreatedObjects;
 
-#ifdef OBJECT_CHECK 
-checkobject CheckObjects[MAX_OBJECTS];
-#endif
-
-int Num_objects=-1;
-int Highest_object_index=-1;
-int Highest_ever_object_index=0;
-int Object_next_signature = 1;	//0 is bogus, start at 1
+size_t Object_next_signature = 1;	//0 is bogus, start at 1
 int Object_inited = 0;
 int Show_waypoints = 0;
 
@@ -107,7 +105,7 @@ obj_flag_name Object_flag_names[] = {
 
 // all we need to set are the pointers, but type, parent, and instance are useful to set as well
 object::object()
-	: next(NULL), prev(NULL), type(OBJ_NONE), parent(-1), instance(-1), dock_list(NULL), dead_dock_list(NULL)
+	: type(OBJ_NONE), parent(NULL), instance(-1), dock_list(NULL), dead_dock_list(NULL)
 {}
 
 object::~object()
@@ -122,7 +120,8 @@ object::~object()
 void object::clear()
 {
 	signature = num_pairs = collision_group_id = 0;
-	parent = parent_sig = instance = -1;
+	parent = NULL;
+	parent_sig = instance = -1;
 	type = parent_type = OBJ_NONE;
 	flags = 0;
 	pos = last_pos = vmd_zero_vector;
@@ -136,119 +135,6 @@ void object::clear()
 	// just in case nobody called obj_delete last mission
 	dock_free_dock_list(this);
 	dock_free_dead_dock_list(this);
-}
-
-/**
- * Scan the object list, freeing down to num_used objects
- *
- * @param  Number of used objects to free down to
- * @return Returns number of slots freed
- */
-int free_object_slots(int num_used)
-{
-	int	i, olind, deleted_weapons;
-	int	obj_list[MAX_OBJECTS];
-	int	num_already_free, num_to_free, original_num_to_free;
-	object *objp;
-
-	olind = 0;
-
-	// calc num_already_free by walking the obj_free_list
-	num_already_free = 0;
-	for ( objp = GET_FIRST(&obj_free_list); objp != END_OF_LIST(&obj_free_list); objp = GET_NEXT(objp) )
-		num_already_free++;
-
-	if (MAX_OBJECTS - num_already_free < num_used)
-		return 0;
-
-	for ( objp = GET_FIRST(&obj_used_list); objp != END_OF_LIST(&obj_used_list); objp = GET_NEXT(objp) ) {
-		if (objp->flags & OF_SHOULD_BE_DEAD) {
-			num_already_free++;
-			if (MAX_OBJECTS - num_already_free < num_used)
-				return num_already_free;
-		} else
-			switch (objp->type) {
-				case OBJ_NONE:
-					num_already_free++;
-					if (MAX_OBJECTS - num_already_free < num_used)
-						return 0;
-					break;
-				case OBJ_FIREBALL:
-				case OBJ_WEAPON:
-				case OBJ_DEBRIS:
-//				case OBJ_CMEASURE:
-					obj_list[olind++] = OBJ_INDEX(objp);
-					break;
-
-				case OBJ_GHOST:
-				case OBJ_SHIP:
-				case OBJ_START:
-				case OBJ_WAYPOINT:
-				case OBJ_POINT:
-				case OBJ_SHOCKWAVE:
-				case OBJ_WING:
-				case OBJ_OBSERVER:
-				case OBJ_ASTEROID:
-				case OBJ_JUMP_NODE:				
-				case OBJ_BEAM:
-					break;
-				default:
-					Int3();	//	Hey, what kind of object is this?  Unknown!
-					break;
-			}
-
-	}
-
-	num_to_free = MAX_OBJECTS - num_used - num_already_free;
-	original_num_to_free = num_to_free;
-
-	if (num_to_free > olind) {
-		nprintf(("allender", "Warning: Asked to free %i objects, but can only free %i.\n", num_to_free, olind));
-		num_to_free = olind;
-	}
-
-	for (i=0; i<num_to_free; i++)
-		if ( (Objects[obj_list[i]].type == OBJ_DEBRIS) && (Debris[Objects[obj_list[i]].instance].flags & DEBRIS_EXPIRE) ) {
-			num_to_free--;
-			nprintf(("allender", "Freeing   DEBRIS object %3i\n", obj_list[i]));
-			Objects[obj_list[i]].flags |= OF_SHOULD_BE_DEAD;
-		}
-
-	if (!num_to_free)
-		return original_num_to_free;
-
-	for (i=0; i<num_to_free; i++)	{
-		object *tmp_obj = &Objects[obj_list[i]];
-		if ( (tmp_obj->type == OBJ_FIREBALL) && (fireball_is_perishable(tmp_obj)) ) {
-			num_to_free--;
-			nprintf(("allender", "Freeing FIREBALL object %3i\n", obj_list[i]));
-			tmp_obj->flags |= OF_SHOULD_BE_DEAD;
-		}
-	}
-
-	if (!num_to_free){
-		return original_num_to_free;
-	}
-
-	deleted_weapons = collide_remove_weapons();
-
-	num_to_free -= deleted_weapons;
-	if ( !num_to_free ){
-		return original_num_to_free;
-	}
-
-	for (i=0; i<num_to_free; i++){
-		if ( Objects[obj_list[i]].type == OBJ_WEAPON ) {
-			num_to_free--;
-			Objects[obj_list[i]].flags |= OF_SHOULD_BE_DEAD;
-		}
-	}
-
-	if (!num_to_free){
-		return original_num_to_free;
-	}
-
-	return original_num_to_free - num_to_free;
 }
 
 // Goober5000
@@ -325,24 +211,9 @@ void obj_init()
 	object *objp;
 	
 	Object_inited = 1;
-	for (i = 0; i < MAX_OBJECTS; ++i)
-		Objects[i].clear();
 	Viewer_obj = NULL;
-
-	list_init( &obj_free_list );
-	list_init( &obj_used_list );
-	list_init( &obj_create_list );
-
-	// Link all object slots into the free list
-	objp = Objects;
-	for (i=0; i<MAX_OBJECTS; i++)	{
-		list_append(&obj_free_list, objp);
-		objp++;
-	}
-
+	
 	Object_next_signature = 1;	//0 is invalid, others start at 1
-	Num_objects = 0;
-	Highest_object_index = 0;
 
 	if ( Cmdline_old_collision_sys ) {
 		obj_reset_pairs();
@@ -359,60 +230,22 @@ static int num_objects_hwm = 0;
  * Generally, obj_create() should be called to get an object, since it
  * fills in important fields and does the linking.
  *
- * @return the number of a free object, updating Highest_object_index
- * @return -1 if no free objects
+ * @return the pointer of the allocated object
  */
-int obj_allocate(void)
+object* obj_allocate(void)
 {
-	int objnum;
-	object *objp;
-
 	if (!Object_inited) {
 		mprintf(("Why hasn't obj_init() been called yet?\n"));
 		obj_init();
 	}
-
-	if ( Num_objects >= MAX_OBJECTS-10 ) {
-		int	num_freed;
-
-		num_freed = free_object_slots(MAX_OBJECTS-10);
-		nprintf(("warning", " *** Freed %i objects\n", num_freed));
-	}
-
-	if (Num_objects >= MAX_OBJECTS) {
-		#ifndef NDEBUG
-		mprintf(("Object creation failed - too many objects!\n" ));
-		#endif
-		return -1;
-	}
-
-	// Find next available object
-	objp = GET_FIRST(&obj_free_list);
-	Assert ( objp != &obj_free_list );		// shouldn't have the dummy element
-
-	// remove objp from the free list
-	list_remove( &obj_free_list, objp );
 	
-	// insert objp onto the end of create list
-	list_append( &obj_create_list, objp );
+	object* objp = objectPool.construct();
 
-	// increment counter
-	Num_objects++;
+	Assertion(objp != NULL, "No more memory to allocate objects!");
 
-	if (Num_objects > num_objects_hwm) {
-		num_objects_hwm = Num_objects;
-	}
+	CreatedObjects.push_back(objp);
 
-	// get objnum
-	objnum = OBJ_INDEX(objp);
-
-	if (objnum > Highest_object_index) {
-		Highest_object_index = objnum;
-		if (Highest_object_index > Highest_ever_object_index)
-			Highest_ever_object_index = Highest_object_index;
-	}
-
-	return objnum;
+	return objp;
 }
 
 /**
@@ -421,36 +254,16 @@ int obj_allocate(void)
  * Generally, obj_delete() should be called to get rid of an object.
  * This function deallocates the object entry after the object has been unlinked
  */
-void obj_free(int objnum)
+void obj_free(object* objp)
 {
-	object *objp;
-
 	if (!Object_inited) {
 		mprintf(("Why hasn't obj_init() been called yet?\n"));
 		obj_init();
 	}
 
-	Assert( objnum >= 0 );	// Trying to free bogus object!!!
+	Assertion(objectPool.is_from(objp), "Invalid pointer passed to obj_free()!");
 
-	// get object pointer
-	objp = &Objects[objnum];
-
-	// remove objp from the used list
-	list_remove( &obj_used_list, objp );
-
-	// add objp to the end of the free
-	list_append( &obj_free_list, objp );
-
-	// decrement counter
-	Num_objects--;
-
-	Objects[objnum].type = OBJ_NONE;
-
-	Assert(Num_objects >= 0);
-
-	if (objnum == Highest_object_index)
-		while (Objects[--Highest_object_index].type == OBJ_NONE);
-
+	objectPool.destroy(objp);
 }
 
 /**
@@ -459,21 +272,14 @@ void obj_free(int objnum)
  * The object will be a non-rendering, non-physics object.   Pass -1 if no parent.
  * @return the object number 
  */
-int obj_create(ubyte type,int parent_obj,int instance, matrix * orient, 
+object* obj_create(ubyte type, object* parent_objp,int instance, matrix * orient, 
                vec3d * pos, float radius, uint flags )
 {
-	int objnum;
 	object *obj;
 
 	// Find next free object
-	objnum = obj_allocate();
-
-	if (objnum == -1)		//no free objects
-		return -1;
-
-	obj = &Objects[objnum];
-	Assert(obj->type == OBJ_NONE);		//make sure unused 
-
+	obj = obj_allocate();
+	
 	// clear object in preparation for setting of custom values
 	obj->clear();
 
@@ -482,10 +288,10 @@ int obj_create(ubyte type,int parent_obj,int instance, matrix * orient,
 
 	obj->type 					= type;
 	obj->instance				= instance;
-	obj->parent					= parent_obj;
-	if (obj->parent != -1)	{
-		obj->parent_sig		= Objects[parent_obj].signature;
-		obj->parent_type		= Objects[parent_obj].type;
+	obj->parent					= parent_objp;
+	if (obj->parent != NULL) {
+		obj->parent_sig = parent_objp->signature;
+		obj->parent_type = parent_objp->type;
 	} else {
 		obj->parent_sig = obj->signature;
 		obj->parent_type = obj->type;
@@ -505,7 +311,8 @@ int obj_create(ubyte type,int parent_obj,int instance, matrix * orient,
 
 	obj->n_quadrants = DEFAULT_SHIELD_SECTIONS; // Might be changed by the ship creation code
 	obj->shield_quadrant.resize(obj->n_quadrants);
-	return objnum;
+
+	return obj;
 }
 
 /**
@@ -514,14 +321,12 @@ int obj_create(ubyte type,int parent_obj,int instance, matrix * orient,
  * 
  * @param objnum Object number to remove
  */
-void obj_delete(int objnum)
+void obj_delete(object* objp)
 {
-	object *objp;
+	Assert(objp != NULL);
 
-	Assert(objnum >= 0 && objnum < MAX_OBJECTS);
-	objp = &Objects[objnum];
 	if (objp->type == OBJ_NONE) {
-		mprintf(("obj_delete() called for already deleted object %d.\n", objnum));
+		mprintf(("obj_delete() called for already deleted object.\n"));
 		return;
 	};	
 
@@ -529,7 +334,7 @@ void obj_delete(int objnum)
 	if ( Cmdline_old_collision_sys ) {
 		obj_remove_pairs( objp );
 	} else {
-		obj_remove_collider(objnum);
+		obj_remove_collider(objp);
 	}
 	
 	switch( objp->type )	{
@@ -606,12 +411,12 @@ void obj_delete(int objnum)
 	dock_free_dead_dock_list(objp);
 
 	// if a persistant sound has been created, delete it
-	obj_snd_delete_type(OBJ_INDEX(objp));		
+	obj_snd_delete_type(objp);
 
 	objp->type = OBJ_NONE;		//unused!
 	objp->signature = 0;
 
-	obj_free(objnum);
+	obj_free(objp);
 }
 
 
@@ -625,25 +430,23 @@ void obj_delete_all_that_should_be_dead()
 		obj_init();
 	}
 
-	// Move all objects
-	objp = GET_FIRST(&obj_used_list);
-	while( objp !=END_OF_LIST(&obj_used_list) )	{
+	BOOST_FOREACH(object* objp, Objects)
+	{
 		// Goober5000 - HACK HACK HACK - see obj_move_all
 		objp->flags &= ~OF_DOCKED_ALREADY_HANDLED;
 
-		temp = GET_NEXT(objp);
-		if ( objp->flags&OF_SHOULD_BE_DEAD )
-			obj_delete( OBJ_INDEX(objp) );			// MWA says that john says that let obj_delete handle everything because of the editor
-		objp = temp;
+		if (objp->flags & OF_SHOULD_BE_DEAD)
+		{
+			obj_delete(objp);
+		}
 	}
-
 }
 
 /**
  * Add all newly created objects to the end of the used list and create their
  * object pairs for collision detection
  */
-void obj_merge_created_list(void)
+void obj_merge_created_list()
 {
 	// The old way just merged the two.   This code takes one out of the create list,
 	// creates object pairs for it, and then adds it to the used list.
@@ -654,9 +457,9 @@ void obj_merge_created_list(void)
 
 		// Add it to the object pairs array
 		if ( Cmdline_old_collision_sys ) {
-			obj_add_pairs(OBJ_INDEX(objp));
+			obj_add_pairs(objp);
 		} else {
-			obj_add_collider(OBJ_INDEX(objp));
+			obj_add_collider(objp);
 		}
 
 		// Then add it to the object used list
@@ -936,54 +739,6 @@ obj_maybe_fire:
 
 #define IMPORTANT_FLAGS (OF_COLLIDES)
 
-#ifdef OBJECT_CHECK 
-
-void obj_check_object( object *obj )
-{
-	int objnum = OBJ_INDEX(obj);
-
-	// PROGRAMMERS: If one of these Int3() gets hit, then someone
-	// is changing a value in the object structure that might cause
-	// collision detection to not work.  See John for more info if
-	// you are hitting one of these.
-
-	if ( CheckObjects[objnum].type != obj->type )	{
-		if ( (obj->type==OBJ_WAYPOINT) && (CheckObjects[objnum].type==OBJ_SHIP) )	{
-			// We know about ships changing into waypoints and that is
-			// ok.
-			CheckObjects[objnum].type = OBJ_WAYPOINT;
-		 } else if ( (obj->type==OBJ_SHIP) && (CheckObjects[objnum].type==OBJ_GHOST) )	{
-			// We know about player changing into a ghost after dying and that is
-			// ok.
-			CheckObjects[objnum].type = OBJ_GHOST;
-		} else if ( (obj->type==OBJ_GHOST) && (CheckObjects[objnum].type==OBJ_SHIP) )	{
-			// We know about player changing into a ghost after dying and that is
-			// ok.
-			CheckObjects[objnum].type = OBJ_SHIP;
-		} else {
-			mprintf(( "Object type changed! Old: %i, Current: %i\n", CheckObjects[objnum].type, obj->type ));
-			Int3();
-		}
-	}
-	if ( CheckObjects[objnum].signature != obj->signature ) {
-		mprintf(( "Object signature changed!\n" ));
-		Int3();
-	}
-	if ( (CheckObjects[objnum].flags&IMPORTANT_FLAGS) != (obj->flags&IMPORTANT_FLAGS) ) {
-		mprintf(( "Object flags changed!\n" ));
-		Int3();
-	}
-	if ( CheckObjects[objnum].parent_sig != obj->parent_sig ) {
-		mprintf(( "Object parent sig changed!\n" ));
-		Int3();
-	}
-	if ( CheckObjects[objnum].parent_type != obj->parent_type ) {
-		mprintf(( "Object's parent type changed!\n" ));
-		Int3();
-	}
-}
-#endif
-
 /**
  * Call this if you want to change an object flag so that the
  * object code knows what's going on.  For instance if you turn
@@ -1007,11 +762,7 @@ void obj_set_flags( object *obj, uint new_flags )
 
 		// update object flags properly		
 		obj->flags = new_flags;
-		obj->flags |= OF_NOT_IN_COLL;		
-#ifdef OBJECT_CHECK
-		CheckObjects[objnum].flags = new_flags;
-		CheckObjects[objnum].flags |= OF_NOT_IN_COLL;		
-#endif		
+		obj->flags |= OF_NOT_IN_COLL;
 		return;
 	}
 	
@@ -1036,11 +787,7 @@ void obj_set_flags( object *obj, uint new_flags )
 		}
 				
 		obj->flags = new_flags;
-		obj->flags &= ~(OF_NOT_IN_COLL);		
-#ifdef OBJECT_CHECK
-		CheckObjects[objnum].flags = new_flags;
-		CheckObjects[objnum].flags &= ~(OF_NOT_IN_COLL);		
-#endif
+		obj->flags &= ~(OF_NOT_IN_COLL);
 		return;
 	}
 
@@ -1073,9 +820,6 @@ void obj_set_flags( object *obj, uint new_flags )
 
 		// set the flag
 		obj->flags = new_flags;
-#ifdef OBJECT_CHECK
-		CheckObjects[objnum].flags = new_flags;
-#endif
 
 		return;
 	}
@@ -1088,9 +832,6 @@ void obj_set_flags( object *obj, uint new_flags )
 	} else {
 		// Since it wasn't an important flag, just bash it.
 		obj->flags = new_flags;
-		#ifdef OBJECT_CHECK 
-		CheckObjects[objnum].flags = new_flags;
-		#endif
 	}	
 }
 
@@ -1404,10 +1145,6 @@ void obj_move_all(float frametime)
 		}
 
 		vec3d cur_pos = objp->pos;			// Save the current position
-
-#ifdef OBJECT_CHECK 
-			obj_check_object( objp );
-#endif
 
 		// pre-move
 		PROFILE("Pre Move", obj_move_all_pre(objp, frametime));
@@ -1813,14 +1550,6 @@ void obj_add_pairs(int objnum)
 		return;
 	}
 
-#ifdef OBJECT_CHECK 
-	CheckObjects[objnum].type = objp->type;
-	CheckObjects[objnum].signature = objp->signature;
-	CheckObjects[objnum].flags = objp->flags & ~(OF_NOT_IN_COLL);
-	CheckObjects[objnum].parent_sig = objp->parent_sig;
-	CheckObjects[objnum].parent_type = objp->parent_type;
-#endif	
-
 	// Find all the objects that can collide with this and add 
 	// it to the collision pair list. 
 	object * A;
@@ -1842,10 +1571,7 @@ void obj_remove_pairs( object * a )
 {
 	obj_pair *parent, *tmp;
 
-	a->flags |= OF_NOT_IN_COLL;	
-#ifdef OBJECT_CHECK 
-	CheckObjects[OBJ_INDEX(a)].flags |= OF_NOT_IN_COLL;
-#endif	
+	a->flags |= OF_NOT_IN_COLL;
 
 	if ( a->num_pairs < 1 )	{
 		return;

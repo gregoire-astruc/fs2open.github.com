@@ -78,9 +78,6 @@
 
 #define MAX_POLYGON_MODELS  300
 
-// object.h
-#define MAX_OBJECTS			3500		
-
 // from lighting.cpp
 #define MAX_LIGHTS 256
 
