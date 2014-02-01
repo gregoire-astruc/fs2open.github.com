@@ -197,11 +197,17 @@ namespace opengl
 							// Equality check needed because the combination of SDR_FLAG_SOFT_QUAD and SDR_FLAG_DISTORTION define something very different
 							// than just SDR_FLAG_SOFT_QUAD alone
 							for (k = 0; k < GL_Uniform_Reference_Particle[j].num_uniforms; k++) {
-								shader.addUniform(GL_Uniform_Reference_Particle[j].uniforms[k]);
+								if (!shader.addUniform(GL_Uniform_Reference_Particle[j].uniforms[k]))
+								{
+									nprintf(("   WARNING: Failed to find uniform %s!\n", GL_Uniform_Reference_Particle[j].uniforms[k]));
+								}
 							}
 
 							for (k = 0; k < GL_Uniform_Reference_Particle[j].num_attributes; k++) {
-								shader.addAttribute(GL_Uniform_Reference_Particle[j].attributes[k]);
+								if (!shader.addAttribute(GL_Uniform_Reference_Particle[j].attributes[k]))
+								{
+									nprintf(("   WARNING: Failed to find attribute %s!\n", GL_Uniform_Reference_Particle[j].attributes[k]));
+								}
 							}
 
 							mprintf(("   %s\n", GL_Uniform_Reference_Particle[j].name));
@@ -213,13 +219,19 @@ namespace opengl
 						if (shader.getPrimaryFlags() & GL_Uniform_Reference_Main[j].flag) {
 							if (GL_Uniform_Reference_Main[j].num_uniforms > 0) {
 								for (int k = 0; k < GL_Uniform_Reference_Main[j].num_uniforms; k++) {
-									shader.addUniform(GL_Uniform_Reference_Main[j].uniforms[k]);
+									if (!shader.addUniform(GL_Uniform_Reference_Main[j].uniforms[k]))
+									{
+										nprintf(("   WARNING: Failed to find uniform %s!\n", GL_Uniform_Reference_Main[j].uniforms[k]));
+									}
 								}
 							}
 
 							if (GL_Uniform_Reference_Main[j].num_attributes > 0) {
 								for (int k = 0; k < GL_Uniform_Reference_Main[j].num_attributes; k++) {
-									shader.addAttribute(GL_Uniform_Reference_Main[j].attributes[k]);
+									if (!shader.addAttribute(GL_Uniform_Reference_Main[j].attributes[k]))
+									{
+										nprintf(("   WARNING: Failed to find attribute %s!\n", GL_Uniform_Reference_Main[j].attributes[k]));
+									}
 								}
 							}
 
