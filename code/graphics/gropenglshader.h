@@ -89,9 +89,6 @@ namespace opengl
 			boost::unordered_map<const char*, Uniform> uniforms;
 			boost::unordered_map<const char*, Attribute> attributes;
 
-			// Disallow assignment
-			//Shader& operator= (const Shader&);
-
 		public:
 			Shader(const SCP_string& nameIn) : name(nameIn), shaderHandle(0), flags(0), flags2(0)
 			{
