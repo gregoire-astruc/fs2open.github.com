@@ -54,8 +54,6 @@ namespace opengl
 			void setValue2f(float x, float y);
 		};
 
-		extern Uniform invalidUniform;
-
 		class Attribute
 		{
 		private:
@@ -89,6 +87,8 @@ namespace opengl
 			boost::unordered_map<const char*, Uniform> uniforms;
 			boost::unordered_map<const char*, Attribute> attributes;
 
+			static Uniform invalidUniform;
+			static Attribute invalidAttribute;
 		public:
 			Shader(const SCP_string& nameIn) : name(nameIn), shaderHandle(0), flags(0), flags2(0)
 			{
@@ -120,9 +120,17 @@ namespace opengl
 
 			inline Attribute& getAttribute(const char* attribute_name)
 			{
-				Assertion(attributes.find(attribute_name) != attributes.end(), "Failed to find attribute '%s' in shader '%s'.", attribute_name, this->name.c_str());
+				boost::unordered_map<const char*, Attribute>::iterator iter = attributes.find(attribute_name);
 
-				return attributes[attribute_name];
+				if (iter == attributes.end())
+				{
+					nprintf(("SHADER-DEBUG", "WARNING: Unable to find attribute \"%s\" in shader \"%s\"!\n", attribute_name, this->name.c_str()));
+					return invalidAttribute;
+				}
+				else
+				{
+					return iter->second;
+				}
 			}
 
 			inline Uniform& getUniform(const char* uniform_name)

@@ -123,6 +123,9 @@ namespace opengl
 {
 	namespace shader
 	{
+		Uniform Shader::invalidUniform;
+		Attribute Shader::invalidAttribute;
+
 		/**
 		 * Go through GL_shader and call glDeleteObject() for all created shaders, then clear GL_shader
 		 */
@@ -734,8 +737,6 @@ namespace opengl
 
 			vglUniformMatrix4fvARB(location, 1, GL_FALSE, value.data);
 		}
-
-		Uniform invalidUniform;
 
 		Shader* ShaderState::addShader(Shader& newShader)
 		{
