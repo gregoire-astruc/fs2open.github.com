@@ -1632,8 +1632,8 @@ void gr_opengl_render_effect(int nverts, vertex *verts, float *radius_list, uint
 					return;
 				}
 
-				shader = &GL_state.Shader.getShader(sdr_index);
-				GL_state.Shader.enableShader(*shader);
+				shader = GL_state.Shader.getShader(sdr_index);
+				GL_state.Shader.enableShader(shader);
 				
 				shader->getUniform("frameBuffer").setValue(2);
 				
@@ -1662,8 +1662,8 @@ void gr_opengl_render_effect(int nverts, vertex *verts, float *radius_list, uint
 					return;
 				}
 
-				shader = &GL_state.Shader.getShader(sdr_index);
-				GL_state.Shader.enableShader(*shader);
+				shader = GL_state.Shader.getShader(sdr_index);
+				GL_state.Shader.enableShader(shader);
 
 				zbuff = gr_zbuffer_set(GR_ZBUFF_NONE);
 			}

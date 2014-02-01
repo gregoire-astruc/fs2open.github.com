@@ -148,63 +148,79 @@ namespace opengl
 		void compile_main_shader(int flags) {
 			mprintf(("Compiling new shader:\n"));
 
-			Shader shader("Main shader");
-			shader.addPrimaryFlag(flags);
+			Shader* shaderPtr = NULL;
 			bool in_error = false;
 
-			// choose appropriate files
-			SCP_string vert_name;
-			SCP_string frag_name;
-
-			if (flags & SDR_FLAG_SOFT_QUAD) {
-				vert_name.assign("soft-v.sdr");
-				frag_name.assign("soft-f.sdr");
-			} else {
-				vert_name.assign("main-v.sdr");
-				frag_name.assign("main-f.sdr");
-			}
-
-			if (!shader.loadShaderFile(Shader::VERTEX_SHADER, vert_name))
 			{
-				in_error = true;
-			}
+				// Do this in its own scope so we don't confuse shader and shaderPtr
 
-			if (!shader.loadShaderFile(Shader::FRAGMENT_SHADER, frag_name))
-			{
-				in_error = true;
-			}
+				Shader shader("Main shader");
+				shader.addPrimaryFlag(flags);
 
-			if (!in_error)
-			{
-				if (!shader.linkProgram())
+				// choose appropriate files
+				SCP_string vert_name;
+				SCP_string frag_name;
+
+				if (flags & SDR_FLAG_SOFT_QUAD) {
+					vert_name.assign("soft-v.sdr");
+					frag_name.assign("soft-f.sdr");
+				}
+				else {
+					vert_name.assign("main-v.sdr");
+					frag_name.assign("main-f.sdr");
+				}
+
+				if (!shader.loadShaderFile(Shader::VERTEX_SHADER, vert_name))
 				{
 					in_error = true;
+				}
+
+				if (!shader.loadShaderFile(Shader::FRAGMENT_SHADER, frag_name))
+				{
+					in_error = true;
+				}
+
+				if (!in_error)
+				{
+					if (!shader.linkProgram())
+					{
+						in_error = true;
+					}
+				}
+
+				if (!in_error)
+				{
+					shaderPtr = GL_state.Shader.addShader(shader);
+				}
+				else
+				{
+					shader.releaseResources();
 				}
 			}
 
 			if (!in_error)
 			{
-				GL_state.Shader.enableShader(shader);
+				GL_state.Shader.enableShader(shaderPtr);
 
 				mprintf(("Shader features:\n"));
 
 				//Init all the uniforms
-				if (shader.getPrimaryFlags() & SDR_FLAG_SOFT_QUAD) {
+				if (shaderPtr->getPrimaryFlags() & SDR_FLAG_SOFT_QUAD) {
 					for (int j = 0; j < Particle_shader_flag_references; j++) {
-						if (shader.getPrimaryFlags() == GL_Uniform_Reference_Particle[j].flag) {
+						if (shaderPtr->getPrimaryFlags() == GL_Uniform_Reference_Particle[j].flag) {
 							int k;
 
 							// Equality check needed because the combination of SDR_FLAG_SOFT_QUAD and SDR_FLAG_DISTORTION define something very different
 							// than just SDR_FLAG_SOFT_QUAD alone
 							for (k = 0; k < GL_Uniform_Reference_Particle[j].num_uniforms; k++) {
-								if (!shader.addUniform(GL_Uniform_Reference_Particle[j].uniforms[k]))
+								if (!shaderPtr->addUniform(GL_Uniform_Reference_Particle[j].uniforms[k]))
 								{
 									nprintf(("   WARNING: Failed to find uniform %s!\n", GL_Uniform_Reference_Particle[j].uniforms[k]));
 								}
 							}
 
 							for (k = 0; k < GL_Uniform_Reference_Particle[j].num_attributes; k++) {
-								if (!shader.addAttribute(GL_Uniform_Reference_Particle[j].attributes[k]))
+								if (!shaderPtr->addAttribute(GL_Uniform_Reference_Particle[j].attributes[k]))
 								{
 									nprintf(("   WARNING: Failed to find attribute %s!\n", GL_Uniform_Reference_Particle[j].attributes[k]));
 								}
@@ -216,10 +232,10 @@ namespace opengl
 				}
 				else {
 					for (int j = 0; j < Main_shader_flag_references; j++) {
-						if (shader.getPrimaryFlags() & GL_Uniform_Reference_Main[j].flag) {
+						if (shaderPtr->getPrimaryFlags() & GL_Uniform_Reference_Main[j].flag) {
 							if (GL_Uniform_Reference_Main[j].num_uniforms > 0) {
 								for (int k = 0; k < GL_Uniform_Reference_Main[j].num_uniforms; k++) {
-									if (!shader.addUniform(GL_Uniform_Reference_Main[j].uniforms[k]))
+									if (!shaderPtr->addUniform(GL_Uniform_Reference_Main[j].uniforms[k]))
 									{
 										nprintf(("   WARNING: Failed to find uniform %s!\n", GL_Uniform_Reference_Main[j].uniforms[k]));
 									}
@@ -228,7 +244,7 @@ namespace opengl
 
 							if (GL_Uniform_Reference_Main[j].num_attributes > 0) {
 								for (int k = 0; k < GL_Uniform_Reference_Main[j].num_attributes; k++) {
-									if (!shader.addAttribute(GL_Uniform_Reference_Main[j].attributes[k]))
+									if (!shaderPtr->addAttribute(GL_Uniform_Reference_Main[j].attributes[k]))
 									{
 										nprintf(("   WARNING: Failed to find attribute %s!\n", GL_Uniform_Reference_Main[j].attributes[k]));
 									}
@@ -241,13 +257,9 @@ namespace opengl
 				}
 
 				GL_state.Shader.disableShader();
-
-				GL_state.Shader.addShader(shader);
 			}
 			else
 			{
-				shader.releaseResources();
-
 				// shut off relevant usage things ...
 				bool dealt_with = false;
 
@@ -725,7 +737,7 @@ namespace opengl
 
 		Uniform invalidUniform;
 
-		Shader& ShaderState::addShader(Shader& newShader)
+		Shader* ShaderState::addShader(Shader& newShader)
 		{
 			shaders.push_back(newShader);
 
@@ -748,10 +760,12 @@ namespace opengl
 			shaders.clear();
 		}
 
-		void ShaderState::enableShader(Shader& shader)
+		void ShaderState::enableShader(Shader* shader)
 		{
-			vglUseProgramObjectARB(shader.getHandle());
-			currentShader = &shader;
+			Assertion(shader != NULL, "Invalid shader pointer passed to ShaderState::enableShader(Shader*)");
+
+			vglUseProgramObjectARB(shader->getHandle());
+			currentShader = shader;
 
 	#ifndef NDEBUG
 			if (opengl_check_for_errors("shader_set_current()")) {

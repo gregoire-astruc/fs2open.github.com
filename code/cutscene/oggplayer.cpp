@@ -437,7 +437,7 @@ static void OGG_video_init(theora_info *tinfo)
 		GL_state.SetZbufferType(ZBUFFER_TYPE_NONE);
 		
 		if(use_shaders) {
-			GL_state.Shader.enableShader(videoShader);
+			GL_state.Shader.enableShader(&videoShader);
 
 			GL_state.Texture.SetActiveUnit(0);
 			GL_state.Texture.SetTarget(GL_texture_target);

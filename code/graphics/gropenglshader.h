@@ -153,9 +153,9 @@ namespace opengl
 		public:
 			ShaderState() : shaders(SCP_vector<Shader>()), currentShader(NULL) {}
 
-			Shader& addShader(Shader& newShader);
+			Shader* addShader(Shader& newShader);
 
-			void enableShader(Shader& shader);
+			void enableShader(Shader* shader);
 
 			void disableShader();
 
@@ -165,11 +165,11 @@ namespace opengl
 
 			inline Shader* getCurrentShader() { return currentShader; }
 
-			inline Shader& getShader(size_t index)
+			inline Shader* getShader(size_t index)
 			{
 				Assertion(index < shaders.size(), "Invalid shader index %d!", index);
 
-				return shaders[index];
+				return &shaders[index];
 			}
 		};
 
