@@ -54,12 +54,12 @@ void text_view_dlg::set(int ship_class)
 	int i, j, n, found = 0, comment = 0, num_files = 0;
 	char tbl_file_arr[MAX_TBL_PARTS][MAX_FILENAME_LEN];
 	char *tbl_file_names[MAX_TBL_PARTS];
-	CFILE *fp;
+	cfile::FileHandle *fp;
 
 	if (ship_class < 0)
 		return;
 
-	fp = cfopen("ships.tbl", "r");
+	fp = cfile::open("ships.tbl", "r");
 	Assert(fp);
 
 	
@@ -117,7 +117,7 @@ void text_view_dlg::set(int ship_class)
 	for (n = 0; n < num_files; n++){
 		strcat(tbl_file_names[n], ".tbm");
 
-		fp = cfopen(tbl_file_names[n], "r");
+		fp = cfile::open(tbl_file_names[n], "r");
 		Assert(fp);
 
 		memset( line, 0, sizeof(line) );

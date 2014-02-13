@@ -1129,22 +1129,22 @@ void options_multi_protocol_button_pressed(int n)
 void options_multi_protocol_load_ip_file()
 {
 	char line[IP_STRING_LEN];
-	CFILE *file = NULL;
+	cfile::FileHandle *file = NULL;
 
 	// reset the ip address count
 	Om_num_ips = 0;
 
 	// attempt to open the ip list file
-	file = cfopen(IP_CONFIG_FNAME,"rt",CFILE_NORMAL,CF_TYPE_DATA);	
+	file = cfile::open(IP_CONFIG_FNAME, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_DATA);
 	if(file == NULL){
 		nprintf(("Network","Error loading tcp.cfg file!\n"));
 		return;
 	}
 
 	// read in all the strings in the file
-	while(!cfeof(file)){
+	while(!cfile::eof(file)){
 		line[0] = '\0';
-		cfgets(line,IP_STRING_LEN,file);
+		cfile::readLine(line,IP_STRING_LEN,file);
 
 		// strip off any newline character
 		if(line[strlen(line) - 1] == '\n'){
@@ -1164,17 +1164,17 @@ void options_multi_protocol_load_ip_file()
 		}
 	}
 
-	cfclose(file);
+	cfile::close(file);
 }
 
 // save the ip address file
 void options_multi_protocol_save_ip_file()
 {
 	int idx;
-	CFILE *file = NULL;
+	cfile::FileHandle *file = NULL;
 
 	// attempt to open the ip list file for writing
-	file = cfopen(IP_CONFIG_FNAME,"wt",CFILE_NORMAL,CF_TYPE_DATA );
+	file = cfile::open(IP_CONFIG_FNAME, cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_DATA);
 	if(file == NULL){
 		nprintf(("Network","Error loading tcp.cfg file\n"));
 		return;
@@ -1187,15 +1187,15 @@ void options_multi_protocol_save_ip_file()
 		// it was added.  We'll only grab games that we can actually get to.
 		//Assert(psnet_is_valid_ip_string(Multi_ip_addrs[idx]));
 
-		cfputs(Om_ip_addrs[idx],file);
-				
+		cfile::write<const char*>(Om_ip_addrs[idx],file);
+
 	   // make sure to tack on a newline if necessary
 		if(Om_ip_addrs[idx][strlen(&Om_ip_addrs[idx][0]) - 1] != '\n'){
-			cfputs(NOX("\n"),file);
+			cfile::write<const char*>(NOX("\n"), file);
 		}
 	}
 
-	cfclose(file);
+	cfile::close(file);
 }
 
 // draw the list of ip addresses

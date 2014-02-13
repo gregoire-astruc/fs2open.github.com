@@ -126,7 +126,7 @@ void multi_data_do()
 					// if he doesn't have it
 					if((Net_player != &Net_players[p_idx]) && MULTI_CONNECTED(Net_players[p_idx]) && (Net_players[p_idx].reliable_socket != INVALID_SOCKET) && (Multi_data[idx].status[p_idx] == 0)){						
 						// queue up the file to send to him, or at least try to
-						if(multi_xfer_send_file(Net_players[p_idx].reliable_socket, Multi_data[idx].filename, CF_TYPE_ANY, MULTI_XFER_FLAG_AUTODESTROY | MULTI_XFER_FLAG_QUEUE) < 0){
+						if (multi_xfer_send_file(Net_players[p_idx].reliable_socket, Multi_data[idx].filename, cfile::TYPE_ANY, MULTI_XFER_FLAG_AUTODESTROY | MULTI_XFER_FLAG_QUEUE) < 0){
 							nprintf(("Network", "Failed to send data file! Trying again later...\n"));
 						} else {
 							// mark his status
@@ -171,7 +171,7 @@ void multi_data_handle_incoming(int handle)
 
 	// if we already have a copy of this file, abort the xfer		
 	// Does file exist in \multidata?
-	if (cf_exists(fname, CF_TYPE_MULTI_CACHE)) {
+	if (cfile::exists(fname, cfile::TYPE_MULTI_CACHE)) {
 		nprintf(("Network", "Not accepting file xfer because a duplicate exists!\n"));			
 	
 		// kill the stream		
@@ -201,7 +201,7 @@ void multi_data_handle_incoming(int handle)
 			return;
 		} else {
 			// force the file to go into the multi cache directory
-			multi_xfer_handle_force_dir(handle, CF_TYPE_MULTI_CACHE);
+			multi_xfer_handle_force_dir(handle, cfile::TYPE_MULTI_CACHE);
 			
 			// mark it as autodestroy			
 			multi_xfer_xor_flags(handle, MULTI_XFER_FLAG_AUTODESTROY);
@@ -222,7 +222,7 @@ void multi_data_handle_incoming(int handle)
 		multi_xfer_xor_flags(handle, MULTI_XFER_FLAG_AUTODESTROY);
 		
 		// force the file to go into the multi cache directory
-		multi_xfer_handle_force_dir(handle, CF_TYPE_MULTI_CACHE);
+		multi_xfer_handle_force_dir(handle, cfile::TYPE_MULTI_CACHE);
 
 		// begin receiving the file
 		nprintf(("Network", "Client receiving xfer handle %d\n",handle));
@@ -265,7 +265,7 @@ void multi_data_send_my_junk()
 	}
 
 	if(ok_to_send){
-		with_ext = cf_add_ext(Net_player->m_player->image_filename, NOX(".pcx"));
+		with_ext = cfile::legacy::add_ext(Net_player->m_player->image_filename, NOX(".pcx"));
 		if(with_ext != NULL){
 			strcpy_s(Net_player->m_player->image_filename, with_ext);
 		}
@@ -277,7 +277,7 @@ void multi_data_send_my_junk()
 		// otherwise clients should just queue up a send
 		else {
 			// add a file extension if necessary			
-			multi_xfer_send_file(Net_player->reliable_socket, Net_player->m_player->image_filename, CF_TYPE_ANY, MULTI_XFER_FLAG_AUTODESTROY | MULTI_XFER_FLAG_QUEUE);
+			multi_xfer_send_file(Net_player->reliable_socket, Net_player->m_player->image_filename, cfile::TYPE_ANY, MULTI_XFER_FLAG_AUTODESTROY | MULTI_XFER_FLAG_QUEUE);
 		}		
 	}
 
@@ -312,7 +312,7 @@ void multi_data_send_my_junk()
 	}
 
 	if(ok_to_send){
-		with_ext = cf_add_ext(Net_player->m_player->m_squad_filename, NOX(".pcx"));
+		with_ext = cfile::legacy::add_ext(Net_player->m_player->m_squad_filename, NOX(".pcx"));
 		if(with_ext != NULL){
 			strcpy_s(Net_player->m_player->m_squad_filename,with_ext);
 		}
@@ -324,7 +324,7 @@ void multi_data_send_my_junk()
 		// otherwise clients should just queue up a send
 		else {
 			// add a file extension if necessary			
-			multi_xfer_send_file(Net_player->reliable_socket, Net_player->m_player->m_squad_filename, CF_TYPE_ANY, MULTI_XFER_FLAG_AUTODESTROY | MULTI_XFER_FLAG_QUEUE);
+			multi_xfer_send_file(Net_player->reliable_socket, Net_player->m_player->m_squad_filename, cfile::TYPE_ANY, MULTI_XFER_FLAG_AUTODESTROY | MULTI_XFER_FLAG_QUEUE);
 		}		
 	}
 }

@@ -260,7 +260,7 @@ class pilotfile_convert {
 		bool csg_convert(const char *fname, bool inferno);
 
 	private:
-		CFILE *cfp;
+		cfile::FileHandle *cfp;
 		unsigned int fver;
 
 		scoring_special_t all_time_stats;

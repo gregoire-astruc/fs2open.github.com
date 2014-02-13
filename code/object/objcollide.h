@@ -15,7 +15,6 @@
 #include "globalincs/pstypes.h"
 
 class object;
-struct CFILE;
 struct mc_info;
 
 // used for ship:ship and ship:debris

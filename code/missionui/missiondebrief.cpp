@@ -924,7 +924,7 @@ void debrief_choose_voice(char *voice_dest, char *voice_base, int persona_index,
 		sprintf(voice_dest, NOX("%d_%s"), persona_index, voice_base);
 
 		// if it exists, we're done
-		if (cf_exists_full(voice_dest, CF_TYPE_VOICE_DEBRIEFINGS))
+		if (cfile::exists(voice_dest, cfile::TYPE_VOICE_DEBRIEFINGS))
 			return;
 	}
 
@@ -1067,7 +1067,7 @@ void debrief_traitor_init()
 			return;
 		}
 
-		read_file_text("traitor.tbl", CF_TYPE_TABLES);
+		read_file_text("traitor.tbl", cfile::TYPE_TABLES);
 		reset_parse();		
 
 		// simplied form of the debriefing stuff.

@@ -695,8 +695,8 @@ static bool opengl_post_init_table()
 		return false;
 	}
 
-	if (cf_exists_full("post_processing.tbl", CF_TYPE_TABLES))
-		read_file_text("post_processing.tbl", CF_TYPE_TABLES);
+	if (cfile::exists("post_processing.tbl", cfile::TYPE_TABLES))
+		read_file_text("post_processing.tbl", cfile::TYPE_TABLES);
 	else
 		read_file_text_from_array(defaults_get_file("post_processing.tbl"));
 
@@ -898,16 +898,16 @@ static char *opengl_post_load_shader(char *filename, int flags, int flags2)
 	int flags_len = strlen(shader_flags);
 
 	if (Enable_external_shaders && stricmp(filename, "fxaapre-f.sdr") && stricmp(filename, "fxaa-f.sdr") && stricmp(filename, "fxaa-v.sdr")) {
-		CFILE *cf_shader = cfopen(filename, "rt", CFILE_NORMAL, CF_TYPE_EFFECTS);
+		cfile::FileHandle *cf_shader = cfile::open(filename, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_EFFECTS);
 
 		if (cf_shader != NULL  ) {
-			int len = cfilelength(cf_shader);
+			int len = cfile::fileLength(cf_shader);
 			char *shader = (char*) vm_malloc(len + flags_len + 1);
 
 			strcpy(shader, shader_flags);
 			memset(shader + flags_len, 0, len + 1);
-			cfread(shader + flags_len, len + 1, 1, cf_shader);
-			cfclose(cf_shader);
+			cfile::read(shader + flags_len, len + 1, 1, cf_shader);
+			cfile::close(cf_shader);
 
 			return shader;
 		} 

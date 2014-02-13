@@ -194,11 +194,12 @@ void player_select_set_controls(int gray);
 void player_select_draw_list();
 void player_select_process_noninput(int k);
 void player_select_process_input(int k);
-int player_select_pilot_file_filter(const char *filename);
 int player_select_get_last_pilot_info();
 void player_select_eval_very_first_pilot();
 void player_select_commit();
 void player_select_cancel_create();
+
+bool player_select_pilot_file_filter(const SCP_string& filename);
 
 extern int delete_pilot_file(char *pilot_name);
 
@@ -817,9 +818,21 @@ int player_select_get_last_pilot()
 			return 0;
 		}
 
-		Get_file_list_filter = player_select_pilot_file_filter;
+		SCP_vector<SCP_string> pilotFiles;
 
-		Player_select_num_pilots = cf_get_file_list_preallocated(MAX_PILOTS, Pilots_arr, Pilots, CF_TYPE_PLAYERS, NOX("*.plr"), CF_SORT_TIME);
+		cfile::listFiles(pilotFiles, cfile::TYPE_PLAYERS, "*.plr", cfile::SORT_TIME, player_select_pilot_file_filter);
+
+		Assert(pilotFiles.size() < MAX_PILOTS);
+
+		int i = 0;
+
+		SCP_vector<SCP_string>::iterator iter;
+		for (iter = pilotFiles.begin(); iter != pilotFiles.end(); ++iter, ++i)
+		{
+			strcpy_s(Pilots_arr[i], iter->c_str());
+		}
+
+		Player_select_num_pilots = (int) pilotFiles.size();
 
 		Player_select_pilot = -1;
 		idx = 0;
@@ -854,10 +867,21 @@ void player_select_init_player_stuff(int mode)
 	// set the select mode to single player for default
 	Player_select_mode = mode;
 
-	// load up the list of players based upon the Player_select_mode (single or multiplayer)
-	Get_file_list_filter = player_select_pilot_file_filter;
+	SCP_vector<SCP_string> pilotFiles;
 
-	Player_select_num_pilots = cf_get_file_list_preallocated(MAX_PILOTS, Pilots_arr, Pilots, CF_TYPE_PLAYERS, NOX("*.plr"), CF_SORT_TIME);
+	cfile::listFiles(pilotFiles, cfile::TYPE_PLAYERS, "*.plr", cfile::SORT_TIME, player_select_pilot_file_filter);
+
+	Assert(pilotFiles.size() < MAX_PILOTS);
+
+	int i = 0;
+
+	SCP_vector<SCP_string>::iterator iter;
+	for (iter = pilotFiles.begin(); iter != pilotFiles.end(); ++iter, ++i)
+	{
+		strcpy_s(Pilots_arr[i], iter->c_str());
+	}
+
+	Player_select_num_pilots = (int)pilotFiles.size();
 
 	// if we have a "last_player", and they're in the list, bash them to the top of the list
 	if (Player_select_last_pilot[0] != '\0') {
@@ -1151,9 +1175,9 @@ void player_select_display_all_text()
 	}
 }
 
-int player_select_pilot_file_filter(const char *filename)
+bool player_select_pilot_file_filter(const SCP_string& filename)
 {
-	return (int)Pilot.verify(filename);
+	return Pilot.verify(filename.c_str());
 }
 
 void player_select_set_bottom_text(const char *txt)
@@ -1294,7 +1318,7 @@ void player_tips_init()
 		return;
 	}
 
-	read_file_text("tips.tbl", CF_TYPE_TABLES);
+	read_file_text("tips.tbl", cfile::TYPE_TABLES);
 	reset_parse();
 
 	while(!optional_string("#end")) {

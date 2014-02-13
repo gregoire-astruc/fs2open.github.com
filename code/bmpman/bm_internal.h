@@ -86,7 +86,7 @@ typedef struct bitmap_entry	{
 	ubyte		comp_type;								// What sort of compressed type, BM_TYPE_NONE if not compressed
 	signed char	ref_count;								// Number of locks on bitmap.  Can't unload unless ref_count is 0.
 
-	int		dir_type;								// which directory this was loaded from (to skip other locations with same name)
+	cfile::DirType		dir_type;								// which directory this was loaded from (to skip other locations with same name)
 
 	// compressed bitmap stuff (.dds) - RT please take a look at this and tell me if we really need it
 	int		mem_taken;									// How much memory does this bitmap use? - UnknownPlayer

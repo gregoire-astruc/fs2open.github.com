@@ -1909,7 +1909,7 @@ int parse_get_line(char *lineout, int max_line_len, char *start, int max_size, c
 //	When a comment is found, it is removed.  If an entire line
 //	consisted of a comment, a blank line is left in the input file.
 // Goober5000 - added ability to read somewhere other than Mission_text
-void read_file_text(const char *filename, int mode, char *processed_text, char *raw_text)
+void read_file_text(const char *filename, cfile::DirType mode, char *processed_text, char *raw_text)
 {
 	// copy the filename
 	if (!filename)
@@ -2040,15 +2040,15 @@ void allocate_mission_text(int size)
 }
 
 // Goober5000
-void read_raw_file_text(const char *filename, int mode, char *raw_text)
+void read_raw_file_text(const char *filename, cfile::DirType mode, char *raw_text)
 {
-	CFILE	*mf;
+	cfile::FileHandle	*mf;
 	int	file_is_encrypted;
 	int file_is_unicode;
 
 	Assert(filename);
 
-	mf = cfopen(filename, "rb", CFILE_NORMAL, mode);
+	mf = cfile::open(filename, cfile::MODE_READ, cfile::OPEN_NORMAL, mode);
 	if (mf == NULL)
 	{
 		nprintf(("Error", "Wokka!  Error opening file (%s)!\n", filename));
@@ -2056,7 +2056,7 @@ void read_raw_file_text(const char *filename, int mode, char *raw_text)
 	}
 
 	// read the entire file in
-	int file_len = cfilelength(mf);
+	int file_len = cfile::fileLength(mf);
 
 	if(!file_len) {
 		nprintf(("Error", "Oh noes!!  File is empty! (%s)!\n", filename));
@@ -2071,9 +2071,9 @@ void read_raw_file_text(const char *filename, int mode, char *raw_text)
 		raw_text = Mission_text_raw;
 
 	// read first 10 bytes to determine if file is encrypted
-	cfread(raw_text, MIN(file_len, 10), 1, mf);
+	cfile::read(raw_text, MIN(file_len, 10), 1, mf);
 	file_is_encrypted = is_encrypted(raw_text);
-	cfseek(mf, 0, CF_SEEK_SET);
+	cfile::seek(mf, 0, cfile::SEEK_MODE_SET);
 
 	// Goober5000 - also determine if file is Unicode
 	file_is_unicode = is_unicode(raw_text);
@@ -2089,7 +2089,7 @@ void read_raw_file_text(const char *filename, int mode, char *raw_text)
 		char	*scrambled_text;
 		scrambled_text = (char*)vm_malloc(file_len+1);
 		Assert(scrambled_text);
-		cfread(scrambled_text, file_len, 1, mf);
+		cfile::read(scrambled_text, file_len, 1, mf);
 		// unscramble text
 		unencrypt(scrambled_text, file_len, raw_text, &unscrambled_len);
 		file_len = unscrambled_len;
@@ -2097,13 +2097,13 @@ void read_raw_file_text(const char *filename, int mode, char *raw_text)
 	}
 	else
 	{
-		cfread(raw_text, file_len, 1, mf);
+		cfile::read(raw_text, file_len, 1, mf);
 	}
 
 	//WMC - Slap a NULL character on here for the odd error where we forgot a #End
 	raw_text[file_len] = '\0';
 
-	cfclose(mf);
+	cfile::close(mf);
 }
 
 // Goober5000
@@ -4164,28 +4164,23 @@ void parse_int_list(int *ilist, int size)
 }
 
 // parse a modular table of type "name_check" and parse it using the specified function callback
-int parse_modular_table(const char *name_check, void (*parse_callback)(const char *filename), int path_type, int sort_type)
+int parse_modular_table(const char *name_check, void (*parse_callback)(const char *filename), cfile::DirType path_type, cfile::SortMode sort_type)
 {
-	char tbl_file_arr[MAX_TBL_PARTS][MAX_FILENAME_LEN];
-	char *tbl_file_names[MAX_TBL_PARTS];
-	int i, num_files = 0;
+	Assert(name_check != NULL);
+	Assert(parse_callback != NULL);
 
-	if ( (name_check == NULL) || (parse_callback == NULL) || ((*name_check) != '*') ) {
-		Int3();
-		return 0;
-	}
-
-	num_files = cf_get_file_list_preallocated(MAX_TBL_PARTS, tbl_file_arr, tbl_file_names, path_type, name_check, sort_type);
+	SCP_vector<SCP_string> tables;
+	cfile::listFiles(tables, path_type, name_check, sort_type);
 
 	Parsing_modular_table = true;
 
-	for (i = 0; i < num_files; i++){
-		strcat(tbl_file_names[i], ".tbm");
-		mprintf(("TBM  =>  Starting parse of '%s' ...\n", tbl_file_names[i]));
-		(*parse_callback)(tbl_file_names[i]);
+	SCP_vector<SCP_string>::iterator iter;
+	for (iter = tables.begin(); iter != tables.end(); ++iter){
+		mprintf(("TBM  =>  Starting parse of '%s' ...\n", iter->c_str()));
+		(*parse_callback)(iter->c_str());
 	}
 
 	Parsing_modular_table = false;
 
-	return num_files;
+	return (int) tables.size();
 }

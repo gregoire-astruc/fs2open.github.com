@@ -733,7 +733,7 @@ void message_translate_tokens(char *buf, char *text)
 int message_play_training_voice(int index)
 {
 	int len;
-	CFILE *fp;
+	cfile::FileHandle *fp;
 
 	if (index < 0) {
 		if (Training_voice >= 0) {
@@ -750,12 +750,12 @@ int message_play_training_voice(int index)
 	}
 
 	if (Message_waves[index].num < 0) {
-		fp = cfopen(Message_waves[index].name, "rb");
+		fp = cfile::open(Message_waves[index].name);
 		if (!fp)
 			return -1;
 
-		len = cfilelength(fp);
-		cfclose(fp);
+		len = cfile::fileLength(fp);
+		cfile::close(fp);
 		if (len > 100000) {
 			if ((Training_voice < 0) || !Training_voice_type || (Training_voice != index)) {
 				if (Training_voice >= 0) {

@@ -73,13 +73,13 @@ typedef struct xfer_entry {
 	int flags;														// status flags for this entry
 	char filename[MAX_FILENAME_LEN+1];						// filename of the currently xferring file
 	char ex_filename[MAX_FILENAME_LEN+10];					// filename with xfer prefix tacked on to the front
-	CFILE *file;													// file handle of the current xferring file
+	cfile::FileHandle *file;													// file handle of the current xferring file
 	int file_size;													// total size of the file being xferred
 	int file_ptr;													// total bytes we're received so far
 	ushort file_chksum;											// used for checking successfully xferred files
 	PSNET_SOCKET_RELIABLE file_socket;						// socket used to xfer the file	
 	int xfer_stamp;												// timestamp for the current operation		
-	int force_dir;													// force the file to go to this directory on receive (will override Multi_xfer_force_dir)	
+	cfile::DirType force_dir;													// force the file to go to this directory on receive (will override Multi_xfer_force_dir)	
 	ushort sig;														// identifying sig - sender specifies this
 } xfer_entry;
 xfer_entry Multi_xfer_entry[MAX_XFER_ENTRIES];			// the file xfer entries themselves
@@ -91,7 +91,7 @@ void (*Multi_xfer_recv_notify)(int handle);
 int Multi_xfer_locked;
 
 // force directory type for receives
-int Multi_xfer_force_dir; 
+cfile::DirType Multi_xfer_force_dir; 
 
 // unique file signature - this along with a socket # is enough to identify all xfers
 ushort Multi_xfer_sig = 0;
@@ -163,7 +163,7 @@ void multi_xfer_init(void (*multi_xfer_recv_callback)(int handle))
 	Multi_xfer_locked = 0;
 
 	// no forced directory
-	Multi_xfer_force_dir = CF_TYPE_MULTI_CACHE;	
+	Multi_xfer_force_dir = cfile::TYPE_MULTI_CACHE;	
 }
 
 // do frame for all file xfers, call in multi_do_frame()
@@ -198,7 +198,7 @@ void multi_xfer_reset()
 }
 
 // send a file to the specified player, return a handle
-int multi_xfer_send_file(PSNET_SOCKET_RELIABLE who, char *filename, int cfile_flags, int flags)
+int multi_xfer_send_file(PSNET_SOCKET_RELIABLE who, char *filename, cfile::DirType cfile_flags, int flags)
 {
 	xfer_entry temp_entry;	
 	int handle;
@@ -222,7 +222,7 @@ int multi_xfer_send_file(PSNET_SOCKET_RELIABLE who, char *filename, int cfile_fl
 
 	// attempt to open the file
 	temp_entry.file = NULL;
-	temp_entry.file = cfopen(filename,"rb",CFILE_NORMAL,cfile_flags);
+	temp_entry.file = cfile::open(filename, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile_flags);
 	if(temp_entry.file == NULL){
 #ifdef MULTI_XFER_VERBOSE
 		nprintf(("Network","MULTI XFER : Could not open file %s on xfer send!\n",filename));
@@ -233,7 +233,7 @@ int multi_xfer_send_file(PSNET_SOCKET_RELIABLE who, char *filename, int cfile_fl
 
 	// set the file size
 	temp_entry.file_size = -1;
-	temp_entry.file_size = cfilelength(temp_entry.file);
+	temp_entry.file_size = cfile::fileLength(temp_entry.file);
 	if(temp_entry.file_size == -1){
 #ifdef MULTI_XFER_VERBOSE
 		nprintf(("Network","MULTI XFER : Could not get file length for file %s on xfer send\n",filename));
@@ -243,7 +243,7 @@ int multi_xfer_send_file(PSNET_SOCKET_RELIABLE who, char *filename, int cfile_fl
 	temp_entry.file_ptr = 0;
 
 	// get the file checksum
-	if(!cf_chksum_short(temp_entry.file,&temp_entry.file_chksum)){
+	if (!cfile::checksum::crc::doShort(temp_entry.file, &temp_entry.file_chksum)){
 #ifdef MULTI_XFER_VERBOSE
 		nprintf(("Network","MULTI XFER : Could not get file checksum for file %s on xfer send\n",filename));
 #endif
@@ -253,7 +253,7 @@ int multi_xfer_send_file(PSNET_SOCKET_RELIABLE who, char *filename, int cfile_fl
 	nprintf(("Network","MULTI XFER : Got file %s checksum of %d\n",temp_entry.filename,(int)temp_entry.file_chksum));
 #endif
 	// rewind the file pointer to the beginning of the file
-	cfseek(temp_entry.file,0,CF_SEEK_SET);
+	cfile::seek(temp_entry.file,0,cfile::SEEK_MODE_SET);
 
 	// set the flags
 	temp_entry.flags |= (MULTI_XFER_FLAG_USED | MULTI_XFER_FLAG_SEND | MULTI_XFER_FLAG_PENDING);
@@ -319,12 +319,12 @@ void multi_xfer_abort(int handle)
 
 	// close any open file and delete it 
 	if(xe->file != NULL){
-		cfclose(xe->file);
+		cfile::close(xe->file);
 		xe->file = NULL;
 
 		// delete it if there isn't some problem with the filename
 		if((xe->flags & MULTI_XFER_FLAG_RECV) && (xe->filename[0] != '\0')){
-			cf_delete(xe->ex_filename, xe->force_dir);
+			cfile::deleteFile(xe->ex_filename, xe->force_dir);
 		}
 	}
 
@@ -350,12 +350,12 @@ void multi_xfer_release_handle(int handle)
 
 	// close any open file and delete it 
 	if(xe->file != NULL){
-		cfclose(xe->file);
+		cfile::close(xe->file);
 		xe->file = NULL;
 
 		// delete it if the file was not successfully received
 		if(!(xe->flags & MULTI_XFER_FLAG_SUCCESS) && (xe->flags & MULTI_XFER_FLAG_RECV) && (xe->filename[0] != '\0')){
-			cf_delete(xe->ex_filename,xe->force_dir);
+			cfile::deleteFile(xe->ex_filename,xe->force_dir);
 		}
 	}
 
@@ -391,14 +391,14 @@ void multi_xfer_unlock()
 }
 
 // force all receives to go into the specified directory by cfile type
-void multi_xfer_force_dir(int cf_type)
+void multi_xfer_force_dir(cfile::DirType cf_type)
 {
 	Multi_xfer_force_dir = cf_type;
-	Assert(Multi_xfer_force_dir > CF_TYPE_ANY);
+	Assert(Multi_xfer_force_dir > cfile::TYPE_ANY);
 }
 
 // forces the given xfer entry to the specified directory type (only valid when called from the recv_callback function)
-void multi_xfer_handle_force_dir(int handle,int cf_type)
+void multi_xfer_handle_force_dir(int handle,cfile::DirType cf_type)
 {
 	// if this is an invalid handle, return NULL
 	if(MULTI_XFER_INVALID_HANDLE(handle)){
@@ -407,7 +407,7 @@ void multi_xfer_handle_force_dir(int handle,int cf_type)
 
 	// force to go to the given directory
 	Multi_xfer_entry[handle].force_dir = cf_type;
-	Assert(Multi_xfer_entry[handle].force_dir > CF_TYPE_ANY);
+	Assert(Multi_xfer_entry[handle].force_dir > cfile::TYPE_ANY);
 }
 
 // or the flag on a given entry
@@ -606,13 +606,13 @@ void multi_xfer_fail_entry(xfer_entry *xe)
 
 	// close the file pointer
 	if(xe->file != NULL){
-		cfclose(xe->file);
+		cfile::close(xe->file);
 		xe->file = NULL;
 	}
 
 	// delete the file
 	if((xe->flags & MULTI_XFER_FLAG_RECV) && (xe->filename[0] != '\0')){
-		cf_delete(xe->ex_filename,xe->force_dir);
+		cfile::deleteFile(xe->ex_filename,xe->force_dir);
 	}
 		
 	// null the timestamp
@@ -808,14 +808,13 @@ void multi_xfer_process_final(xfer_entry *xe)
 	
 	// close the file
 	if(xe->file != NULL){
-		cflush(xe->file);
-		cfclose(xe->file);
+		cfile::close(xe->file);
 		xe->file = NULL;
 	}	
 
 	// check to make sure the file checksum is the same
 	chksum = 0;
-	if(!cf_chksum_short(xe->ex_filename, &chksum, -1, xe->force_dir) || (chksum != xe->file_chksum)){
+	if (!cfile::checksum::crc::doShort(xe->ex_filename, &chksum, -1, xe->force_dir) || (chksum != xe->file_chksum)){
 		// mark as failed
 		xe->flags |= MULTI_XFER_FLAG_FAIL;
 
@@ -833,7 +832,7 @@ void multi_xfer_process_final(xfer_entry *xe)
 		nprintf(("Network","MULTI XFER : renaming xferred file from %s to %s (chksum %d %d)\n", xe->ex_filename, xe->filename, (int)xe->file_chksum, (int)chksum));
 #endif
 		// rename the file properly
-		if(cf_rename(xe->ex_filename,xe->filename, xe->force_dir) == CF_RENAME_SUCCESS){
+		if(cfile::rename(xe->ex_filename,xe->filename, xe->force_dir)){
 			// mark the xfer as being successful
 			xe->flags |= MULTI_XFER_FLAG_SUCCESS;	
 
@@ -847,7 +846,7 @@ void multi_xfer_process_final(xfer_entry *xe)
 			nprintf(("Network","FAILED TO TRANSFER FILE (could not rename temp file %s)\n", xe->ex_filename));
 
 			// delete the tempfile
-			cf_delete(xe->ex_filename, xe->force_dir);
+			cfile::deleteFile(xe->ex_filename, xe->force_dir);
 
 			// send an nak to the sender
 			multi_xfer_send_nak(xe->file_socket, xe->sig);
@@ -867,7 +866,7 @@ void multi_xfer_process_data(xfer_entry *xe, ubyte *data, int data_size)
 	nprintf(("Network","."));		
 
 	// attempt to write the rest of the data string to the file
-	if((xe->file == NULL) || !cfwrite(data, data_size, 1, xe->file)){
+	if((xe->file == NULL) || !cfile::write(data, data_size, 1, xe->file)){
 		// inform the sender we had a problem
 		multi_xfer_send_nak(xe->file_socket, xe->sig);
 
@@ -952,12 +951,12 @@ void multi_xfer_process_header(ubyte *data, PSNET_SOCKET_RELIABLE who, ushort si
 	}			
 
 	// delete the old file (if it exists)
-	cf_delete( xe->filename, CF_TYPE_MULTI_CACHE );
-	cf_delete( xe->filename, CF_TYPE_MISSIONS );
+	cfile::deleteFile( xe->filename, cfile::TYPE_MULTI_CACHE );
+	cfile::deleteFile( xe->filename, cfile::TYPE_MISSIONS );
 
 	// attempt to open the file (using the prefixed filename)
 	xe->file = NULL;
-	xe->file = cfopen(xe->ex_filename, "wb", CFILE_NORMAL, xe->force_dir);
+	xe->file = cfile::open(xe->ex_filename, cfile::MODE_WRITE, cfile::OPEN_NORMAL, xe->force_dir);
 	if(xe->file == NULL){		
 		multi_xfer_send_nak(who, sig);		
 
@@ -1028,7 +1027,7 @@ void multi_xfer_send_next(xfer_entry *xe)
 	ADD_USHORT(data_size);
 	
 	// copy in the data
-	if(cfread(data+packet_size,1,(int)data_size,xe->file) == 0){
+	if(cfile::read(data+packet_size,1,(int)data_size,xe->file) == 0){
 		// send a nack to the receiver
 		multi_xfer_send_nak(xe->file_socket, xe->sig);
 

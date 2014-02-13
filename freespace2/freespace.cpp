@@ -522,7 +522,7 @@ sound_env Game_default_sound_env = { EAX_ENVIRONMENT_BATHROOM, 0.2f, 0.2f, 1.0f 
 int Game_sound_env_update_timestamp;
 
 
-fs_builtin_mission *game_find_builtin_mission(char *filename)
+fs_builtin_mission *game_find_builtin_mission(const char *filename)
 {
 	int idx;
 
@@ -1741,7 +1741,7 @@ void game_init()
 	//Initialize the libraries
 	s1 = timer_get_milliseconds();
 
-	if ( cfile_init(whee, strlen(Game_CDROM_dir) ? Game_CDROM_dir : NULL) ) {			// initialize before calling any cfopen stuff!!!
+	if ( !cfile::init(whee, strlen(Game_CDROM_dir) ? Game_CDROM_dir : NULL) ) {			// initialize before calling any cfopen stuff!!!
 		exit(1);
 	}
 
@@ -5519,8 +5519,8 @@ void game_leave_state( int old_state, int new_state )
 			
 			// COMMAND LINE OPTION
 			if (Cmdline_multi_stream_chat_to_file){
-				cfwrite_string(NOX("-------------------------------------------\n"),Multi_chat_stream);
-				cfclose(Multi_chat_stream);
+				cfile::write<const char*>(NOX("-------------------------------------------\n"),Multi_chat_stream);
+				cfile::close(Multi_chat_stream);
 			}
 			break;
 
@@ -5714,8 +5714,8 @@ void game_leave_state( int old_state, int new_state )
 			// COMMAND LINE OPTION
 			if (Cmdline_multi_stream_chat_to_file){
 				if( (new_state != GS_STATE_TEAM_SELECT) && (Multi_chat_stream!=NULL) ) {
-					cfwrite_string(NOX("-------------------------------------------\n"),Multi_chat_stream);
-					cfclose(Multi_chat_stream);
+					cfile::write<const char*>(NOX("-------------------------------------------\n"),Multi_chat_stream);
+					cfile::close(Multi_chat_stream);
 				}
 			}			
 			break;
@@ -6805,7 +6805,7 @@ void game_maybe_update_launcher(char *exe_dir)
 
 #endif // ifdef WIN32
 
-void game_spew_pof_info_sub(int model_num, polymodel *pm, int sm, CFILE *out, int *out_total, int *out_destroyed_total)
+void game_spew_pof_info_sub(int model_num, polymodel *pm, int sm, cfile::FileHandle *out, int *out_total, int *out_destroyed_total)
 {
 	int i;
 	int sub_total = 0;
@@ -6826,7 +6826,7 @@ void game_spew_pof_info_sub(int model_num, polymodel *pm, int sm, CFILE *out, in
 	
 	// write out total
 	sprintf(str, "Submodel %s total : %d faces\n", pm->submodel[sm].name, total);
-	cfputs(str, out);		
+	cfile::write<const char*>(str, out);
 
 	*out_total += total + sub_total;
 	*out_destroyed_total += sub_total_destroyed;
@@ -6835,41 +6835,41 @@ void game_spew_pof_info_sub(int model_num, polymodel *pm, int sm, CFILE *out, in
 #define BAIL()			do { int _idx; for(_idx=0; _idx<num_files; _idx++){ if(pof_list[_idx] != NULL){vm_free(pof_list[_idx]); pof_list[_idx] = NULL;}} return;} while(0);
 void game_spew_pof_info()
 {
-	char *pof_list[1000];
-	int num_files;	
-	CFILE *out;
-	int idx, model_num, i, j;
+	cfile::FileHandle *out;
+	int model_num, i, j;
 	polymodel *pm;
 	int total, root_total, model_total, destroyed_total, counted;
 	char str[255] = "";
 
-	// get file list
-	num_files = cf_get_file_list(1000, pof_list, CF_TYPE_MODELS, "*.pof");
+	SCP_vector<SCP_string> pofs;
+	cfile::listFiles(pofs, cfile::TYPE_MODELS, "*.pof");
 
 	// spew info on all the pofs
-	if(!num_files){
+	if (pofs.empty()){
 		return;
 	}
 
 	// go
-	out = cfopen("pofspew.txt", "wt", CFILE_NORMAL, CF_TYPE_DATA);
+	out = cfile::open("pofspew.txt", cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_DATA);
 	if(out == NULL){
-		BAIL();
-	}	
-	counted = 0;	
-	for(idx=0; idx<num_files; idx++, counted++){
-		sprintf(str, "%s.pof", pof_list[idx]);
-		model_num = model_load(str, 0, NULL);
+		return;
+	}
+
+	SCP_vector<SCP_string>::iterator iter;
+	counted = 0;
+	for (iter = pofs.begin(); iter != pofs.end(); ++iter, ++counted){
+		model_num = model_load(iter->c_str(), 0, NULL);
+
 		if(model_num >= 0){
 			pm = model_get(model_num);
 
 			// if we have a real model
-			if(pm != NULL){				
-				cfputs(str, out);
-				cfputs("\n", out);
+			if(pm != NULL) {
+				cfile::write<const char*>(iter->c_str(), out);
+				cfile::write<const char*>("\n", out);
 				
 				// go through and print all raw submodels
-				cfputs("RAW\n", out);
+				cfile::write<const char*>("RAW\n", out);
 				total = 0;
 				model_total = 0;				
 				for (i=0; i<pm->n_models; i++)	{					
@@ -6877,16 +6877,16 @@ void game_spew_pof_info()
 					
 					model_total += total;
 					sprintf(str, "Submodel %s total : %d faces\n", pm->submodel[i].name, total);
-					cfputs(str, out);
+					cfile::write<const char*>(str, out);
 				}				
 				sprintf(str, "Model total %d\n", model_total);				
-				cfputs(str, out);				
+				cfile::write<const char*>(str, out);
 
 				// now go through and do it by LOD
-				cfputs("BY LOD\n\n", out);				
+				cfile::write<const char*>("BY LOD\n\n", out);
 				for(i=0; i<pm->n_detail_levels; i++){
 					sprintf(str, "LOD %d\n", i);
-					cfputs(str, out);
+					cfile::write<const char*>(str, out);
 
 					// submodels
 					root_total = submodel_get_num_polys(model_num, pm->detail[i] );
@@ -6897,16 +6897,16 @@ void game_spew_pof_info()
 					}
 
 					sprintf(str, "Submodel %s total : %d faces\n", pm->submodel[pm->detail[i]].name, root_total);
-					cfputs(str, out);
+					cfile::write<const char*>(str, out);
 
 					sprintf(str, "TOTAL: %d\n", total + root_total);					
-					cfputs(str, out);
+					cfile::write<const char*>(str, out);
 					sprintf(str, "TOTAL not counting destroyed faces %d\n", (total + root_total) - destroyed_total);
-					cfputs(str, out);
+					cfile::write<const char*>(str, out);
 					sprintf(str, "TOTAL destroyed faces %d\n\n", destroyed_total);
-					cfputs(str, out);
+					cfile::write<const char*>(str, out);
 				}				
-				cfputs("------------------------------------------------------------------------\n\n", out);				
+				cfile::write<const char*>("------------------------------------------------------------------------\n\n", out);
 			}
 		}
 
@@ -6916,9 +6916,8 @@ void game_spew_pof_info()
 		}
 	}
 
-	cfclose(out);
+	cfile::close(out);
 	model_free_all();
-	BAIL();
 }
 
 DCF(pofspew, "")
@@ -7040,8 +7039,7 @@ int game_main(char *cmdline)
 
 	// maybe spew VP CRCs, and exit
 	if (Cmdline_verify_vps) {
-		extern void cfile_spew_pack_file_crcs();
-		cfile_spew_pack_file_crcs();
+		cfile::util::generateVPChecksums();
 		game_shutdown();
 		return 0;
 	}
@@ -7313,6 +7311,8 @@ void game_shutdown(void)
 
 	model_free_all();
 	bm_unload_all();			// unload/free bitmaps, has to be called *after* model_free_all()!
+
+	cfile::shutdown();
 
 	os_cleanup();
 
@@ -8333,52 +8333,6 @@ int game_do_cd_check(char *volume_name)
 #endif
 }
 
-// check if _any_ FreeSpace2 CDs are in the drive
-// return: 1	=> CD now in drive
-//			  0	=>	Could not find CD, they refuse to put it in the drive
-int game_do_cd_check_specific(char *volume_name, int cdnum)
-{	
-	int cd_present = 0;
-	int cd_drive_num;
-
-	int num_attempts = 0;
-	int refresh_files = 0;
-	while(1) {
-		int path_set_ok, popup_rval;
-
-		cd_drive_num = find_freespace_cd(volume_name);
-		path_set_ok = set_cdrom_path(cd_drive_num);
-		if ( path_set_ok ) {
-			cd_present = 1;
-			if ( refresh_files ) {
-				cfile_refresh();
-				refresh_files = 0;
-			}
-			break;
-		}
-
-		if(Is_standalone){
-			cd_present = 0;
-			break;
-		} else {
-			// no CD found, so prompt user
-			popup_rval = popup(PF_BODY_BIG, 1, POPUP_OK, XSTR("Please insert CD %d", 1468), cdnum);
-			refresh_files = 1;
-			if ( popup_rval != 1 ) {
-				cd_present = 0;
-				break;
-			}
-
-			if ( num_attempts++ > 5 ) {
-				cd_present = 0;
-				break;
-			}
-		}
-	}
-
-	return cd_present;
-}
-
 // ----------------------------------------------------------------
 //
 // CDROM detection code END
@@ -8405,7 +8359,7 @@ int detect_lang()
 
 	// try and open the file to verify
 	gr_stuff_first_font(first_font, sizeof(first_font));
-	CFILE *detect = cfopen(first_font, "rb");
+	cfile::FileHandle *detect = cfile::open(first_font);
 
 	// will use default setting if something went wrong
 	if (!detect)
@@ -8413,9 +8367,9 @@ int detect_lang()
 
 	// get the long checksum of the file
 	file_checksum = 0;
-	cfseek(detect, 0, SEEK_SET);
-	cf_chksum_long(detect, &file_checksum);
-	cfclose(detect);
+	cfile::seek(detect, 0, cfile::SEEK_MODE_SET);
+	cfile::checksum::crc::doLong(detect, &file_checksum);
+	cfile::close(detect);
 	detect = NULL;
 
 	// now compare the checksum/filesize against known #'s
@@ -8461,7 +8415,7 @@ void verify_ships_tbl()
 	int idx;
 
 	// detect if the packfile exists
-	CFILE *detect = cfopen("ships.tbl", "rb");
+	cfile::FileHandle *detect = cfile::open("ships.tbl");
 	Game_ships_tbl_valid = 0;	 
 	
 	// not mission-disk
@@ -8472,9 +8426,9 @@ void verify_ships_tbl()
 
 	// get the long checksum of the file
 	file_checksum = 0;
-	cfseek(detect, 0, SEEK_SET);	
-	cf_chksum_long(detect, &file_checksum);
-	cfclose(detect);
+	cfile::seek(detect, 0, cfile::SEEK_MODE_SET);	
+	cfile::checksum::crc::doLong(detect, &file_checksum);
+	cfile::close(detect);
 	detect = NULL;	
 
 	// now compare the checksum/filesize against known #'s
@@ -8490,12 +8444,12 @@ void verify_ships_tbl()
 DCF(shipspew, "display the checksum for the current ships.tbl")
 {
 	uint file_checksum;
-	CFILE *detect = cfopen("ships.tbl", "rb");
+	cfile::FileHandle *detect = cfile::open("ships.tbl");
 	// get the long checksum of the file
 	file_checksum = 0;
-	cfseek(detect, 0, SEEK_SET);	
-	cf_chksum_long(detect, &file_checksum);
-	cfclose(detect);
+	cfile::seek(detect, 0, cfile::SEEK_MODE_SET);	
+	cfile::checksum::crc::doLong(detect, &file_checksum);
+	cfile::close(detect);
 
 	dc_printf("%d", file_checksum);
 }
@@ -8523,7 +8477,7 @@ void verify_weapons_tbl()
 	int idx;
 
 	// detect if the packfile exists
-	CFILE *detect = cfopen("weapons.tbl", "rb");
+	cfile::FileHandle *detect = cfile::open("weapons.tbl");
 	Game_weapons_tbl_valid = 0;	 
 	
 	// not mission-disk
@@ -8534,9 +8488,9 @@ void verify_weapons_tbl()
 
 	// get the long checksum of the file
 	file_checksum = 0;
-	cfseek(detect, 0, SEEK_SET);	
-	cf_chksum_long(detect, &file_checksum);
-	cfclose(detect);
+	cfile::seek(detect, 0, cfile::SEEK_MODE_SET);	
+	cfile::checksum::crc::doLong(detect, &file_checksum);
+	cfile::close(detect);
 	detect = NULL;	
 
 	// now compare the checksum/filesize against known #'s
@@ -8552,12 +8506,12 @@ void verify_weapons_tbl()
 DCF(wepspew, "display the checksum for the current weapons.tbl")
 {
 	uint file_checksum;
-	CFILE *detect = cfopen("weapons.tbl", "rb");
+	cfile::FileHandle *detect = cfile::open("weapons.tbl");
 	// get the long checksum of the file
 	file_checksum = 0;
-	cfseek(detect, 0, SEEK_SET);	
-	cf_chksum_long(detect, &file_checksum);
-	cfclose(detect);
+	cfile::seek(detect, 0, cfile::SEEK_MODE_SET);	
+	cfile::checksum::crc::doLong(detect, &file_checksum);
+	cfile::close(detect);
 
 	dc_printf("%d", file_checksum);
 }

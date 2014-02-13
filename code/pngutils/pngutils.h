@@ -9,7 +9,7 @@
 #define PNG_ERROR_READING		1
 
 // reading
-extern int png_read_header(const char *real_filename, CFILE *img_cfp = NULL, int *w = 0, int *h = 0, int *bpp = 0, ubyte *palette = NULL);
-extern int png_read_bitmap(const char *real_filename, ubyte *image_data, ubyte *bpp, int dest_size, int cf_type = CF_TYPE_ANY);
+extern int png_read_header(const char *real_filename, cfile::FileHandle *img_cfp = NULL, int *w = 0, int *h = 0, int *bpp = 0, ubyte *palette = NULL);
+extern int png_read_bitmap(const char *real_filename, ubyte *image_data, ubyte *bpp, int dest_size, cfile::DirType cf_type = cfile::TYPE_ANY);
 
 #endif // _PNGUTILS_H

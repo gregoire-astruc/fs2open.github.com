@@ -61,7 +61,7 @@ extern int ds_initialized;
 
 int ds_init();
 void ds_close();
-int ds_parse_sound(CFILE *fp, ubyte **dest, uint *dest_size, WAVEFORMATEX **header, bool ogg = false, OggVorbis_File *ovf = NULL);
+int ds_parse_sound(cfile::FileHandle *fp, ubyte **dest, uint *dest_size, WAVEFORMATEX **header, bool ogg = false, OggVorbis_File *ovf = NULL);
 int ds_parse_sound_info(char *real_filename, sound_info *s_info);
 int ds_load_buffer(int *sid, int *final_size, void *header, sound_info *si, int flags);
 void ds_unload_buffer(int sid);

@@ -358,10 +358,10 @@ static void targa_read_pixel( int num_pixels, ubyte **dst, ubyte **src, int byte
 //
 // returns - TARGA_ERROR_NONE if successful, otherwise error code
 //
-int targa_read_header(const char *real_filename, CFILE *img_cfp, int *w, int *h, int *bpp, ubyte *palette )
+int targa_read_header(const char *real_filename, cfile::FileHandle *img_cfp, int *w, int *h, int *bpp, ubyte *palette )
 {	
 	targa_header header;
-	CFILE *targa_file = NULL;
+	cfile::FileHandle *targa_file = NULL;
 	char filename[MAX_FILENAME_LEN];
 
 	if (img_cfp == NULL) {
@@ -374,7 +374,7 @@ int targa_read_header(const char *real_filename, CFILE *img_cfp, int *w, int *h,
 
 		strcat_s( filename, ".tga" );
 
-		targa_file = cfopen( filename , "rb" );
+		targa_file = cfile::open(filename);
 
 		if ( !targa_file ) {
 			return TARGA_ERROR_READING;
@@ -383,44 +383,44 @@ int targa_read_header(const char *real_filename, CFILE *img_cfp, int *w, int *h,
 		targa_file = img_cfp;
 	}
 
-	header.id_length = cfread_ubyte(targa_file);
+	header.id_length = cfile::read<ubyte>(targa_file);
 	// header.id_length=targa_file.read_char();
 
-	header.color_map_type = cfread_ubyte(targa_file);
+	header.color_map_type = cfile::read<ubyte>(targa_file);
 	// header.color_map_type=targa_file.read_char();
 
-	header.image_type = cfread_ubyte(targa_file);
+	header.image_type = cfile::read<ubyte>(targa_file);
 	// header.image_type=targa_file.read_char();
 
-	header.cmap_start = cfread_short(targa_file);
+	header.cmap_start = cfile::read<short>(targa_file);
 	// header.cmap_start=targa_file.read_short();
 
-	header.cmap_length = cfread_short(targa_file);
+	header.cmap_length = cfile::read<short>(targa_file);
 	// header.cmap_length=targa_file.read_short();
 
-	header.cmap_depth = cfread_ubyte(targa_file);
+	header.cmap_depth = cfile::read<ubyte>(targa_file);
 	// header.cmap_depth=targa_file.read_char();
 
-	header.xoffset = cfread_short(targa_file);
+	header.xoffset = cfile::read<short>(targa_file);
 	// header.xoffset=targa_file.read_short();
 
-	header.yoffset = cfread_short(targa_file);
+	header.yoffset = cfile::read<short>(targa_file);
 	// header.yoffset=targa_file.read_short();
 
-	header.width = cfread_short(targa_file);
+	header.width = cfile::read<short>(targa_file);
 	// header.width=targa_file.read_short();
 
-	header.height = cfread_short(targa_file);
+	header.height = cfile::read<short>(targa_file);
 	// header.height=targa_file.read_short();
 
-	header.pixel_depth = cfread_ubyte(targa_file);
+	header.pixel_depth = cfile::read<ubyte>(targa_file);
 	// header.pixel_depth=targa_file.read_char();
 
-	header.image_descriptor = cfread_ubyte(targa_file);
+	header.image_descriptor = cfile::read<ubyte>(targa_file);
 	// header.image_descriptor=targa_file.read_char();
 
 	if (img_cfp == NULL) {
-		cfclose(targa_file);
+		cfile::close(targa_file);
 		targa_file = NULL;
 	}
 	
@@ -500,12 +500,12 @@ int targa_uncompress( ubyte *dst, ubyte *src, int bitmap_width, int bytes_per_pi
 //
 // returns - true if succesful, false otherwise
 //
-int targa_read_bitmap(const char *real_filename, ubyte *image_data, ubyte *palette, int dest_size, int cf_type)
+int targa_read_bitmap(const char *real_filename, ubyte *image_data, ubyte *palette, int dest_size, cfile::DirType cf_type)
 {
 	Assert(real_filename);
 	targa_header header;
 	targa_footer footer;
-	CFILE *targa_file;
+	cfile::FileHandle *targa_file;
 	char filename[MAX_FILENAME_LEN];
 	ubyte r, g, b;
 	int xfile_offset = 0;
@@ -516,66 +516,66 @@ int targa_read_bitmap(const char *real_filename, ubyte *image_data, ubyte *palet
 	if ( p ) *p = 0;
 	strcat_s( filename, ".tga" );
 
-	targa_file = cfopen( filename , "rb", CFILE_NORMAL, cf_type );
+	targa_file = cfile::open( filename , cfile::MODE_READ, cfile::OPEN_NORMAL, cf_type );
 	if ( !targa_file ){
 		return TARGA_ERROR_READING;
 	}		
 
 	// read the footer info first
-	cfseek( targa_file, cfilelength(targa_file) - TARGA_FOOTER_SIZE, CF_SEEK_SET );
+	cfile::seek( targa_file, cfile::fileLength(targa_file) - TARGA_FOOTER_SIZE, cfile::SEEK_MODE_SET );
 
 	memset( &footer, 0, sizeof(targa_footer) );
 
-	footer.ext_offset = cfread_uint(targa_file);
-	footer.dev_offset = cfread_uint(targa_file);
+	footer.ext_offset = cfile::read<uint>(targa_file);
+	footer.dev_offset = cfile::read<uint>(targa_file);
 
-	cfread_string(footer.sig_string, sizeof(footer.sig_string), targa_file);
+	cfile::readString(footer.sig_string, sizeof(footer.sig_string), targa_file);
 
 	if ( !strcmp(footer.sig_string, Xfile_ID) ) {
 		// it's an extended file to lets be sure to skip the extra crap which comes after the
 		// image data section, dev section comes first in the file and we only need one offset
 		if (footer.dev_offset || footer.ext_offset) {
-			xfile_offset = cfilelength(targa_file) - ((footer.dev_offset) ? footer.dev_offset : footer.ext_offset);
+			xfile_offset = cfile::fileLength(targa_file) - ((footer.dev_offset) ? footer.dev_offset : footer.ext_offset);
 		}
 	}
 
 	// done with the footer so jump back and do normal reading
-	cfseek( targa_file, 0, CF_SEEK_SET );
+	cfile::seek(targa_file, 0, cfile::SEEK_MODE_SET);
 
-	header.id_length = cfread_ubyte(targa_file);
+	header.id_length = cfile::read<ubyte>(targa_file);
 	// header.id_length=targa_file.read_char();
 
-	header.color_map_type = cfread_ubyte(targa_file);
+	header.color_map_type = cfile::read<ubyte>(targa_file);
 	// header.color_map_type=targa_file.read_char();
 
-	header.image_type = cfread_ubyte(targa_file);
+	header.image_type = cfile::read<ubyte>(targa_file);
 	// header.image_type=targa_file.read_char();
 
-	header.cmap_start = cfread_short(targa_file);
+	header.cmap_start = cfile::read<short>(targa_file);
 	// header.cmap_start=targa_file.read_short();
 
-	header.cmap_length = cfread_short(targa_file);
+	header.cmap_length = cfile::read<short>(targa_file);
 	// header.cmap_length=targa_file.read_short();
 
-	header.cmap_depth = cfread_ubyte(targa_file);
+	header.cmap_depth = cfile::read<ubyte>(targa_file);
 	// header.cmap_depth=targa_file.read_char();
 
-	header.xoffset = cfread_short(targa_file);
+	header.xoffset = cfile::read<short>(targa_file);
 	// header.xoffset=targa_file.read_short();
 
-	header.yoffset = cfread_short(targa_file);
+	header.yoffset = cfile::read<short>(targa_file);
 	// header.yoffset=targa_file.read_short();
 
-	header.width = cfread_short(targa_file);
+	header.width = cfile::read<short>(targa_file);
 	// header.width=targa_file.read_short();
 
-	header.height = cfread_short(targa_file);
+	header.height = cfile::read<short>(targa_file);
 	// header.height=targa_file.read_short();
 
-	header.pixel_depth = cfread_ubyte(targa_file);
+	header.pixel_depth = cfile::read<ubyte>(targa_file);
 	// header.pixel_depth=targa_file.read_char();
 
-	header.image_descriptor = cfread_ubyte(targa_file);
+	header.image_descriptor = cfile::read<ubyte>(targa_file);
 	// header.image_descriptor=targa_file.read_char();	
 
 	int bytes_per_pixel = (header.pixel_depth>>3);
@@ -584,21 +584,21 @@ int targa_read_bitmap(const char *real_filename, ubyte *image_data, ubyte *palet
 	Assert( (bytes_per_pixel == 2) || (bytes_per_pixel == 3) || (bytes_per_pixel == 4) );
 
 	if ( (bytes_per_pixel < 2) || (bytes_per_pixel > 4) ) {
-		cfclose(targa_file);
+		cfile::close(targa_file);
 		Int3();
 
 		return TARGA_ERROR_READING;
 	}
 
 	if((header.image_type!=1)&&(header.image_type!=2)&&(header.image_type!=9)&&(header.image_type!=10)) {
-		cfclose(targa_file);
+		cfile::close(targa_file);
 		return TARGA_ERROR_READING;
 	}
 
 	// skip the Image ID field -- should not be needed
 	if(header.id_length>0) {
-		if ( cfseek(targa_file, header.id_length, CF_SEEK_CUR) ) {
-			cfclose(targa_file);
+		if (!cfile::seek(targa_file, header.id_length, cfile::SEEK_MODE_CUR)) {
+			cfile::close(targa_file);
 			return TARGA_ERROR_READING;
 		}
 	}
@@ -616,9 +616,9 @@ int targa_read_bitmap(const char *real_filename, ubyte *image_data, ubyte *palet
 		// Read the color map data
 		int i;
 		for (i = 0; i < header.cmap_length; i++)	{
-			r = cfread_ubyte(targa_file);
-			g = cfread_ubyte(targa_file);
-			b = cfread_ubyte(targa_file);
+			r = cfile::read<ubyte>(targa_file);
+			g = cfile::read<ubyte>(targa_file);
+			b = cfile::read<ubyte>(targa_file);
 
 			if(palette != NULL){
 				palette[i*3+2] = r;
@@ -636,7 +636,7 @@ int targa_read_bitmap(const char *real_filename, ubyte *image_data, ubyte *palet
 		}
 	}
 
-	int bytes_remaining = cfilelength(targa_file) - cftell(targa_file) - xfile_offset;
+	int bytes_remaining = cfile::fileLength(targa_file) - cfile::tell(targa_file) - xfile_offset;
 
 	Assert(bytes_remaining > 0);
 
@@ -648,7 +648,7 @@ int targa_read_bitmap(const char *real_filename, ubyte *image_data, ubyte *palet
 
 	ubyte *src_pixels = fileptr;
 
-	cfread(fileptr, bytes_remaining, 1, targa_file);	
+	cfile::read(fileptr, bytes_remaining, 1, targa_file);	
 	
 	int rowsize = header.width * dest_size;
 
@@ -686,7 +686,7 @@ int targa_read_bitmap(const char *real_filename, ubyte *image_data, ubyte *palet
 	}
 
 	vm_free(fileptr);
-	cfclose(targa_file);
+	cfile::close(targa_file);
 	targa_file = NULL;
 
 	return TARGA_ERROR_NONE;
@@ -707,7 +707,7 @@ int targa_write_bitmap(char *real_filename, ubyte *data, ubyte *palette, int w, 
 {
 	Assert(bpp == 24);
 	char filename[MAX_FILENAME_LEN];
-	CFILE *f;
+	cfile::FileHandle *f;
 	int bytes_per_pixel = (bpp >> 3);
 		
 	// open the file
@@ -716,53 +716,53 @@ int targa_write_bitmap(char *real_filename, ubyte *data, ubyte *palette, int w, 
 	if ( p ) *p = 0;
 	strcat_s( filename, ".tga" );
 
-	f = cfopen( filename , "wb" );
+	f = cfile::open(filename , cfile::MODE_WRITE);
 	if ( !f ){
 		return TARGA_ERROR_READING;
 	}			
 
 	// Write the TGA header
-	cfwrite_ubyte(0, f);
+	cfile::write<ubyte>(0, f);
 	// f.write_ubyte(0);				//	IDLength
 
-	cfwrite_ubyte(0, f);
+	cfile::write<ubyte>(0, f);
 	//f.write_ubyte(0);				//	ColorMapType
 
-	cfwrite_ubyte(10, f);
+	cfile::write<ubyte>(10, f);
 	// f.write_ubyte(10);			//	image_type: 2 = 24bpp, uncompressed, 10=24bpp rle compressed
 
-	cfwrite_ushort(0, f);
+	cfile::write<short>(0, f);
 	// f.write_ushort(0);			// CMapStart
 
-	cfwrite_ushort(0, f);
+	cfile::write<short>(0, f);
 	// f.write_ushort(0);			//	CMapLength
 
-	cfwrite_ubyte(0, f);
+	cfile::write<ubyte>(0, f);
 	// f.write_ubyte(0);				// CMapDepth
 
-	cfwrite_ushort(0, f);
+	cfile::write<short>(0, f);
 	// f.write_ushort(0);			//	XOffset
 
-	cfwrite_ushort(0, f);
+	cfile::write<short>(0, f);
 	// f.write_ushort(0);			//	YOffset
 
-	cfwrite_ushort((ushort)w, f);
+	cfile::write<short>((ushort)w, f);
 	// f.write_ushort((ushort)w);	//	Width
 
-	cfwrite_ushort((ushort)h, f);
+	cfile::write<short>((ushort)h, f);
 	// f.write_ushort((ushort)h);	//	Height
 
-	cfwrite_ubyte(24, f);
+	cfile::write<ubyte>(24, f);
 	// f.write_ubyte(24);			// pixel_depth
 
-	cfwrite_ubyte(0x20, f);
+	cfile::write<ubyte>(0x20, f);
 	// f.write_ubyte(0x20);				// ImageDesc  ( 0x20 = Origin at upper left )
 
 	ubyte *compressed_data;
 	compressed_data = (ubyte*)vm_malloc(w * h * bytes_per_pixel);
 	Assert(compressed_data);
 	if(compressed_data == NULL){
-		cfclose(f);
+		cfile::close(f);
 		return -1;
 	}
 
@@ -770,12 +770,12 @@ int targa_write_bitmap(char *real_filename, ubyte *data, ubyte *palette, int w, 
 	compressed_data_len = targa_compress((char*)compressed_data, (char*)data, 3, bytes_per_pixel, w * h * bytes_per_pixel);
 	if (compressed_data_len < 0) {
 		vm_free(compressed_data);
-		cfclose(f);		
+		cfile::close(f);		
 		return -1;
 	}
 
-	cfwrite(compressed_data, compressed_data_len, 1, f);
-	cfclose(f);
+	cfile::write(compressed_data, compressed_data_len, 1, f);
+	cfile::close(f);
 	f = NULL;
 
 	return 0;

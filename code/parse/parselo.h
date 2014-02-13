@@ -187,9 +187,9 @@ extern void stop_parse();
 extern void mark_int_list(int *ilp, int max_ints, int lookup_type);
 extern void compact_multitext_string(char *str);
 extern void compact_multitext_string(SCP_string &str);
-extern void read_file_text(const char *filename, int mode = CF_TYPE_ANY, char *processed_text = NULL, char *raw_text = NULL);
+extern void read_file_text(const char *filename, cfile::DirType mode = cfile::TYPE_ANY, char *processed_text = NULL, char *raw_text = NULL);
 extern void read_file_text_from_array(const char *array, char *processed_text = NULL, char *raw_text = NULL);
-extern void read_raw_file_text(const char *filename, int mode = CF_TYPE_ANY, char *raw_text = NULL);
+extern void read_raw_file_text(const char *filename, cfile::DirType mode = cfile::TYPE_ANY, char *raw_text = NULL);
 extern void process_raw_file_text(char *processed_text = NULL, char *raw_text = NULL);
 extern void debug_show_mission_text();
 extern void convert_sexp_to_string(SCP_string &dest, int cur_node, int mode);
@@ -248,7 +248,9 @@ extern void truncate_message_lines(SCP_string &text, int num_allowed_lines);
 inline void parse_advance(int s){Mp+=s;}
 
 // parse a modular table, returns the number of files matching the "name_check" filter or 0 if it did nothing
-extern int parse_modular_table(const char *name_check, void (*parse_callback)(const char *filename), int path_type = CF_TYPE_TABLES, int sort_type = CF_SORT_REVERSE);
+extern int parse_modular_table(const char *name_check, void(*parse_callback)(const char *filename),
+	cfile::DirType path_type = cfile::TYPE_TABLES, cfile::SortMode sort_type = cfile::SORT_NAME);
+
 // to know that we are parsing a modular table
 extern bool Parsing_modular_table;
 

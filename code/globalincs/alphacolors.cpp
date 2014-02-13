@@ -69,9 +69,9 @@ int new_alpha_colors_init()
 		return 0;
 	}
 
-	if (cf_exists_full("colors.tbl", CF_TYPE_TABLES))
+	if (cfile::exists("colors.tbl", cfile::TYPE_TABLES))
 	{
-		read_file_text("colors.tbl", CF_TYPE_TABLES);
+		read_file_text("colors.tbl", cfile::TYPE_TABLES);
 		mprintf(("TABLES => Starting parse of 'colors.tbl'...\n"));
 	}
 	else

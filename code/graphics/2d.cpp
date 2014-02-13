@@ -532,7 +532,7 @@ bool gr_init(int d_mode, int d_width, int d_height, int d_depth)
 	}
 
 	// check for hi-res interface files so that we can verify our width/height is correct
-	bool has_sparky_hi = (cf_exists_full("2_ChoosePilot-m.pcx", CF_TYPE_ANY) && cf_exists_full("2_TechShipData-m.pcx", CF_TYPE_ANY));
+	bool has_sparky_hi = cfile::exists("2_ChoosePilot-m.pcx") && cfile::exists("2_TechShipData-m.pcx");
 
 	// if we don't have it then fall back to 640x480 mode instead
 	if ( !has_sparky_hi ) {

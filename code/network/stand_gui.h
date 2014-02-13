@@ -37,7 +37,7 @@ void std_destroy_gen_dialog();
 
 // set the text in the filename of the validate dialog
 // valid values for field_num == 0 .. 2
-void std_gen_set_text(char *str, int field_num);
+void std_gen_set_text(const char *str, int field_num);
 
 // is the validate dialog active
 int std_gen_is_active();

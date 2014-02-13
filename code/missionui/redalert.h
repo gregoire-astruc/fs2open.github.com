@@ -14,8 +14,6 @@
 
 #include "globalincs/pstypes.h"
 
-struct CFILE;
-
 void	red_alert_start_mission();
 
 void	red_alert_init();

@@ -75,23 +75,23 @@ void project_2d_onto_sphere( vec3d *pnt, float u, float v )
 // returns 0 if failed
 int load_nebula_sub(char *filename)
 {
-	CFILE *fp;
+	cfile::FileHandle *fp;
 	char id[16];
 	int version, major;
 
-	fp = cfopen(filename, "rb");
+	fp = cfile::open(filename);
 
 	if ( !fp )	{
 		return 0;
 	}
 
 	// ID of NEBU
-	cfread( id, 4, 1, fp );	
+	cfile::read( id, 4, 1, fp );	
 	if ( strncmp( id, NEBULA_FILE_ID, 4))	{
 		mprintf(( "Not a valid nebula file.\n" ));
 		return 0;
 	} 
-	cfread( &version, sizeof(int), 1, fp );
+	cfile::read( &version, sizeof(int), 1, fp );
 	major = version / 100;
 
 	if ( major != NEBULA_MAJOR_VERSION )	{
@@ -99,9 +99,9 @@ int load_nebula_sub(char *filename)
 		return 0;
 	}	
 
-	cfread( &num_pts, sizeof(int), 1, fp );
+	cfile::read( &num_pts, sizeof(int), 1, fp );
 	Assert( num_pts < MAX_POINTS );
-	cfread( &num_tris, sizeof(int), 1, fp );
+	cfile::read( &num_tris, sizeof(int), 1, fp );
 	Assert( num_tris < MAX_TRIS );
 
 	int i;
@@ -109,9 +109,9 @@ int load_nebula_sub(char *filename)
 		float xf, yf;
 		int l;
 
-		cfread( &xf, sizeof(float), 1, fp );
-		cfread( &yf, sizeof(float), 1, fp );
-		cfread( &l, sizeof(int), 1, fp );
+		cfile::read( &xf, sizeof(float), 1, fp );
+		cfile::read( &yf, sizeof(float), 1, fp );
+		cfile::read( &l, sizeof(int), 1, fp );
 		project_2d_onto_sphere( &nebula_vecs[i], 1.0f - xf, yf );
 		vm_vec_scale( &nebula_vecs[i], 10.0f );
 		nebula_verts[i].b = ubyte((l*255)/31);
@@ -120,12 +120,12 @@ int load_nebula_sub(char *filename)
 	}
 
 	for (i=0; i<num_tris; i++ )	{
-		cfread( &tri[i][0], sizeof(int), 1, fp );
-		cfread( &tri[i][1], sizeof(int), 1, fp );
-		cfread( &tri[i][2], sizeof(int), 1, fp );
+		cfile::read( &tri[i][0], sizeof(int), 1, fp );
+		cfile::read( &tri[i][1], sizeof(int), 1, fp );
+		cfile::read( &tri[i][2], sizeof(int), 1, fp );
 	}
 
-	cfclose(fp);
+	cfile::close(fp);
 
 	return 1;
 }
@@ -146,7 +146,7 @@ void nebula_init( char *filename, angles * pbh )
 		nebula_close();
 	}
 
-	if ( load_nebula_sub( cf_add_ext(filename, NOX(".neb")) ) ) {
+	if ( load_nebula_sub( cfile::legacy::add_ext(filename, NOX(".neb")) ) ) {
 		Nebula_loaded = 1;
 	}
 

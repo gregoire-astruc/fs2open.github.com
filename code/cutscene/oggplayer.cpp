@@ -88,7 +88,7 @@ static bool use_shaders = true;
 static int OGG_buffer_data(THEORAFILE *movie)
 {
 	char *buffer = ogg_sync_buffer(&movie->osyncstate, 8192); // Doubled read size to fix choppy audio with high bitrate movies - Valathil
-	int bytes = cfread(buffer, 1, 8192, movie->cfp);
+	int bytes = cfile::read(buffer, 1, 8192, movie->cfp);
 
 	ogg_sync_wrote(&movie->osyncstate, bytes);
 
@@ -375,13 +375,13 @@ static void OGG_video_init(theora_info *tinfo)
 			mprintf(("Compiling video-processing shader ... \n"));
 
 			// read vertex shader
-			CFILE *cf_shader = cfopen(vert_name, "rt", CFILE_NORMAL, CF_TYPE_EFFECTS);
+			cfile::FileHandle *cf_shader = cfile::open(vert_name, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_EFFECTS);
 	
 			if (cf_shader != NULL) {
-				int len = cfilelength(cf_shader);
+				int len = cfile::fileLength(cf_shader);
 				vert = (char*) vm_malloc(len + 1);
-				cfread(vert, len + 1, 1, cf_shader);
-				cfclose(cf_shader);
+				cfile::read(vert, len + 1, 1, cf_shader);
+				cfile::close(cf_shader);
 			} else {
 				mprintf(("   Loading built-in default shader for: %s\n", vert_name));
 				vert = defaults_get_file(vert_name);
@@ -391,13 +391,13 @@ static void OGG_video_init(theora_info *tinfo)
 				use_shaders = false;
 
 			// read fragment shader
-			cf_shader = cfopen(frag_name, "rt", CFILE_NORMAL, CF_TYPE_EFFECTS);
+			cf_shader = cfile::open(frag_name, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_EFFECTS);
 	
 			if (cf_shader != NULL) {
-				int len = cfilelength(cf_shader);
+				int len = cfile::fileLength(cf_shader);
 				frag = (char*) vm_malloc(len + 1);
-				cfread(frag, len + 1, 1, cf_shader);
-				cfclose(cf_shader);
+				cfile::read(frag, len + 1, 1, cf_shader);
+				cfile::close(cf_shader);
 			} else {
 				mprintf(("   Loading built-in default shader for: %s\n", frag_name));
 				frag = defaults_get_file(frag_name);
@@ -770,7 +770,7 @@ void theora_close(THEORAFILE *movie)
 
 	// free the stream
 	if (movie->cfp)
-		cfclose(movie->cfp);
+		cfile::close(movie->cfp);
 
 	// free the struct
 	vm_free(movie);
@@ -808,10 +808,10 @@ THEORAFILE *theora_open(char *filename)
 	// NOTE: Because the .ogg extension is used for both movies and sounds, we have to
 	//       be a bit more specific about our search locations, so we look only in the
 	//       two places that Theora movies might exist.
-	movie->cfp = cfopen(lower_name, "rb", CFILE_NORMAL, CF_TYPE_ROOT);
+	movie->cfp = cfile::open(lower_name, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_ROOT);
 
 	if (movie->cfp == NULL)
-		movie->cfp = cfopen(lower_name, "rb", CFILE_NORMAL, CF_TYPE_MOVIES);
+		movie->cfp = cfile::open(lower_name, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_MOVIES);
 
 	if (movie->cfp == NULL) {
 		mprintf(("Theora ERROR:  Unable to find and open movie file named '%s'\n", lower_name));
@@ -1062,7 +1062,7 @@ void theora_play(THEORAFILE *movie)
 				videobuf_ready = true;
 		}
 
-		if ( !videobuf_ready && (movie->vorbis_p && !audiobuf_ready) && cfeof(movie->cfp) )
+		if ( !videobuf_ready && (movie->vorbis_p && !audiobuf_ready) && cfile::eof(movie->cfp) )
 			break;
 
 		if ( !videobuf_ready || (movie->vorbis_p && !audiobuf_ready) ) {

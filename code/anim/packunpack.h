@@ -13,8 +13,7 @@
 #define __PACKUNPACK_H__
 
 #include "globalincs/pstypes.h"
-
-struct CFILE;
+#include "cfile/cfile.h"
 
 #define ANI_STREAM_CACHE_SIZE			4096
 
@@ -51,7 +50,7 @@ typedef struct anim {
 	ubyte			palette[768];
 	ubyte			palette_translation[256];
 	ubyte			*data;		// points to compressed data
-	CFILE*		cfile_ptr;
+	cfile::FileHandle*		cfile_ptr;
 	int			version;
 	int			fps;
 	ubyte			xparent_r;		// red component for the transparent color in source image

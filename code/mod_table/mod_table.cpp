@@ -46,7 +46,7 @@ void parse_mod_table(const char *filename)
 	if (filename == NULL)
 		read_file_text_from_array(defaults_get_file("game_settings.tbl"));
 	else
-		read_file_text(filename, CF_TYPE_TABLES);
+		read_file_text(filename, cfile::TYPE_TABLES);
 
 	reset_parse();	
 
@@ -225,7 +225,7 @@ void mod_table_init()
 	parse_mod_table(NULL);
 
 	// if a mod.tbl exists read it
-	if (cf_exists_full("game_settings.tbl", CF_TYPE_TABLES)) {
+	if (cfile::exists("game_settings.tbl", cfile::TYPE_TABLES)) {
 		parse_mod_table("game_settings.tbl");
 	}
 

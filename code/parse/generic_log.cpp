@@ -9,8 +9,9 @@
 
 
 
-
+#include <time.h>
 #include <stdarg.h>
+
 #include "globalincs/globals.h"
 #include "parse/generic_log.h"
 #include "cfile/cfile.h"
@@ -35,7 +36,7 @@ CFILE *log_file[];
 
 typedef struct logfile {
 	char filename[NAME_LENGTH];
-	CFILE *log_file;
+	cfile::FileHandle *log_file;
 } logfile;
 
 logfile logfiles[MAX_LOGFILES] = {
@@ -57,7 +58,7 @@ bool logfile_init(int logfile_type)
 	}
 
 	// attempt to open the file
-	logfiles[logfile_type].log_file = cfopen(logfiles[logfile_type].filename, "wt", CFILE_NORMAL, CF_TYPE_DATA);
+	logfiles[logfile_type].log_file = cfile::open(logfiles[logfile_type].filename, cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_DATA);
 
 	if(logfiles[logfile_type].log_file == NULL){
 		nprintf(("Network","Error opening %s for writing!!\n",logfiles[logfile_type].filename));
@@ -73,7 +74,7 @@ void logfile_close(int logfile_type)
 	// if we have a valid file, write a trailer and close
 	if(logfiles[logfile_type].log_file != NULL){
 
-		cfclose(logfiles[logfile_type].log_file);
+		cfile::close(logfiles[logfile_type].log_file);
 		logfiles[logfile_type].log_file = NULL;
 	}
 }
@@ -128,8 +129,8 @@ void log_string(int logfile_type, const char *string, int add_time)
 	strcat_s(tmp, "\n");
 
 	// now print it to the logfile if necessary	
-	cfputs(tmp, logfiles[logfile_type].log_file);
-	cflush(logfiles[logfile_type].log_file);
+	cfile::write<const char*>(tmp, logfiles[logfile_type].log_file);
+	cfile::flush(logfiles[logfile_type].log_file);
 
 #if defined(LOGFILE_ECHO_TO_DEBUG)
 	mprintf(("Log file type %d %s",logfile_type, tmp));

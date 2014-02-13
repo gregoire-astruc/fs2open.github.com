@@ -150,10 +150,9 @@ int generic_anim_load(generic_anim *ga)
 
 int generic_anim_stream(generic_anim *ga)
 {
-	CFILE *img_cfp = NULL;
+	cfile::FileHandle *img_cfp = NULL;
 	int anim_fps = 0;
-	char full_path[MAX_PATH];
-	int size = 0, offset = 0;
+
 	const int NUM_TYPES = 2;
 	const ubyte type_list[NUM_TYPES] = {BM_TYPE_EFF, BM_TYPE_ANI};
 	const char *ext_list[NUM_TYPES] = {".eff", ".ani"};
@@ -162,14 +161,15 @@ int generic_anim_stream(generic_anim *ga)
 
 	ga->type = BM_TYPE_NONE;
 
-	rval = cf_find_file_location_ext(ga->filename, NUM_TYPES, ext_list, CF_TYPE_ANY, sizeof(full_path) - 1, full_path, &size, &offset, 0);
-
-	// could not be found, or is invalid for some reason
-	if ( (rval < 0) || (rval >= NUM_TYPES) )
+	SCP_string fullName;
+	size_t index;
+	if (!cfile::findFile(ga->filename, fullName, cfile::TYPE_ANY, ext_list, NUM_TYPES, &index))
+	{
 		return -1;
+	}
 
 	//make sure we can open it
-	img_cfp = cfopen_special(full_path, "rb", size, offset, CF_TYPE_ANY);
+	img_cfp = cfile::open(fullName, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_ANY);
 
 	if (img_cfp == NULL) {
 		return -1;
@@ -178,16 +178,16 @@ int generic_anim_stream(generic_anim *ga)
 	strcat_s(ga->filename, ext_list[rval]);
 	ga->type = type_list[rval];
 	//seek to the end
-	cfseek(img_cfp, 0, CF_SEEK_END);
+	cfile::seek(img_cfp, 0, cfile::SEEK_MODE_END);
 
-	cfclose(img_cfp);
+	cfile::close(img_cfp);
 
 	//TODO: add streaming EFF
 	if(ga->type == BM_TYPE_ANI) {
 		bpp = ANI_BPP_CHECK;
 		if(ga->use_hud_color)
 			bpp = 8;
-		ga->ani.animation = anim_load(ga->filename, CF_TYPE_ANY, 0);
+		ga->ani.animation = anim_load(ga->filename, cfile::TYPE_ANY, 0);
 		ga->ani.instance = init_anim_instance(ga->ani.animation, bpp);
 
 	#ifndef NDEBUG
@@ -212,7 +212,7 @@ int generic_anim_stream(generic_anim *ga)
 		bpp = 32;
 		if(ga->use_hud_color)
 			bpp = 8;
-		bm_load_and_parse_eff(ga->filename, CF_TYPE_ANY, &ga->num_frames, &anim_fps, &ga->keyframe, 0);
+		bm_load_and_parse_eff(ga->filename, cfile::TYPE_ANY, &ga->num_frames, &anim_fps, &ga->keyframe, 0);
 		char *p = strrchr( ga->filename, '.' );
 		if ( p )
 			*p = 0;

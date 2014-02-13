@@ -136,8 +136,8 @@ void iff_init()
 	}
 
 	// Goober5000 - if table doesn't exist, use the default table
-	if (cf_exists_full("iff_defs.tbl", CF_TYPE_TABLES))
-		read_file_text("iff_defs.tbl", CF_TYPE_TABLES);
+	if (cfile::exists("iff_defs.tbl", cfile::TYPE_TABLES))
+		read_file_text("iff_defs.tbl", cfile::TYPE_TABLES);
 	else
 		read_file_text_from_array(defaults_get_file("iff_defs.tbl"));
 

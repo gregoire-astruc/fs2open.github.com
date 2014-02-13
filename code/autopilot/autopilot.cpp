@@ -3,7 +3,7 @@
 // 4-30-2004
 
 
-
+#include <time.h>
 
 #include "autopilot/autopilot.h"
 #include "ai/ai.h"
@@ -1261,7 +1261,7 @@ void NavSystem_Init()
 	UseCutsceneBars = true;
 
 	// defaults... can be tabled or bound to mission later
-	if (cf_exists_full("autopilot.tbl", CF_TYPE_TABLES))
+	if (cfile::exists("autopilot.tbl", cfile::TYPE_TABLES))
 		parse_autopilot_table("autopilot.tbl");
 	else
 		parse_autopilot_table(NULL);
@@ -1287,7 +1287,7 @@ void parse_autopilot_table(char *filename)
 	if (filename == NULL)
 		read_file_text_from_array(defaults_get_file("autopilot.tbl"));
 	else
-		read_file_text(filename, CF_TYPE_TABLES);
+		read_file_text(filename, cfile::TYPE_TABLES);
 
 	reset_parse();		
 

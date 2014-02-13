@@ -1819,7 +1819,7 @@ void door_anim_init(main_hall_defines &m)
 void main_hall_table_init()
 {
 	// if mainhall.tbl exists, parse it
-	if (cf_exists_full("mainhall.tbl", CF_TYPE_TABLES)) {
+	if (cfile::exists("mainhall.tbl", cfile::TYPE_TABLES)) {
 		parse_main_hall_table("mainhall.tbl");
 	}
 
@@ -1841,7 +1841,7 @@ void parse_main_hall_table(const char* filename)
 		return;
 	}
 
-	read_file_text(filename, CF_TYPE_TABLES);
+	read_file_text(filename, cfile::TYPE_TABLES);
 
 	reset_parse();
 

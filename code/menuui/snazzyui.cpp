@@ -177,7 +177,7 @@ void snazzy_menu_add_region(MENU_REGION* region, char* text, int mask, int key, 
 
 void read_menu_tbl(char* menu_name, char* bkg_filename, char* mask_filename, MENU_REGION* regions, int* num_regions, int play_sound)
 {
-	CFILE* fp;
+	cfile::FileHandle* fp;
 	int state=0;
 	char* p1, *p2, *p3;
 	//char music_filename[128];
@@ -191,7 +191,7 @@ void read_menu_tbl(char* menu_name, char* bkg_filename, char* mask_filename, MEN
 	// open localization
 	lcl_ext_open();
 
-	fp = cfopen( NOX("menu.tbl"), "rt" );
+	fp = cfile::open(NOX("menu.tbl"));
 	if (fp == NULL) {
 		Error(LOCATION, "menu.tbl could not be opened\n");
 
@@ -202,7 +202,7 @@ void read_menu_tbl(char* menu_name, char* bkg_filename, char* mask_filename, MEN
 	}
 
 
-	while (cfgets(tmp_line, 132, fp)) {
+	while (cfile::readLine(tmp_line, 132, fp)) {
 		p1 = strchr(tmp_line,'\n'); if (p1) *p1 = '\0';
 		p1 = strchr(tmp_line,';'); if (p1) *p1 = '\0';
 		p1 = p3 = strchr( tmp_line, '[' );
@@ -211,7 +211,7 @@ void read_menu_tbl(char* menu_name, char* bkg_filename, char* mask_filename, MEN
 			// close localization
 			lcl_ext_close();
 
-			cfclose(fp);
+			cfile::close(fp);
 			return;
 		}
 		
@@ -221,7 +221,7 @@ void read_menu_tbl(char* menu_name, char* bkg_filename, char* mask_filename, MEN
 				if (p2) *p2 = 0;
 				if (!stricmp( ++p1, menu_name )) state = 1;
 			} else {
-				cfclose(fp);
+				cfile::close(fp);
 				break;
 			}
 		} else if (state) {
@@ -278,7 +278,7 @@ void read_menu_tbl(char* menu_name, char* bkg_filename, char* mask_filename, MEN
 			}
 		}
 	}	
-	cfclose(fp);
+	cfile::close(fp);
 	
 	// close localization
 	lcl_ext_close();

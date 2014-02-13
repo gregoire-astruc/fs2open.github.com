@@ -1461,10 +1461,10 @@ void multi_join_load_tcp_addrs()
 	char line[MAX_IP_STRING];
 	net_addr addr;	
 	server_item *item;
-	CFILE *file = NULL;
+	cfile::FileHandle *file = NULL;
 
 	// attempt to open the ip list file
-	file = cfopen(IP_CONFIG_FNAME,"rt",CFILE_NORMAL,CF_TYPE_DATA);	
+	file = cfile::open(IP_CONFIG_FNAME, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_DATA);	
 	if(file == NULL){
 		nprintf(("Network","Error loading tcp.cfg file!\n"));
 		return;
@@ -1474,9 +1474,9 @@ void multi_join_load_tcp_addrs()
 	multi_free_server_list();
 
 	// read in all the strings in the file
-	while(!cfeof(file)){
+	while(!cfile::eof(file)){
 		line[0] = '\0';
-		cfgets(line,MAX_IP_STRING,file);
+		cfile::readLine(line,MAX_IP_STRING,file);
 
 		// strip off any newline character
 		if(line[strlen(line) - 1] == '\n'){
@@ -1507,7 +1507,7 @@ void multi_join_load_tcp_addrs()
 		}
 	}
 
-	cfclose(file);
+	cfile::close(file);
 }
 
 // do stuff like pinging servers, sending out requests, etc
@@ -3665,7 +3665,7 @@ void multi_create_game_do()
 		char mission_name[NAME_LENGTH+1];
 		int flags;
 		char *filename; 
-		filename = cf_add_ext( Cmdline_almission, FS_MISSION_FILE_EXT ); //DTP ADD EXTENSION needed next line
+		filename = cfile::legacy::add_ext( Cmdline_almission, FS_MISSION_FILE_EXT ); //DTP ADD EXTENSION needed next line
 		flags = mission_parse_is_multi(filename, mission_name); //DTP flags will set if mission is multi
 
 		if (flags) { //only continue if mission is multiplayer mission
@@ -4441,23 +4441,16 @@ void multi_create_list_scroll_down()
 // gets a list of multiplayer misisons
 void multi_create_list_load_missions()
 {
-	char *fname, mission_name[NAME_LENGTH+1];
+	char mission_name[NAME_LENGTH + 1];
 	char wild_card[10];
-	int file_count, idx;
-	char **file_list = NULL;
 
 	Multi_create_mission_list.clear();
 
 	memset( wild_card, 0, sizeof(wild_card) );
 	snprintf(wild_card, sizeof(wild_card) - 1, "*%s", FS_MISSION_FILE_EXT);
 
-	file_list = (char**) vm_malloc( sizeof(char*) * 1024 );
-
-	if (file_list == NULL) {
-		return;
-	}
-
-	file_count = cf_get_file_list(1024, file_list, CF_TYPE_MISSIONS, wild_card);
+	SCP_vector<SCP_string> fileList;
+	cfile::listFiles(fileList, cfile::TYPE_MISSIONS, wild_card);
 
 	// maybe create a standalone dialog
 	if (Game_mode & GM_STANDALONE_SERVER) {
@@ -4465,54 +4458,37 @@ void multi_create_list_load_missions()
 		std_gen_set_text("Mission:", 1);
 	}
 
-	for (idx = 0; idx < file_count; idx++) {
+	SCP_vector<SCP_string>::iterator iter;
+	for (iter = fileList.begin(); iter != fileList.end(); ++iter) {
 		int flags,max_players;
-		char *filename;
 		uint m_respawn;
 
-		fname = file_list[idx];
-		
-		// tack on any necessary file extension
-		filename = cf_add_ext( fname, FS_MISSION_FILE_EXT );
-
 		if (Game_mode & GM_STANDALONE_SERVER) {			
-			std_gen_set_text(filename, 2);
+			std_gen_set_text(iter->c_str(), 2);
 		}
 
-		flags = mission_parse_is_multi(filename, mission_name);		
+		flags = mission_parse_is_multi(iter->c_str(), mission_name);
 
 		// if the mission is a multiplayer mission, then add it to the mission list
 		if ( flags ) {
-			max_players = mission_parse_get_multi_mission_info( filename );				
+			max_players = mission_parse_get_multi_mission_info( iter->c_str() );				
 			m_respawn = The_mission.num_respawns;
 
 			multi_create_info mcip;
 
-			strcpy_s(mcip.filename, filename );
+			strcpy_s(mcip.filename, iter->c_str() );
 			strcpy_s(mcip.name, mission_name );
 			mcip.flags = flags;
 			mcip.respawn = m_respawn;
 			mcip.max_players = (ubyte)max_players;
 
 			// get any additional information for possibly builtin missions
-			fs_builtin_mission *fb = game_find_builtin_mission(filename);
+			fs_builtin_mission *fb = game_find_builtin_mission(iter->c_str());
 			if(fb != NULL){					
 			}
 
 			Multi_create_mission_list.push_back( mcip );
 		}
-	}
-
-	if (file_list) {
-		for (idx = 0; idx < file_count; idx++) {
-			if (file_list[idx]) {
-				vm_free(file_list[idx]);
-				file_list[idx] = NULL;
-			}
-		}
-
-		vm_free(file_list);
-		file_list = NULL;
 	}
 
 	Multi_create_slider.set_numberItems(int(Multi_create_mission_list.size()) > Multi_create_list_max_display[gr_screen.res] ? int(Multi_create_mission_list.size())-Multi_create_list_max_display[gr_screen.res] : 0);
@@ -4525,25 +4501,17 @@ void multi_create_list_load_missions()
 
 void multi_create_list_load_campaigns()
 {	
-	char *fname;
-	int idx, file_count;
 	int campaign_type,max_players;
 	char title[255];
 	char wild_card[10];
-	char **file_list = NULL;
 
 	Multi_create_campaign_list.clear();
 
 	memset( wild_card, 0, sizeof(wild_card) );
 	snprintf(wild_card, sizeof(wild_card) - 1, "*%s", FS_CAMPAIGN_FILE_EXT);
 
-	file_list = (char**) vm_malloc( sizeof(char*) * 1024 );
-
-	if (file_list == NULL) {
-		return;
-	}
-
-	file_count = cf_get_file_list(1024, file_list, CF_TYPE_MISSIONS, wild_card);
+	SCP_vector<SCP_string> fileList;
+	cfile::listFiles(fileList, cfile::TYPE_MISSIONS, wild_card);
 
 	// maybe create a standalone dialog
 	if (Game_mode & GM_STANDALONE_SERVER) {
@@ -4551,26 +4519,23 @@ void multi_create_list_load_campaigns()
 		std_gen_set_text("Campaign:", 1);
 	}
 
-	for (idx = 0; idx < file_count; idx++) {
+	SCP_vector<SCP_string>::iterator iter;
+	for (iter = fileList.begin(); iter != fileList.end(); ++iter)
+	{
 		int flags;
-		char *filename, name[NAME_LENGTH];
-
-		fname = file_list[idx];
-		
-		// tack on any necessary file extension
-		filename = cf_add_ext( fname, FS_CAMPAIGN_FILE_EXT );
+		char name[NAME_LENGTH];
 
 		if (Game_mode & GM_STANDALONE_SERVER) {			
-			std_gen_set_text(filename, 2);
+			std_gen_set_text(iter->c_str(), 2);
 		}
 
 		// if the campaign is a multiplayer campaign, then add the data to the campaign list items
-		flags = mission_campaign_parse_is_multi( filename, name );
-		if( flags != CAMPAIGN_TYPE_SINGLE && mission_campaign_get_info(filename,title,&campaign_type,&max_players)) {
+		flags = mission_campaign_parse_is_multi( iter->c_str(), name );
+		if( flags != CAMPAIGN_TYPE_SINGLE && mission_campaign_get_info(iter->c_str(),title,&campaign_type,&max_players)) {
 			multi_create_info mcip;
 
-			strcpy_s(mcip.filename, filename );
-			strcpy_s(mcip.name, name );
+			strcpy_s(mcip.filename, iter->c_str());
+			strcpy_s(mcip.name, name);
 			
 			// setup various flags
 			if ( flags == CAMPAIGN_TYPE_MULTI_COOP ){
@@ -4587,25 +4552,8 @@ void multi_create_list_load_campaigns()
 			// 0 max players for campaign files
 			mcip.max_players = (unsigned char)max_players;
 
-			// get any additional information for possibly builtin missions
-			fs_builtin_mission *fb = game_find_builtin_mission(filename);
-			if(fb != NULL){					
-			}
-
 			Multi_create_campaign_list.push_back( mcip );
 		}
-	}
-
-	if (file_list) {
-		for (idx = 0; idx < file_count; idx++) {
-			if (file_list[idx]) {
-				vm_free(file_list[idx]);
-				file_list[idx] = NULL;
-			}
-		}
-
-		vm_free(file_list);
-		file_list = NULL;
 	}
 
 	// maybe create a standalone dialog
@@ -5418,7 +5366,7 @@ int multi_create_lookup_campaign(char *fname)
 void multi_create_refresh_pxo()
 {
 	// delete mvalid.cfg if it exists
-	cf_delete(MULTI_VALID_MISSION_FILE, CF_TYPE_DATA);
+	cfile::deleteFile(MULTI_VALID_MISSION_FILE, cfile::TYPE_DATA);
 
 	// refresh missions from the tracker
 	multi_update_valid_missions();

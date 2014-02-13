@@ -1551,7 +1551,7 @@ int parse_ship_values(ship_info* sip, bool isTemplate, bool first_time, bool rep
 		// Goober5000 - if this is a modular table, and we're replacing an existing file name, and the file doesn't exist, don't replace it
 		if (replace)
 			if (sip->cockpit_pof_file[0] != '\0')
-				if (!cf_exists_full(temp, CF_TYPE_MODELS))
+				if (!cfile::exists(temp, cfile::TYPE_MODELS))
 					valid = false;
 
 		if (valid)
@@ -1618,7 +1618,7 @@ int parse_ship_values(ship_info* sip, bool isTemplate, bool first_time, bool rep
 		// Goober5000 - if this is a modular table, and we're replacing an existing file name, and the file doesn't exist, don't replace it
 		if (replace)
 			if (sip->pof_file[0] != '\0')
-				if (!cf_exists_full(temp, CF_TYPE_MODELS))
+				if (!cfile::exists(temp, cfile::TYPE_MODELS))
 					valid = false;
 
 		if (valid)
@@ -1681,7 +1681,7 @@ int parse_ship_values(ship_info* sip, bool isTemplate, bool first_time, bool rep
 		// Goober5000 - if this is a modular table, and we're replacing an existing file name, and the file doesn't exist, don't replace it
 		if (replace)
 			if (sip->pof_file[0] != '\0')
-				if (!cf_exists_full(temp, CF_TYPE_MODELS))
+				if (!cfile::exists(temp, cfile::TYPE_MODELS))
 					valid = false;
 
 		if (valid)
@@ -4119,7 +4119,7 @@ void parse_shiptype_tbl(const char *filename)
 	}
 
 	if (filename != NULL)
-		read_file_text(filename, CF_TYPE_TABLES);
+		read_file_text(filename, cfile::TYPE_TABLES);
 	else
 		read_file_text_from_array(defaults_get_file("objecttypes.tbl"));
 
@@ -4221,7 +4221,7 @@ void parse_shiptbl(const char *filename)
 		return;
 	}
 
-	read_file_text(filename, CF_TYPE_TABLES);
+	read_file_text(filename, cfile::TYPE_TABLES);
 	reset_parse();
 
 	// parse default ship
@@ -4387,7 +4387,7 @@ void ship_init()
 	if ( !ships_inited )
 	{
 		//Parse main TBL first
-		if (cf_exists_full("objecttypes.tbl", CF_TYPE_TABLES))
+		if (cfile::exists("objecttypes.tbl", cfile::TYPE_TABLES))
 			parse_shiptype_tbl("objecttypes.tbl");
 		else
 			parse_shiptype_tbl(NULL);
@@ -17644,7 +17644,7 @@ void armor_parse_table(const char *filename)
 		return;
 	}
 
-	read_file_text(filename, CF_TYPE_TABLES);
+	read_file_text(filename, cfile::TYPE_TABLES);
 	reset_parse();
 
 	//Enumerate through all the armor types and add them.

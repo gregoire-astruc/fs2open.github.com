@@ -124,10 +124,10 @@ int bm_release( int n, int clear_render_targets = 0 );
 // It returns a negative number if it couldn't load
 // the bitmap.   On success, it returns the bitmap
 // number of the first frame and nframes is set.
-extern int bm_load_animation( const char *filename, int *nframes = NULL, int *fps = NULL, int *keyframe = NULL, int can_drop_frames = 0, int dir_type = CF_TYPE_ANY );
+extern int bm_load_animation( const char *filename, int *nframes = NULL, int *fps = NULL, int *keyframe = NULL, int can_drop_frames = 0, cfile::DirType dir_type = cfile::TYPE_ANY);
 
 //Loads either animation (bm_load_animation) or still image (bm_load)
-extern int bm_load_either(const char *filename, int *nframes = NULL, int *fps = NULL, int *keyframe = NULL, int can_drop_frames = 0, int dir_type = CF_TYPE_ANY);
+extern int bm_load_either(const char *filename, int *nframes = NULL, int *fps = NULL, int *keyframe = NULL, int can_drop_frames = 0, cfile::DirType dir_type = cfile::TYPE_ANY);
 
 // This locks down a bitmap and returns a pointer to a bitmap
 // that can be accessed until you call bm_unlock.   Only lock
@@ -284,5 +284,5 @@ int bm_make_render_target( int width, int height, int flags );
 int bm_is_render_target(int bitmap_id);
 int bm_set_render_target(int handle, int face = -1);
 
-int bm_load_and_parse_eff(const char *filename, int dir_type, int *nframes, int *nfps, int *key, ubyte *type);
+int bm_load_and_parse_eff(const char *filename, cfile::DirType dir_type, int *nframes, int *nfps, int *key, ubyte *type);
 #endif

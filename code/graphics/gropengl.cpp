@@ -1160,29 +1160,29 @@ static void opengl_flush_frame_dump()
 		sprintf(filename, NOX("frm%04d.tga"), GL_dump_frame_number );
 		GL_dump_frame_number++;
 
-		CFILE *f = cfopen(filename, "wb", CFILE_NORMAL, CF_TYPE_DATA);
+		cfile::FileHandle *f = cfile::open(filename, cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_DATA);
 
 		// Write the TGA header
-		cfwrite_ubyte( 0, f );	//	IDLength;
-		cfwrite_ubyte( 0, f );	//	ColorMapType;
-		cfwrite_ubyte( 2, f );	//	ImageType;		// 2 = 24bpp, uncompressed, 10=24bpp rle compressed
-		cfwrite_ushort( 0, f );	// CMapStart;
-		cfwrite_ushort( 0, f );	//	CMapLength;
-		cfwrite_ubyte( 0, f );	// CMapDepth;
-		cfwrite_ushort( 0, f );	//	XOffset;
-		cfwrite_ushort( 0, f );	//	YOffset;
-		cfwrite_ushort( (ushort)gr_screen.max_w, f );	//	Width;
-		cfwrite_ushort( (ushort)gr_screen.max_h, f );	//	Height;
-		cfwrite_ubyte( 24, f );	//PixelDepth;
-		cfwrite_ubyte( 0, f );	//ImageDesc;
+		cfile::write<ubyte>( 0, f );	//	IDLength;
+		cfile::write<ubyte>( 0, f );	//	ColorMapType;
+		cfile::write<ubyte>( 2, f );	//	ImageType;		// 2 = 24bpp, uncompressed, 10=24bpp rle compressed
+		cfile::write<short>( 0, f );	// CMapStart;
+		cfile::write<short>( 0, f );	//	CMapLength;
+		cfile::write<ubyte>( 0, f );	// CMapDepth;
+		cfile::write<short>( 0, f );	//	XOffset;
+		cfile::write<short>( 0, f );	//	YOffset;
+		cfile::write<short>( (ushort)gr_screen.max_w, f );	//	Width;
+		cfile::write<short>( (ushort)gr_screen.max_h, f );	//	Height;
+		cfile::write<ubyte>( 24, f );	//PixelDepth;
+		cfile::write<ubyte>( 0, f );	//ImageDesc;
 
 		glReadBuffer(GL_FRONT);
 		glReadPixels(0, 0, gr_screen.max_w, gr_screen.max_h, GL_BGR_EXT, GL_UNSIGNED_BYTE, GL_dump_buffer);
 
 		// save the data out
-		cfwrite( GL_dump_buffer, GL_dump_frame_size, 1, f );
+		cfile::write( GL_dump_buffer, GL_dump_frame_size, 1, f );
 
-		cfclose(f);
+		cfile::close(f);
 
 	}
 

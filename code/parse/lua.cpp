@@ -2,7 +2,6 @@
 #include "ai/aigoals.h"
 #include "asteroid/asteroid.h"
 #include "camera/camera.h"
-#include "cfile/cfilesystem.h"
 #include "debris/debris.h"
 #include "cmdline/cmdline.h"
 #include "freespace.h"
@@ -1081,15 +1080,33 @@ ADE_FUNC(isValid, l_Event, NULL, "Detects whether handle is valid", "boolean", "
 
 //**********HANDLE: File
 
-ade_obj<CFILE*> l_File("file", "File handle");
+class file_handle_h
+{
+public:
+	cfile::FileHandle* handle;
+	bool valid;
+
+	file_handle_h() : handle(NULL), valid(false)
+	{}
+
+	file_handle_h(cfile::FileHandle* handleIn) : handle(handleIn), valid(true)
+	{}
+
+	bool isValid()
+	{
+		return valid;
+	}
+};
+
+ade_obj<file_handle_h> l_File("file", "File handle");
 
 ADE_FUNC(isValid, l_File, NULL, "Detects whether handle is valid", "boolean", "true if valid, false if handle is invalid, nil if a syntax/type error occurs")
 {
-	CFILE *cfp = NULL;
-	if(!ade_get_args(L, "o", l_File.Get(&cfp)))
+	file_handle_h *cfp = NULL;
+	if (!ade_get_args(L, "o", l_File.GetPtr(&cfp)))
 		return ADE_RETURN_NIL;
 
-	if(!cf_is_valid(cfp))
+	if(!cfp->isValid())
 		return ADE_RETURN_FALSE;
 
 	return ADE_RETURN_TRUE;
@@ -1097,17 +1114,19 @@ ADE_FUNC(isValid, l_File, NULL, "Detects whether handle is valid", "boolean", "t
 
 ADE_FUNC(close, l_File, NULL, "Instantly closes file and invalidates all file handles", NULL, NULL)
 {
-	CFILE *cfp;
-	if(!ade_get_args(L, "o", l_File.Get(&cfp)))
+	file_handle_h *cfp;
+	if (!ade_get_args(L, "o", l_File.GetPtr(&cfp)))
 		return ADE_RETURN_FALSE;
 
-	if(!cf_is_valid(cfp))
+	if(!cfp->isValid())
 		return ADE_RETURN_FALSE;
 
-	int rval = cfclose(cfp);
-	if(rval != 0)
+	cfp->valid = false;
+
+	bool rval = cfile::close(cfp->handle);
+	if(!rval)
 	{
-		LuaError(L, "Attempt to close file resulted in error %d", rval);
+		LuaError(L, "Attempt to close file resulted in error!");
 		return ADE_RETURN_FALSE;
 	}
 	return ADE_RETURN_TRUE;
@@ -1115,35 +1134,43 @@ ADE_FUNC(close, l_File, NULL, "Instantly closes file and invalidates all file ha
 
 ADE_FUNC(flush, l_File, NULL, "Flushes file buffer to disk.", "boolean", "True for success, false on failure")
 {
-	CFILE *cfp = NULL;
-	if(!ade_get_args(L, "o", l_File.Get(&cfp)))
+	file_handle_h *cfp = NULL;
+	if(!ade_get_args(L, "o", l_File.GetPtr(&cfp)))
 		return ADE_RETURN_FALSE;
 
-	if(!cf_is_valid(cfp))
+	if(!cfp->isValid())
 		return ADE_RETURN_FALSE;
 
 	//WMC - this looks reversed, yes, it's right. Look at cflush.
-	int cf_result = cflush(cfp);
-	return ade_set_args(L, "b", cf_result ? false : true);
+	bool cf_result = cfile::flush(cfp->handle);
+	return ade_set_args(L, "b", cf_result);
 }
 
 ADE_FUNC(getPath, l_File, NULL, "Determines path of the given file", "string", "Path string of the file handle, or an empty string if it doesn't have one, or the handle is invalid")
 {
-	CFILE *cfp = NULL;
-	if(!ade_get_args(L, "o", l_File.Get(&cfp)))
+	file_handle_h *cfp = NULL;
+	if (!ade_get_args(L, "o", l_File.GetPtr(&cfp)))
 		return ade_set_error(L, "s", "");
 
-	if(!cf_is_valid(cfp))
+	if(!cfp->isValid())
 		return ade_set_error(L, "s", "");
 
-	int id = cf_get_dir_type(cfp);
-	if(Pathtypes[id].path != NULL)
-		return ade_set_args(L, "s", Pathtypes[id].path);
+	const std::string& path = cfile::getFilePath(cfp->handle);
+
+	size_t slash = path.find_last_of('/');
+
+	if (slash != std::string::npos)
+	{
+		SCP_string path(path.begin(), path.begin() + slash);
+
+		return ade_set_args(L, "s", path.c_str());
+	}
 	else
+	{
 		return ade_set_args(L, "s", "");
+	}
 }
 
-extern int cfread_lua_number(double *buf, CFILE *cfile);
 ADE_FUNC(read, l_File, "number or string, ...",
 		 "Reads part of or all of a file, depending on arguments passed. Based on basic Lua file:read function."
 		 "Returns nil when the end of the file is reached."
@@ -1154,11 +1181,11 @@ ADE_FUNC(read, l_File, "number or string, ...",
 		 "number or string, ...",
 		 "Requested data, or nil if the function fails")
 {
-	CFILE *cfp = NULL;
-	if(!ade_get_args(L, "o", l_File.Get(&cfp)))
+	file_handle_h *cfp = NULL;
+	if (!ade_get_args(L, "o", l_File.GetPtr(&cfp)))
 		return ADE_RETURN_NIL;
 
-	if(!cf_is_valid(cfp))
+	if(!cfp->isValid())
 		return ADE_RETURN_NIL;
 
 	int i;
@@ -1178,24 +1205,31 @@ ADE_FUNC(read, l_File, "number or string, ...",
 			fmt = (char*)lua_tostring(L, i);
 			if(!stricmp(fmt, "*n"))
 			{
-				double d = 0.0f;
-				if(cfread_lua_number(&d, cfp) == EOF)
-					return ADE_RETURN_NIL;
+				try
+				{
+					double d;
+					
+					cfile::getStream(cfp->handle) >> d;
 
-				lua_pushnumber(L, d);
-				num_returned++;
+					lua_pushnumber(L, d);
+					num_returned++;
+				}
+				catch (const cfile::EOFException&)
+				{
+					return ADE_RETURN_NIL;
+				}
 			}
 			else if(!stricmp(fmt, "*a"))
 			{
-				int tell_res = cftell(cfp);
+				int tell_res = cfile::tell(cfp->handle);
 				if(tell_res < 0)
 				{
 					Error(LOCATION, "Critical error reading Lua file; could not cftell.");
 				}
-				int read_len = cfilelength(cfp) - tell_res;
+				int read_len = cfile::fileLength(cfp->handle) - tell_res;
 
 				char *buf = (char *)vm_malloc(read_len + 1);
-				int final_len = cfread(buf, 1, read_len, cfp);
+				int final_len = cfile::read(buf, 1, read_len, cfp->handle);
 				buf[final_len] = '\0';
 
 				lua_pushstring(L, buf);
@@ -1206,7 +1240,7 @@ ADE_FUNC(read, l_File, "number or string, ...",
 			{
 				char buf[10240];
 				size_t idx;
-				if(cfgets(buf, (int)(sizeof(buf)/sizeof(char)), cfp) == NULL)
+				if (cfile::readLine(buf, (int)(sizeof(buf) / sizeof(char)), cfp->handle) == NULL)
 				{
 					lua_pushnil(L);
 				}
@@ -1236,14 +1270,14 @@ ADE_FUNC(read, l_File, "number or string, ...",
 
 			if(num < 1)
 			{
-				if(cfeof(cfp))
+				if (cfile::eof(cfp->handle))
 					lua_pushstring(L, "");
 				else
 					lua_pushnil(L);
 			}
 
 			char *buf = (char*)vm_malloc(num+1);
-			int total_read = cfread(buf, 1, num, cfp);
+			int total_read = cfile::read(buf, 1, num, cfp->handle);
 			if(total_read)
 			{
 				buf[total_read] = '\0';
@@ -1275,30 +1309,30 @@ ADE_FUNC(seek, l_File, "[string Whence=\"cur\", number Offset=0]",
 	char *w = NULL;
 	int o = 0;
 
-	CFILE *cfp = NULL;
-	if(!ade_get_args(L, "o|si", l_File.Get(&cfp), &w, &o))
+	file_handle_h *cfp = NULL;
+	if (!ade_get_args(L, "o|si", l_File.GetPtr(&cfp), &w, &o))
 		return ADE_RETURN_NIL;
 
-	if(!cf_is_valid(cfp))
+	if(!cfp->isValid())
 		return ADE_RETURN_NIL;
 
 	if(!(w == NULL || (!stricmp(w, "cur") && o != 0)))
 	{
-		int seek_type = CF_SEEK_CUR;
+		cfile::SeekMode seek_type = cfile::SEEK_MODE_CUR;
 		if(!stricmp(w, "set"))
-			seek_type = CF_SEEK_SET;
+			seek_type = cfile::SEEK_MODE_SET;
 		else if(!stricmp(w, "cur"))
-			seek_type = CF_SEEK_CUR;
+			seek_type = cfile::SEEK_MODE_CUR;
 		else if(!stricmp(w, "end"))
-			seek_type = CF_SEEK_END;
+			seek_type = cfile::SEEK_MODE_END;
 		else
 			LuaError(L, "Invalid where argument passed to seek() - '%s'", w);
 
-		if(cfseek(cfp, o, seek_type))
+		if (cfile::seek(cfp->handle, o, seek_type))
 			return ADE_RETURN_FALSE;
 	}
 
-	int res = cftell(cfp);
+	int res = cfile::tell(cfp->handle);
 	if(res >= 0)
 		return ade_set_args(L, "i", res);
 	else
@@ -1308,11 +1342,11 @@ ADE_FUNC(seek, l_File, "[string Whence=\"cur\", number Offset=0]",
 ADE_FUNC(write, l_File, "string or number, ...",
 		 "Writes a series of Lua strings or numbers to the current file.", "number", "Number of items successfully written.")
 {
-	CFILE *cfp = NULL;
-	if(!ade_get_args(L, "o", l_File.Get(&cfp)))
+	file_handle_h *cfp = NULL;
+	if (!ade_get_args(L, "o", l_File.GetPtr(&cfp)))
 		return ade_set_error(L, "i", 0);
 
-	if(!cf_is_valid(cfp))
+	if(!cfp->isValid())
 		return ade_set_error(L, "i", 0);
 
 	int l_pos = 2;
@@ -1324,7 +1358,7 @@ ADE_FUNC(write, l_File, "string or number, ...",
 		if(type == LUA_TSTRING)
 		{
 			char *s = (char*)lua_tostring(L, l_pos);
-			if(cfwrite(s, sizeof(char), strlen(s), cfp))
+			if (cfile::write(s, sizeof(char), strlen(s), cfp->handle))
 				num_successful++;
 		}
 		else if(type == LUA_TNUMBER)
@@ -1332,7 +1366,7 @@ ADE_FUNC(write, l_File, "string or number, ...",
 			double d = lua_tonumber(L, l_pos);
 			char buf[32]= {0};
 			sprintf(buf, LUA_NUMBER_FMT, d);
-			if(cfwrite(buf, sizeof(char), strlen(buf), cfp))
+			if (cfile::write(buf, sizeof(char), strlen(buf), cfp->handle))
 				num_successful++;
 		}
 
@@ -12054,84 +12088,54 @@ ADE_FUNC(__len, l_Base_States, NULL, "Number of states", "number", "Number of st
 //Ironically, I never actually put this on it.
 ade_lib l_CFile("CFile", NULL, "cf", "CFile FS2 filesystem access");
 
-int l_cf_get_path_id(char* n_path)
+SCP_string constructFilePath(const char* c_file, const char* c_path)
 {
-	uint i;
-
-	size_t path_len = strlen(n_path);
-	char *buf = (char*) vm_malloc((strlen(n_path)+1) * sizeof(char));
-	
-	if (!buf) 
-		return CF_TYPE_INVALID;
-		
-	strcpy(buf, n_path);
-
-	//Remove trailing slashes
-	i = path_len -1;
-	while(buf[i] == '\\' || buf[i] == '/')
-		buf[i--] = '\0';
-
-	//Remove leading slashes
-	i = 0;
-	while(i < path_len && (buf[i] == '\\' || buf[i] == '/'))
-		buf[i++] = '\0';
-
-	//Use official DIR_SEPARATOR_CHAR
-	for(i = 0; i < path_len; i++)
+	SCP_string path;
+	if (strstr(c_file, "/") || strstr(c_file, "\\"))
 	{
-		if(buf[i] == '\\' || buf[i] == '/')
-			buf[i] = DIR_SEPARATOR_CHAR;
+		path.assign(c_file);
 	}
-	for(i = 0; i < CF_MAX_PATH_TYPES; i++)
+	else
 	{
-		if(Pathtypes[i].path != NULL && !stricmp(buf, Pathtypes[i].path)) {
-			vm_free(buf);
-			buf = NULL;
-			return Pathtypes[i].index;
+		path.assign(c_path);
+
+		while (path.find_last_of("/\\") == path.size() - 1)
+		{
+			// remove all trailing slashes
+			path.resize(path.size() - 1);
 		}
+
+		path.append("/").append(c_file);
 	}
 
-	vm_free(buf);
-	buf = NULL;
-	return CF_TYPE_INVALID;
+	std::replace(path.begin(), path.end(), '\\', '/');
+
+	return path;
 }
 
 ADE_FUNC(deleteFile, l_CFile, "string Filename, string Path", "Deletes given file. Path must be specified. Use a slash for the root directory.", "boolean", "True if deleted, false")
 {
 	char *n_filename = NULL;
-	char *n_path = "";
+	char *n_path = NULL;
 	if(!ade_get_args(L, "ss", &n_filename, &n_path))
 		return ade_set_error(L, "b", false);
 
-	int path = CF_TYPE_INVALID;
-	if(n_path != NULL && strlen(n_path))
-		path = l_cf_get_path_id(n_path);
+	SCP_string filePath = constructFilePath(n_filename, n_path);
 
-	if(path == CF_TYPE_INVALID)
-		return ade_set_error(L, "b", false);
-
-	return ade_set_args(L, "b", cf_delete(n_filename, path) != 0);
+	return ade_set_args(L, "b", cfile::deleteFile(filePath) != 0);
 }
 
-ADE_FUNC(fileExists, l_CFile, "string Filename, [string Path = \"\", boolean CheckVPs = false]", "Checks if a file exists. Use a blank string for path for any directory, or a slash for the root directory.", "boolean", "True if file exists, false or nil otherwise")
+ADE_FUNC(fileExists, l_CFile, "string Filename, [string Path = \"\"]", "Checks if a file exists. Use a blank string for path for any directory, or a slash for the root directory.", "boolean", "True if file exists, false or nil otherwise")
 {
 	char *n_filename = NULL;
 	char *n_path = "";
-	bool check_vps = false;
-	if(!ade_get_args(L, "s|sb", &n_filename, &n_path, &check_vps))
+
+	if(!ade_get_args(L, "s|s", &n_filename, &n_path))
 		return ADE_RETURN_NIL;
 
-	int path = CF_TYPE_ANY;
-	if(n_path != NULL && strlen(n_path))
-		path = l_cf_get_path_id(n_path);
+	SCP_string filePath = constructFilePath(n_filename, n_path);
 
-	if(path == CF_TYPE_INVALID)
-		return ade_set_error(L, "b", false);
-
-	if(!check_vps)
-		return ade_set_args(L, "b", cf_exists(n_filename, path) != 0);
-	else
-		return ade_set_args(L, "b", cf_exists_full(n_filename, path ) != 0);
+	return ade_set_args(L, "b", cfile::exists(n_filename, cfile::TYPE_ANY) != 0);
 }
 
 ADE_FUNC(openFile, l_CFile, "string Filename, [string Mode=\"r\", string Path = \"\"]",
@@ -12146,26 +12150,35 @@ ADE_FUNC(openFile, l_CFile, "string Filename, [string Mode=\"r\", string Path = 
 	if(!ade_get_args(L, "s|ss", &n_filename, &n_mode, &n_path))
 		return ade_set_error(L, "o", l_File.Set(NULL));
 
-	int type = CFILE_NORMAL;
+	int mode = 0;
 
-	int path = CF_TYPE_ANY;
-	if(n_path != NULL && strlen(n_path))
-		path = l_cf_get_path_id(n_path);
+	if (strstr(n_mode, "r"))
+	{
+		mode |= cfile::MODE_READ;
+	}
 
-	if(path == CF_TYPE_INVALID)
+	if (strstr(n_mode, "w"))
+	{
+		mode |= cfile::MODE_WRITE;
+	}
+
+	if (mode == 0)
+	{
+		LuaError(L, "Open mode does not contain 'r' or 'w' at least one has to be given!");
 		return ade_set_error(L, "o", l_File.Set(NULL));
+	}
 
-	CFILE *cfp = cfopen(n_filename, n_mode, type, path);
-	
-	if(!cf_is_valid(cfp))
-		return ade_set_error(L, "o", l_File.Set(NULL));
+	SCP_string filename = constructFilePath(n_filename, n_path);
+
+	cfile::FileHandle *cfp = cfile::open(filename, mode);
 
 	return ade_set_args(L, "o", l_File.Set(cfp));
 }
 
 ADE_FUNC(openTempFile, l_CFile, NULL, "Opens a temp file that is automatically deleted when closed", "file", "File handle, or invalid file handle if tempfile couldn't be created")
 {
-	return ade_set_args(L, "o", l_File.Set(ctmpfile()));
+	LuaError(L, "This function has been deprecated, if you encounter this with an existing script then please report as a bug.");
+	return ade_set_args(L, "o", l_File.Set(NULL));
 }
 
 ADE_FUNC(renameFile, l_CFile, "string CurrentFilename, string NewFilename, string Path", "Renames given file. Path must be specified. Use a slash for the root directory.", "boolean", "True if file was renamed, otherwise false")
@@ -12176,14 +12189,12 @@ ADE_FUNC(renameFile, l_CFile, "string CurrentFilename, string NewFilename, strin
 	if(!ade_get_args(L, "ss|s", &n_filename, &n_new_filename, &n_path))
 		return ade_set_error(L, "b", false);
 
-	int path = CF_TYPE_INVALID;
-	if(n_path != NULL && strlen(n_path))
-		path = l_cf_get_path_id(n_path);
+	cfile::DirType type = cfile::getPathType(n_path);
 
-	if(path == CF_TYPE_INVALID)
+	if (type == cfile::TYPE_INVALID)
 		return ade_set_error(L, "b", false);
 
-	return ade_set_args(L, "b", cf_rename(n_filename, n_new_filename, path) != 0);
+	return ade_set_args(L, "b", cfile::rename(n_filename, n_new_filename, type) != 0);
 }
 
 //**********LIBRARY: Controls library
@@ -14510,7 +14521,7 @@ ADE_FUNC(startMission, l_Mission, "[Filename or MISSION_* enumeration, Briefing 
 		*file_ext = 0;
 
 	// game is in MP mode... or if the file does not exist... bail
-	if ((Game_mode & GM_MULTIPLAYER) || (cf_exists_full(str, CF_TYPE_MISSIONS) != 0))
+	if ((Game_mode & GM_MULTIPLAYER) || (cfile::exists(str, cfile::TYPE_MISSIONS) != 0))
 		return ade_set_args(L, "b", false);
 
 	// mission is already running...

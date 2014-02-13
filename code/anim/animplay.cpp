@@ -603,9 +603,9 @@ void anim_release_all_instances(int screen_id)
 //	4			|	key frame offset	}		repeats
 //	4			|	compressed data length
 //
-void anim_read_header(anim *ptr, CFILE *fp)
+void anim_read_header(anim *ptr, cfile::FileHandle *fp)
 {
-	ptr->width = cfread_short(fp);
+	ptr->width = cfile::read<short>(fp);
 	// If first 2 bytes are zero, this means we are using a new format, which includes
 	// a version, and fps values. This is only done since a version number was not included
 	// in the original header.
@@ -616,24 +616,24 @@ void anim_read_header(anim *ptr, CFILE *fp)
 	Color_xparent.blue = 0;
 
 	if ( ptr->width == 0 ) {
-		ptr->version = cfread_short(fp);
-		ptr->fps = cfread_short(fp);
+		ptr->version = cfile::read<short>(fp);
+		ptr->fps = cfile::read<short>(fp);
 
 		// version 2 added a custom transparency color
 		if ( ptr->version >= 2 ) {
-			cfread(&Color_xparent.red, 1, 1, fp);
-			cfread(&Color_xparent.green, 1, 1, fp);
-			cfread(&Color_xparent.blue, 1, 1, fp);
+			cfile::read(&Color_xparent.red, 1, 1, fp);
+			cfile::read(&Color_xparent.green, 1, 1, fp);
+			cfile::read(&Color_xparent.blue, 1, 1, fp);
 		}
 
-		ptr->width = cfread_short(fp);
+		ptr->width = cfile::read<short>(fp);
 	}
 	else {
 		ptr->version = 0;
 		ptr->fps = 30;
 	}
 	
-	ptr->height = cfread_short(fp);
+	ptr->height = cfile::read<short>(fp);
 
 #ifndef NDEBUG
 	// get size of ani compared to power of 2
@@ -657,10 +657,10 @@ void anim_read_header(anim *ptr, CFILE *fp)
 	}
 #endif
 
-	ptr->total_frames = cfread_short(fp);
-	ptr->packer_code = cfread_ubyte(fp);
-	cfread(&ptr->palette, 256, 3, fp);
-	ptr->num_keys = cfread_short(fp);
+	ptr->total_frames = cfile::read<short>(fp);
+	ptr->packer_code = cfile::read<ubyte>(fp);
+	cfile::read(&ptr->palette, 256, 3, fp);
+	ptr->num_keys = cfile::read<short>(fp);
 
 	// store xparent colors
 	ptr->xparent_r = Color_xparent.red;
@@ -683,10 +683,10 @@ void anim_read_header(anim *ptr, CFILE *fp)
  * @details Memory-mapped files will page in the animation from disk as it is needed, but performance is not as good.
  * @return Pointer to anim that is loaded if sucess, NULL if failure.
  */
-anim *anim_load(char *real_filename, int cf_dir_type, int file_mapped)
+anim *anim_load(char *real_filename, cfile::DirType cf_dir_type, int file_mapped)
 {
 	anim			*ptr;
-	CFILE			*fp;
+	cfile::FileHandle			*fp;
 	int			count,idx;
 	char name[_MAX_PATH];
 
@@ -708,7 +708,7 @@ anim *anim_load(char *real_filename, int cf_dir_type, int file_mapped)
 	}
 
 	if (!ptr) {
-		fp = cfopen(name, "rb", CFILE_NORMAL, cf_dir_type);
+		fp = cfile::open(name, cfile::MODE_READ, cfile::OPEN_NORMAL, cf_dir_type);
 		if ( !fp )
 			return NULL;
 
@@ -739,13 +739,13 @@ anim *anim_load(char *real_filename, int cf_dir_type, int file_mapped)
 
 		for(idx=0;idx<ptr->num_keys;idx++){
 			ptr->keys[idx].frame_num = 0;
-			cfread(&ptr->keys[idx].frame_num, 2, 1, fp);
-			cfread(&ptr->keys[idx].offset, 4, 1, fp);
+			cfile::read(&ptr->keys[idx].frame_num, 2, 1, fp);
+			cfile::read(&ptr->keys[idx].offset, 4, 1, fp);
 			ptr->keys[idx].frame_num = INTEL_INT( ptr->keys[idx].frame_num ); //-V570
 			ptr->keys[idx].offset = INTEL_INT( ptr->keys[idx].offset ); //-V570
 		}
 
-		cfread(&count, 4, 1, fp);	// size of compressed data
+		cfile::read(&count, 4, 1, fp);	// size of compressed data
 		count = INTEL_INT( count );
 
 		ptr->cfile_ptr = NULL;
@@ -753,14 +753,14 @@ anim *anim_load(char *real_filename, int cf_dir_type, int file_mapped)
 		if ( file_mapped == PAGE_FROM_MEM) {
 			// Try mapping the file to memory 
 			ptr->flags |= ANF_MEM_MAPPED;
-			ptr->cfile_ptr = cfopen(name, "rb", CFILE_MEMORY_MAPPED, cf_dir_type);
+			ptr->cfile_ptr = cfile::open(name, cfile::MODE_READ, cfile::OPEN_MEMORY_MAPPED, cf_dir_type);
 		}
 
 		// couldn't memory-map file... must be in a packfile, so stream manually
 		if ( file_mapped && !ptr->cfile_ptr ) {
 			ptr->flags &= ~ANF_MEM_MAPPED;
 			ptr->flags |= ANF_STREAMED;
-			ptr->cfile_ptr = cfopen(name, "rb", CFILE_NORMAL, cf_dir_type);
+			ptr->cfile_ptr = cfile::open(name, cfile::MODE_READ, cfile::OPEN_NORMAL, cf_dir_type);
 		}
 
 		ptr->cache = NULL;
@@ -772,17 +772,17 @@ anim *anim_load(char *real_filename, int cf_dir_type, int file_mapped)
 			// file).  Use ftell() to find out how far we've already parsed into the file
 			//
 			int offset;
-			offset = cftell(fp);
+			offset = cfile::tell(fp);
 			ptr->file_offset = offset;
 			if ( ptr->flags & ANF_STREAMED ) {
 				ptr->data = NULL;
 				ptr->cache_file_offset = ptr->file_offset;
 				ptr->cache = (ubyte*)vm_malloc(ANI_STREAM_CACHE_SIZE+2);
 				Assert(ptr->cache);
-				cfseek(ptr->cfile_ptr, offset, CF_SEEK_SET);
-				cfread(ptr->cache, ANI_STREAM_CACHE_SIZE, 1, ptr->cfile_ptr);
+				cfile::seek(ptr->cfile_ptr, offset, cfile::SEEK_MODE_SET);
+				cfile::read(ptr->cache, ANI_STREAM_CACHE_SIZE, 1, ptr->cfile_ptr);
 			} else {
-				ptr->data = (ubyte*)cf_returndata(ptr->cfile_ptr) + offset;
+				ptr->data = (ubyte*)cfile::returndata(ptr->cfile_ptr) + offset;
 			}
 		} else {
 			// Not a memory mapped file (or streamed)
@@ -790,10 +790,10 @@ anim *anim_load(char *real_filename, int cf_dir_type, int file_mapped)
 			ptr->flags &= ~ANF_STREAMED;
 			ptr->data = (ubyte *) vm_malloc(count);
 			ptr->file_offset = -1;
-			cfread(ptr->data, count, 1, fp);
+			cfile::read(ptr->data, count, 1, fp);
 		}
 
-		cfclose(fp);
+		cfile::close(fp);
 
 		// store screen signature, so we can tell if palette changes
 		ptr->screen_sig = gr_screen.signature;
@@ -839,7 +839,7 @@ int anim_free(anim *ptr)
 	}
 
 	if ( ptr->flags & (ANF_MEM_MAPPED|ANF_STREAMED) ) {
-		cfclose(ptr->cfile_ptr);
+		cfile::close(ptr->cfile_ptr);
 		if (ptr->cache != NULL) {
 			vm_free(ptr->cache);
 			ptr->cache = NULL;
@@ -945,7 +945,7 @@ int anim_write_frames_out(char *filename)
  */
 void anim_display_info(char *real_filename)
 {
-	CFILE				*fp;
+	cfile::FileHandle				*fp;
 	anim				A;
 	float				percent;
 	int				i, uncompressed, compressed, *key_frame_nums=NULL, tmp;
@@ -958,7 +958,7 @@ void anim_display_info(char *real_filename)
 	}
 	strcat_s( filename, ".ani" );
 
-	fp = cfopen(filename, "rb");
+	fp = cfile::open(filename);
 	if ( !fp ) {
 		printf("Fatal error opening %s", filename);
 		return;
@@ -973,11 +973,11 @@ void anim_display_info(char *real_filename)
 
 	for ( i = 0; i < A.num_keys; i++ ) {
 		key_frame_nums[i] = 0;
-		cfread(&key_frame_nums[i], 2, 1, fp);
-		cfread(&tmp, 4, 1, fp);
+		cfile::read(&key_frame_nums[i], 2, 1, fp);
+		cfile::read(&tmp, 4, 1, fp);
 	}
 
-	cfread(&compressed, 4, 1, fp);
+	cfile::read(&compressed, 4, 1, fp);
 
 	uncompressed = A.width * A.height * A.total_frames;	// 8 bits per pixel
 	percent = i2fl(compressed) / uncompressed * 100.0f;
@@ -1012,7 +1012,7 @@ void anim_display_info(char *real_filename)
 		vm_free(key_frame_nums);
 	}
 
-	cfclose(fp);
+	cfile::close(fp);
 }
 
 void anim_reverse_direction(anim_instance *ai)
@@ -1088,8 +1088,8 @@ unsigned char anim_instance_get_byte(anim_instance *ai, int offset)
 		return parent->cache[cache_offset];
 	} else {
 		// fill cache
-		cfseek(parent->cfile_ptr, absolute_offset, CF_SEEK_SET);
-		cfread(parent->cache, ANI_STREAM_CACHE_SIZE, 1, parent->cfile_ptr);
+		cfile::seek(parent->cfile_ptr, absolute_offset, cfile::SEEK_MODE_SET);
+		cfile::read(parent->cache, ANI_STREAM_CACHE_SIZE, 1, parent->cfile_ptr);
 		parent->cache_file_offset = absolute_offset;
 		return parent->cache[0];
 	}

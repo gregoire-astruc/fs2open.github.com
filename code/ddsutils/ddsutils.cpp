@@ -27,11 +27,11 @@ static inline int is_power_of_two(int w, int h)
 }
 
 
-int dds_read_header(const char *filename, CFILE *img_cfp, int *width, int *height, int *bpp, int *compression_type, int *levels, int *size, ubyte *palette)
+int dds_read_header(const char *filename, cfile::FileHandle *img_cfp, int *width, int *height, int *bpp, int *compression_type, int *levels, int *size, ubyte *palette)
 {
 	DDSURFACEDESC2 dds_header;
 	int code = 0;
-	CFILE *ddsfile;
+	cfile::FileHandle *ddsfile;
 	char real_name[MAX_FILENAME_LEN];
 	int retval = DDS_ERROR_NONE;
 	int ct = DDS_UNCOMPRESSED;
@@ -51,7 +51,7 @@ int dds_read_header(const char *filename, CFILE *img_cfp, int *width, int *heigh
 		strcat_s(real_name, ".dds");
 
 		// try to open the file
-		ddsfile = cfopen(real_name, "rb");
+		ddsfile = cfile::open(real_name);
 
 		// file not found
 		if (ddsfile == NULL)
@@ -61,7 +61,7 @@ int dds_read_header(const char *filename, CFILE *img_cfp, int *width, int *heigh
 	}
 
 	// read the code
-	code = cfread_int(ddsfile);
+	code = cfile::read<int>(ddsfile);
 
 	// check it
 	if (code != DDS_FILECODE) {
@@ -70,29 +70,29 @@ int dds_read_header(const char *filename, CFILE *img_cfp, int *width, int *heigh
 	}
 
 	// read header variables
-	dds_header.dwSize				= cfread_uint(ddsfile);
-	dds_header.dwFlags				= cfread_uint(ddsfile);
-	dds_header.dwHeight				= cfread_uint(ddsfile);
-	dds_header.dwWidth				= cfread_uint(ddsfile);
-	dds_header.dwPitchOrLinearSize	= cfread_uint(ddsfile);
-	dds_header.dwDepth				= cfread_uint(ddsfile);
-	dds_header.dwMipMapCount		= cfread_uint(ddsfile);
+	dds_header.dwSize				= cfile::read<uint>(ddsfile);
+	dds_header.dwFlags				= cfile::read<uint>(ddsfile);
+	dds_header.dwHeight				= cfile::read<uint>(ddsfile);
+	dds_header.dwWidth				= cfile::read<uint>(ddsfile);
+	dds_header.dwPitchOrLinearSize	= cfile::read<uint>(ddsfile);
+	dds_header.dwDepth				= cfile::read<uint>(ddsfile);
+	dds_header.dwMipMapCount		= cfile::read<uint>(ddsfile);
 
 	// skip over the crap we don't care about
 	for (i = 0; i < 11; i++)
-		trash = cfread_uint(ddsfile);
+		trash = cfile::read<uint>(ddsfile);
 
-	dds_header.ddpfPixelFormat.dwSize				= cfread_uint(ddsfile);
-	dds_header.ddpfPixelFormat.dwFlags				= cfread_uint(ddsfile);
-	dds_header.ddpfPixelFormat.dwFourCC				= cfread_uint(ddsfile);
-	dds_header.ddpfPixelFormat.dwRGBBitCount		= cfread_uint(ddsfile);
-	dds_header.ddpfPixelFormat.dwRBitMask			= cfread_uint(ddsfile);
-	dds_header.ddpfPixelFormat.dwGBitMask			= cfread_uint(ddsfile);
-	dds_header.ddpfPixelFormat.dwBBitMask			= cfread_uint(ddsfile);
-	dds_header.ddpfPixelFormat.dwRGBAlphaBitMask	= cfread_uint(ddsfile);
+	dds_header.ddpfPixelFormat.dwSize				= cfile::read<uint>(ddsfile);
+	dds_header.ddpfPixelFormat.dwFlags				= cfile::read<uint>(ddsfile);
+	dds_header.ddpfPixelFormat.dwFourCC				= cfile::read<uint>(ddsfile);
+	dds_header.ddpfPixelFormat.dwRGBBitCount		= cfile::read<uint>(ddsfile);
+	dds_header.ddpfPixelFormat.dwRBitMask			= cfile::read<uint>(ddsfile);
+	dds_header.ddpfPixelFormat.dwGBitMask			= cfile::read<uint>(ddsfile);
+	dds_header.ddpfPixelFormat.dwBBitMask			= cfile::read<uint>(ddsfile);
+	dds_header.ddpfPixelFormat.dwRGBAlphaBitMask	= cfile::read<uint>(ddsfile);
 
-	dds_header.ddsCaps.dwCaps1		= cfread_uint(ddsfile);
-	dds_header.ddsCaps.dwCaps2		= cfread_uint(ddsfile);
+	dds_header.ddsCaps.dwCaps1		= cfile::read<uint>(ddsfile);
+	dds_header.ddsCaps.dwCaps2		= cfile::read<uint>(ddsfile);
 
 	// sanity
 	if (dds_header.dwDepth == 0)
@@ -256,15 +256,15 @@ int dds_read_header(const char *filename, CFILE *img_cfp, int *width, int *heigh
 		*levels = dds_header.dwMipMapCount;
 
 	if (palette && (bits == 8)) {
-		cfseek(ddsfile, DDS_OFFSET, CF_SEEK_SET);
-		cfread(palette, 1, 1024, ddsfile);
+		cfile::seek(ddsfile, DDS_OFFSET, cfile::SEEK_MODE_SET);
+		cfile::read(palette, 1, 1024, ddsfile);
 	}
 
 
 Done:
 	if (img_cfp == NULL) {
 		// close file and return
-		cfclose(ddsfile);
+		cfile::close(ddsfile);
 		ddsfile = NULL;
 	}
 
@@ -272,12 +272,12 @@ Done:
 }
 
 //reads pixel info from a dds file
-int dds_read_bitmap(const char *filename, ubyte *data, ubyte *bpp, int cf_type)
+int dds_read_bitmap(const char *filename, ubyte *data, ubyte *bpp, cfile::DirType cf_type)
 {
 	int retval;
 	int w,h,ct,lvl;
 	int size = 0, bits = 0;
-	CFILE *cfp;
+	cfile::FileHandle *cfp;
 	char real_name[MAX_FILENAME_LEN];
 
 	// this better not happen.. ever
@@ -290,7 +290,7 @@ int dds_read_bitmap(const char *filename, ubyte *data, ubyte *bpp, int cf_type)
 	strcat_s(real_name, ".dds");
 
 	// open it up and go to the data section
-	cfp = cfopen(real_name, "rb", CFILE_NORMAL, cf_type);
+	cfp = cfile::open(real_name, cfile::MODE_READ, cfile::OPEN_NORMAL, cf_type);
 
 	// just in case
 	if (cfp == NULL)
@@ -305,16 +305,16 @@ int dds_read_bitmap(const char *filename, ubyte *data, ubyte *bpp, int cf_type)
 		return retval;
 	}
 
-	cfseek(cfp, DDS_OFFSET, CF_SEEK_SET);
+	cfile::seek(cfp, DDS_OFFSET, cfile::SEEK_MODE_SET);
 
 	// read in the data
-	cfread(data, 1, size, cfp);
+	cfile::read(data, 1, size, cfp);
 
 	if (bpp)
 		*bpp = (ubyte)bits;
 
 	// we look done here
-	cfclose(cfp);
+	cfile::close(cfp);
 
 	return DDS_ERROR_NONE;
 }
@@ -364,7 +364,7 @@ void dds_save_image(int width, int height, int bpp, int num_mipmaps, ubyte *data
 		strcat_s(real_filename, ".dds");
 	}
 
-	CFILE *image = cfopen( real_filename, "wb", CFILE_NORMAL, CF_TYPE_CACHE );
+	cfile::FileHandle *image = cfile::open( real_filename, cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_CACHE );
 
 	if (image == NULL) {
 		mprintf(("Unable to open DDS image for saving!!\n"));
@@ -418,8 +418,8 @@ void dds_save_image(int width, int height, int bpp, int num_mipmaps, ubyte *data
 
 	// now save it all...
 	uint dds_id = DDS_FILECODE;
-	cfwrite(&dds_id, 1, 4, image);
-	cfwrite(&dds_header, 1, sizeof(DDSURFACEDESC2), image);
+	cfile::write(&dds_id, 1, 4, image);
+	cfile::write(&dds_header, 1, sizeof(DDSURFACEDESC2), image);
 
 	int faces = (cubemap) ? 6 : 1;
 	int f_width = width;
@@ -437,7 +437,7 @@ void dds_save_image(int width, int height, int bpp, int num_mipmaps, ubyte *data
 		for (int j = 0; j < num_mipmaps; j++) {
 			f_size = (f_width * f_height * (bpp >> 3));
 
-			cfwrite(data + f_offset, 1, f_size, image);
+			cfile::write(data + f_offset, 1, f_size, image);
 
 			// increase offset for next mipmap level
 			f_offset += f_size;
@@ -459,7 +459,7 @@ void dds_save_image(int width, int height, int bpp, int num_mipmaps, ubyte *data
 	}
 
 	// done!  now lets go get something to eat...
-	cfclose(image);
+	cfile::close(image);
 }
 
 

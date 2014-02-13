@@ -335,7 +335,7 @@ void brief_parse_icon_tbl()
 		return;
 	}
 
-	read_file_text("icons.tbl", CF_TYPE_TABLES);
+	read_file_text("icons.tbl", cfile::TYPE_TABLES);
 	reset_parse();
 
 	required_string("#Start");

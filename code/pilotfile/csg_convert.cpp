@@ -10,7 +10,6 @@
 #include "ship/ship.h"
 #include "weapon/weapon.h"
 #include "stats/medals.h"
-#include "cfile/cfilesystem.h"
 #include "menuui/techmenu.h"
 
 #include <iostream>
@@ -148,14 +147,14 @@ void pilotfile_convert::csg_import_ships_weapons()
 	int idx;
 	int list_size = 0;
 
-	int ship_count = cfread_int(cfp);
-	int weap_count = cfread_int(cfp);
+	int ship_count = cfile::read<int>(cfp);
+	int weap_count = cfile::read<int>(cfp);
 
 	for (idx = 0; idx < ship_count; idx++) {
-		ubyte allowed = cfread_ubyte(cfp);
+		ubyte allowed = cfile::read<ubyte>(cfp);
 		csg->ships_allowed.push_back( (allowed != 0) );
 
-		cfread_string_len(name, sizeof(name), cfp);
+		cfile::readStringLen(name, sizeof(name), cfp);
 
 		ilist.name = name;
 		ilist.index = ship_info_lookup(name);
@@ -170,10 +169,10 @@ void pilotfile_convert::csg_import_ships_weapons()
 	}
 
 	for (idx = 0; idx < weap_count; idx++) {
-		ubyte allowed = cfread_ubyte(cfp);
+		ubyte allowed = cfile::read<ubyte>(cfp);
 		csg->weapons_allowed.push_back( allowed != 0 );
 
-		cfread_string_len(name, sizeof(name), cfp);
+		cfile::readStringLen(name, sizeof(name), cfp);
 
 		ilist.name = name;
 		ilist.index = weapon_info_lookup(name);
@@ -236,15 +235,15 @@ void pilotfile_convert::csg_import_missions(bool inferno)
 
 	int ship_list_size = (int)csg->ship_list.size();
 
-	int num_missions = cfread_int(cfp);
+	int num_missions = cfile::read<int>(cfp);
 
 	csg->missions.reserve(num_missions);
 
 	for (idx = 0; idx < num_missions; idx++) {
-		miss.index = cfread_int(cfp);
+		miss.index = cfile::read<int>(cfp);
 
 		// goals
-		count = cfread_int(cfp);
+		count = cfile::read<int>(cfp);
 
 		if (count > 0) {
 			mgoal n_goal;
@@ -254,15 +253,15 @@ void pilotfile_convert::csg_import_missions(bool inferno)
 			for (j = 0; j < count; j++) {
 				memset(&n_goal, 0, sizeof(mgoal));
 
-				cfread_string_len(n_goal.name, sizeof(n_goal.name), cfp);
-				n_goal.status = cfread_char(cfp);
+				cfile::readStringLen(n_goal.name, sizeof(n_goal.name), cfp);
+				n_goal.status = cfile::read<char>(cfp);
 
 				miss.goals.push_back( n_goal );
 			}
 		}
 
 		// events
-		count = cfread_int(cfp);
+		count = cfile::read<int>(cfp);
 
 		if (count > 0) {
 			mevent n_event;
@@ -272,15 +271,15 @@ void pilotfile_convert::csg_import_missions(bool inferno)
 			for (j = 0; j < count; j++) {
 				memset(&n_event, 0, sizeof(mevent));
 
-				cfread_string_len(n_event.name, sizeof(n_event.name), cfp);
-				n_event.status = cfread_char(cfp);
+				cfile::readStringLen(n_event.name, sizeof(n_event.name), cfp);
+				n_event.status = cfile::read<char>(cfp);
 
 				miss.events.push_back( n_event );
 			}
 		}
 
 		// variables
-		count = cfread_int(cfp);
+		count = cfile::read<int>(cfp);
 
 		if (count > 0) {
 			sexp_variable n_variable;
@@ -290,9 +289,9 @@ void pilotfile_convert::csg_import_missions(bool inferno)
 			for (j = 0; j < count; j++) {
 				memset(&n_variable, 0, sizeof(sexp_variable));
 
-				n_variable.type = cfread_int(cfp);
-				cfread_string_len(n_variable.text, sizeof(n_variable.text), cfp);
-				cfread_string_len(n_variable.variable_name, sizeof(n_variable.variable_name), cfp);
+				n_variable.type = cfile::read<int>(cfp);
+				cfile::readStringLen(n_variable.text, sizeof(n_variable.text), cfp);
+				cfile::readStringLen(n_variable.variable_name, sizeof(n_variable.variable_name), cfp);
 
 				miss.variables.push_back( n_variable );
 			}
@@ -303,7 +302,7 @@ void pilotfile_convert::csg_import_missions(bool inferno)
 		miss.stats.medals_earned = csg->medals_list;
 
 		if (inferno) {
-			cfread(&t_inf_score, sizeof(scoring_conv_INF_t), 1, cfp);
+			cfile::read(&t_inf_score, sizeof(scoring_conv_INF_t), 1, cfp);
 
 			for (j = 0; j < ship_list_size; j++) {
 				miss.stats.ship_kills[j].val = INTEL_INT(t_inf_score.kills[j]);
@@ -326,7 +325,7 @@ void pilotfile_convert::csg_import_missions(bool inferno)
 				miss.stats.medals_earned[j].val = INTEL_INT(t_inf_score.medals[j]);
 			}
 		} else {
-			cfread(&t_score, sizeof(scoring_conv_t), 1, cfp);
+			cfile::read(&t_score, sizeof(scoring_conv_t), 1, cfp);
 
 			for (j = 0; j < ship_list_size; j++) {
 				miss.stats.ship_kills[j].val = INTEL_INT(t_score.kills[j]);
@@ -351,7 +350,7 @@ void pilotfile_convert::csg_import_missions(bool inferno)
 		}
 
 		// flags
-		miss.flags = cfread_int(cfp);
+		miss.flags = cfile::read<int>(cfp);
 
 
 		// now add to list
@@ -390,7 +389,7 @@ void pilotfile_convert::csg_import_red_alert()
 	float val;
 	wep_t weapons;
 
-	count = cfread_int(cfp);
+	count = cfile::read<int>(cfp);
 
 	if (count <= 0) {
 		return;
@@ -398,7 +397,7 @@ void pilotfile_convert::csg_import_red_alert()
 
 	csg->wingman_status.reserve( count );
 
-	cfread_string(t_string, sizeof(t_string)-1, cfp);
+	cfile::readString(t_string, sizeof(t_string)-1, cfp);
 	csg->precursor_mission = t_string;
 
 	int ship_list_size = (int)csg->ship_list.size();
@@ -408,11 +407,11 @@ void pilotfile_convert::csg_import_red_alert()
 		red_alert_ship_status ras;
 
 		// ship name
-		cfread_string(t_string, sizeof(t_string)-1, cfp);
+		cfile::readString(t_string, sizeof(t_string)-1, cfp);
 		ras.name = t_string;
 
-		ras.hull = cfread_float(cfp);
-		ras.ship_class = cfread_int(cfp);
+		ras.hull = cfile::read<float>(cfp);
+		ras.ship_class = cfile::read<int>(cfp);
 
 		if (ras.ship_class >= ship_list_size) {
 			throw std::runtime_error("Data failure (RedAlert-ship)!");
@@ -422,14 +421,14 @@ void pilotfile_convert::csg_import_red_alert()
 		ras.subsys_current_hits.reserve(64);
 
 		for (j = 0; j < 64; j++) {
-			val = cfread_float(cfp);
+			val = cfile::read<float>(cfp);
 			ras.subsys_current_hits.push_back( val );
 		}
 
 		ras.subsys_aggregate_current_hits.reserve(12);
 
 		for (j = 0; j < 12; j++) {
-			val = cfread_float(cfp);
+			val = cfile::read<float>(cfp);
 			ras.subsys_aggregate_current_hits.push_back( val );
 		}
 
@@ -437,14 +436,14 @@ void pilotfile_convert::csg_import_red_alert()
 		ras.primary_weapons.reserve(3);
 
 		for (j = 0; j < 3; j++) {
-			i = cfread_int(cfp);
+			i = cfile::read<int>(cfp);
 
 			if (i >= weapon_list_size || i < 0) {
 				throw std::runtime_error("Data check failure (RedAlert-weapon)!");
 			}
 
 			weapons.index = csg->weapon_list[i].index;
-			weapons.count = cfread_int(cfp);
+			weapons.count = cfile::read<int>(cfp);
 
 			if (weapons.index >= 0) {
 				ras.primary_weapons.push_back( weapons );
@@ -454,14 +453,14 @@ void pilotfile_convert::csg_import_red_alert()
 		ras.secondary_weapons.reserve(4);
 
 		for (j = 0; j < 4; j++) {
-			i = cfread_int(cfp);
+			i = cfile::read<int>(cfp);
 
 			if (i >= weapon_list_size) {
 				throw std::runtime_error("Data check failure (RedAlert-weapon)!");
 			}
 
 			weapons.index = csg->weapon_list[i].index;
-			weapons.count = cfread_int(cfp);
+			weapons.count = cfile::read<int>(cfp);
 
 			if (weapons.index >= 0) {
 				ras.secondary_weapons.push_back( weapons );
@@ -480,7 +479,7 @@ void pilotfile_convert::csg_import_techroom()
 	unsigned char in = 0;
 
 	// intel entry count
-	int intel_count = cfread_int(cfp);
+	int intel_count = cfile::read<int>(cfp);
 
 	csg->ships_techroom.reserve( csg->ship_list.size() );
 	csg->weapons_techroom.reserve( csg->weapon_list.size() );
@@ -490,7 +489,7 @@ void pilotfile_convert::csg_import_techroom()
 	list_size = (int)csg->ship_list.size();
 
 	for (idx = 0; idx < list_size; idx++) {
-		in = cfread_ubyte(cfp);
+		in = cfile::read<ubyte>(cfp);
 
 		if (in > 1) {
 			throw std::runtime_error("Data check failure (techroom-ship)!");
@@ -505,7 +504,7 @@ void pilotfile_convert::csg_import_techroom()
 	list_size = (int)csg->weapon_list.size();
 
 	for (idx = 0; idx < list_size; idx++) {
-		in = cfread_ubyte(cfp);
+		in = cfile::read<ubyte>(cfp);
 
 		if (in > 1) {
 			throw std::runtime_error("Data check failure (techroom-weapon)!");
@@ -520,7 +519,7 @@ void pilotfile_convert::csg_import_techroom()
 	list_size = intel_count;
 
 	for (idx = 0; idx < list_size; idx++) {
-		in = cfread_ubyte(cfp);
+		in = cfile::read<ubyte>(cfp);
 
 		if (in > 1) {
 			throw std::runtime_error("Data check failure (techroom-intel)!");
@@ -539,10 +538,10 @@ void pilotfile_convert::csg_import_loadout()
 	char t_string[50] = { '\0' };
 
 	// mission name/status
-	cfread_string_len(t_string, sizeof(t_string), cfp);
+	cfile::readStringLen(t_string, sizeof(t_string), cfp);
 	csg->loadout.filename = t_string;
 
-	cfread_string_len(t_string, sizeof(t_string), cfp);
+	cfile::readStringLen(t_string, sizeof(t_string), cfp);
 	csg->loadout.last_modified = t_string;
 
 	// ship pool
@@ -550,7 +549,7 @@ void pilotfile_convert::csg_import_loadout()
 	csg->loadout.ship_pool.reserve(list_size);
 
 	for (idx = 0; idx < list_size; idx++) {
-		count = cfread_int(cfp);
+		count = cfile::read<int>(cfp);
 		csg->loadout.ship_pool.push_back( count );
 	}
 
@@ -559,17 +558,17 @@ void pilotfile_convert::csg_import_loadout()
 	csg->loadout.weapon_pool.reserve(list_size);
 
 	for (idx = 0; idx < list_size; idx++) {
-		count = cfread_int(cfp);
+		count = cfile::read<int>(cfp);
 		csg->loadout.weapon_pool.push_back( count );
 	}
 
 	// loadout info
 	for (idx = 0; idx < MAX_WSS_SLOTS_CONV; idx++) {
-		csg->loadout.slot[idx].ship_index = cfread_int(cfp);
+		csg->loadout.slot[idx].ship_index = cfile::read<int>(cfp);
 
 		for (j = 0; j < MAX_SHIP_WEAPONS_CONV; j++) {
-			csg->loadout.slot[idx].wep[j] = cfread_int(cfp);
-			csg->loadout.slot[idx].wep_count[j] = cfread_int(cfp);
+			csg->loadout.slot[idx].wep[j] = cfile::read<int>(cfp);
+			csg->loadout.slot[idx].wep_count[j] = cfile::read<int>(cfp);
 		}
 	}
 }
@@ -579,21 +578,21 @@ void pilotfile_convert::csg_import_stats()
 	int list_size = 0;
 	int idx;
 
-	csg->stats.score = cfread_int(cfp);
-	csg->stats.rank = cfread_int(cfp);
-	csg->stats.assists = cfread_int(cfp);
+	csg->stats.score = cfile::read<int>(cfp);
+	csg->stats.rank = cfile::read<int>(cfp);
+	csg->stats.assists = cfile::read<int>(cfp);
 
 	csg->stats.medals_earned = csg->medals_list;
 
 	list_size = (int)csg->stats.medals_earned.size();
 
 	for (idx = 0; idx < list_size; idx++) {
-		csg->stats.medals_earned[idx].val = cfread_int(cfp);
+		csg->stats.medals_earned[idx].val = cfile::read<int>(cfp);
 	}
 
 	csg->stats.ship_kills = csg->ship_list;
 
-	list_size = cfread_int(cfp);
+	list_size = cfile::read<int>(cfp);
 
 	// NOTE: could be less, but never greater than
 	if ( list_size > (int)csg->stats.ship_kills.size() ) {
@@ -601,20 +600,20 @@ void pilotfile_convert::csg_import_stats()
 	}
 
 	for (idx = 0; idx < list_size; idx++) {
-		csg->stats.ship_kills[idx].val = (int)cfread_ushort(cfp);
+		csg->stats.ship_kills[idx].val = (int)cfile::read<ushort>(cfp);
 	}
 
-	csg->stats.kill_count = cfread_int(cfp);
-	csg->stats.kill_count_ok = cfread_int(cfp);
+	csg->stats.kill_count = cfile::read<int>(cfp);
+	csg->stats.kill_count_ok = cfile::read<int>(cfp);
 
-	csg->stats.p_shots_fired = cfread_uint(cfp);
-	csg->stats.s_shots_fired = cfread_uint(cfp);
-	csg->stats.p_shots_hit = cfread_uint(cfp);
-	csg->stats.s_shots_hit = cfread_uint(cfp);
+	csg->stats.p_shots_fired = cfile::read<uint>(cfp);
+	csg->stats.s_shots_fired = cfile::read<uint>(cfp);
+	csg->stats.p_shots_hit = cfile::read<uint>(cfp);
+	csg->stats.s_shots_hit = cfile::read<uint>(cfp);
 
-	csg->stats.p_bonehead_hits = cfread_uint(cfp);
-	csg->stats.s_bonehead_hits = cfread_uint(cfp);
-	csg->stats.bonehead_kills = cfread_uint(cfp);
+	csg->stats.p_bonehead_hits = cfile::read<uint>(cfp);
+	csg->stats.s_bonehead_hits = cfile::read<uint>(cfp);
+	csg->stats.bonehead_kills = cfile::read<uint>(cfp);
 }
 
 void pilotfile_convert::csg_import(bool inferno)
@@ -623,34 +622,34 @@ void pilotfile_convert::csg_import(bool inferno)
 
 	char name[35];
 
-	unsigned int csg_id = cfread_uint(cfp);
+	unsigned int csg_id = cfile::read<uint>(cfp);
 
 	if (csg_id != 0xbeefcafe) {
 		throw std::runtime_error("Invalid file signature!");
 	}
 
-	fver = cfread_uint(cfp);
+	fver = cfile::read<uint>(cfp);
 
 	if (fver != 15) {
 		throw std::runtime_error("Unsupported file version!");
 	}
 
 	// campaign type (single/multi)
-	csg->sig = cfread_int(cfp);
+	csg->sig = cfile::read<int>(cfp);
 
 	// trash
-	cfread_string_len(name, sizeof(name), cfp);
+	cfile::readStringLen(name, sizeof(name), cfp);
 
-	csg->prev_mission = cfread_int(cfp);
-	csg->next_mission = cfread_int(cfp);
-	csg->loop_reentry = cfread_int(cfp);
-	csg->loop_enabled = cfread_int(cfp);
+	csg->prev_mission = cfile::read<int>(cfp);
+	csg->next_mission = cfile::read<int>(cfp);
+	csg->loop_reentry = cfile::read<int>(cfp);
+	csg->loop_enabled = cfile::read<int>(cfp);
 
 	csg_import_ships_weapons();
 
 	csg_import_missions(inferno);
 
-	csg->main_hall = cfread_ubyte(cfp);
+	csg->main_hall = cfile::read<ubyte>(cfp);
 
 	csg_import_red_alert();
 
@@ -660,7 +659,7 @@ void pilotfile_convert::csg_import(bool inferno)
 
 	csg_import_stats();
 
-	csg->cutscenes = cfread_int(cfp);
+	csg->cutscenes = cfile::read<int>(cfp);
 
 	// final data checks
 	if ( csg->ship_list.size() != csg->ships_allowed.size() ) {
@@ -684,7 +683,7 @@ void pilotfile_convert::csg_export_flags()
 	startSection(Section::Flags);
 
 	// tips
-	cfwrite_ubyte((ubyte)plr->tips, cfp);
+	cfile::write<ubyte>((ubyte)plr->tips, cfp);
 
 	endSection();
 }
@@ -699,68 +698,68 @@ void pilotfile_convert::csg_export_info()
 
 	// ship list
 	list_size = (int)csg->ship_list.size();
-	cfwrite_int(list_size, cfp);
+	cfile::write<int>(list_size, cfp);
 
 	for (idx = 0; idx < list_size; idx++) {
-		cfwrite_string_len(csg->ship_list[idx].name.c_str(), cfp);
+		cfile::writeStringLen(csg->ship_list[idx].name.c_str(), cfp);
 	}
 
 	// weapon list
 	list_size = (int)csg->weapon_list.size();
-	cfwrite_int(list_size, cfp);
+	cfile::write<int>(list_size, cfp);
 
 	for (idx = 0; idx < list_size; idx++) {
-		cfwrite_string_len(csg->weapon_list[idx].name.c_str(), cfp);
+		cfile::writeStringLen(csg->weapon_list[idx].name.c_str(), cfp);
 	}
 
 	// intel list
 	list_size = (int)csg->intel_list.size();
-	cfwrite_int(list_size, cfp);
+	cfile::write<int>(list_size, cfp);
 
 	for (idx = 0; idx < list_size; idx++) {
-		cfwrite_string_len(csg->intel_list[idx].name.c_str(), cfp);
+		cfile::writeStringLen(csg->intel_list[idx].name.c_str(), cfp);
 	}
 
 	// medals list
 	list_size = (int)csg->stats.medals_earned.size();
-	cfwrite_int(list_size, cfp);
+	cfile::write<int>(list_size, cfp);
 
 	for (idx = 0; idx < list_size; idx++) {
-		cfwrite_string_len(csg->stats.medals_earned[idx].name.c_str(), cfp);
+		cfile::writeStringLen(csg->stats.medals_earned[idx].name.c_str(), cfp);
 	}
 
 	// last ship flown
-	cfwrite_int(csg->last_ship_flown_index, cfp);
+	cfile::write<int>(csg->last_ship_flown_index, cfp);
 
 	// progression state
-	cfwrite_int(csg->prev_mission, cfp);
-	cfwrite_int(csg->next_mission, cfp);
+	cfile::write<int>(csg->prev_mission, cfp);
+	cfile::write<int>(csg->next_mission, cfp);
 
 	// loop state
-	cfwrite_int(csg->loop_enabled, cfp);
-	cfwrite_int(csg->loop_reentry, cfp);
+	cfile::write<int>(csg->loop_enabled, cfp);
+	cfile::write<int>(csg->loop_reentry, cfp);
 
 	// missions completed
 	list_size = (int)csg->missions.size();
-	cfwrite_int(list_size, cfp);
+	cfile::write<int>(list_size, cfp);
 
 	// allowed ships
 	list_size = (int)csg->ships_allowed.size();
 	for (idx = 0; idx < list_size; idx++) {
 		visible = csg->ships_allowed[idx] ? 1 : 0;
-		cfwrite_ubyte(visible, cfp);
+		cfile::write<ubyte>(visible, cfp);
 	}
 
 	// allowed weapons
 	list_size = (int)csg->weapons_allowed.size();
 	for (idx = 0; idx < list_size; idx++) {
 		visible = csg->weapons_allowed[idx] ? 1 : 0;
-		cfwrite_ubyte(visible, cfp);
+		cfile::write<ubyte>(visible, cfp);
 	}
 
 	// single/campaign squad name & image, make it the same as multi
-	cfwrite_string_len(plr->squad_name, cfp);
-	cfwrite_string_len(plr->squad_filename, cfp);
+	cfile::writeStringLen(plr->squad_name, cfp);
+	cfile::writeStringLen(plr->squad_filename, cfp);
 
 	endSection();
 }
@@ -776,67 +775,67 @@ void pilotfile_convert::csg_export_missions()
 	list_size = csg->missions.size();
 
 	for (idx = 0; idx < list_size; idx++) {
-		cfwrite_int(csg->missions[idx].index, cfp);
+		cfile::write<int>(csg->missions[idx].index, cfp);
 
 		// flags
-		cfwrite_int(csg->missions[idx].flags, cfp);
+		cfile::write<int>(csg->missions[idx].flags, cfp);
 
 		// goals
 		count = (int)csg->missions[idx].goals.size();
-		cfwrite_int(count, cfp);
+		cfile::write<int>(count, cfp);
 
 		for (j = 0; j < count; j++) {
-			cfwrite_string_len(csg->missions[idx].goals[j].name, cfp);
-			cfwrite_char(csg->missions[idx].goals[j].status, cfp);
+			cfile::writeStringLen(csg->missions[idx].goals[j].name, cfp);
+			cfile::write<char>(csg->missions[idx].goals[j].status, cfp);
 		}
 
 		// events
 		count = (int)csg->missions[idx].events.size();
-		cfwrite_int(count, cfp);
+		cfile::write<int>(count, cfp);
 
 		for (j = 0; j < count; j++) {
-			cfwrite_string_len(csg->missions[idx].events[j].name, cfp);
-			cfwrite_char(csg->missions[idx].events[j].status, cfp);
+			cfile::writeStringLen(csg->missions[idx].events[j].name, cfp);
+			cfile::write<char>(csg->missions[idx].events[j].status, cfp);
 		}
 
 		// variables
 		count = (int)csg->missions[idx].variables.size();
-		cfwrite_int(count, cfp);
+		cfile::write<int>(count, cfp);
 
 		for (j = 0; j < count; j++) {
-			cfwrite_int(csg->missions[idx].variables[j].type, cfp);
-			cfwrite_string_len(csg->missions[idx].variables[j].text, cfp);
-			cfwrite_string_len(csg->missions[idx].variables[j].variable_name, cfp);
+			cfile::write<int>(csg->missions[idx].variables[j].type, cfp);
+			cfile::writeStringLen(csg->missions[idx].variables[j].text, cfp);
+			cfile::writeStringLen(csg->missions[idx].variables[j].variable_name, cfp);
 		}
 
 		// scoring stats
-		cfwrite_int(csg->missions[idx].stats.score, cfp);
-		cfwrite_int(csg->missions[idx].stats.rank, cfp);
-		cfwrite_int(csg->missions[idx].stats.assists, cfp);
-		cfwrite_int(csg->missions[idx].stats.kill_count, cfp);
-		cfwrite_int(csg->missions[idx].stats.kill_count_ok, cfp);
-		cfwrite_int(csg->missions[idx].stats.bonehead_kills, cfp);
+		cfile::write<int>(csg->missions[idx].stats.score, cfp);
+		cfile::write<int>(csg->missions[idx].stats.rank, cfp);
+		cfile::write<int>(csg->missions[idx].stats.assists, cfp);
+		cfile::write<int>(csg->missions[idx].stats.kill_count, cfp);
+		cfile::write<int>(csg->missions[idx].stats.kill_count_ok, cfp);
+		cfile::write<int>(csg->missions[idx].stats.bonehead_kills, cfp);
 
-		cfwrite_uint(csg->missions[idx].stats.p_shots_fired, cfp);
-		cfwrite_uint(csg->missions[idx].stats.p_shots_hit, cfp);
-		cfwrite_uint(csg->missions[idx].stats.p_bonehead_hits, cfp);
+		cfile::write<uint>(csg->missions[idx].stats.p_shots_fired, cfp);
+		cfile::write<uint>(csg->missions[idx].stats.p_shots_hit, cfp);
+		cfile::write<uint>(csg->missions[idx].stats.p_bonehead_hits, cfp);
 
-		cfwrite_uint(csg->missions[idx].stats.s_shots_fired, cfp);
-		cfwrite_uint(csg->missions[idx].stats.s_shots_hit, cfp);
-		cfwrite_uint(csg->missions[idx].stats.s_bonehead_hits, cfp);
+		cfile::write<uint>(csg->missions[idx].stats.s_shots_fired, cfp);
+		cfile::write<uint>(csg->missions[idx].stats.s_shots_hit, cfp);
+		cfile::write<uint>(csg->missions[idx].stats.s_bonehead_hits, cfp);
 
 		// ship kills (scoring)
 		count = (int)csg->missions[idx].stats.ship_kills.size();
 
 		for (j = 0; j < count; j++) {
-			cfwrite_int(csg->missions[idx].stats.ship_kills[j].val, cfp);
+			cfile::write<int>(csg->missions[idx].stats.ship_kills[j].val, cfp);
 		}
 
 		// medals earned (scoring)
 		count = (int)csg->missions[idx].stats.medals_earned.size();
 
 		for (j = 0; j < count; j++) {
-			cfwrite_int(csg->missions[idx].stats.medals_earned[j].val, cfp);
+			cfile::write<int>(csg->missions[idx].stats.medals_earned[j].val, cfp);
 		}
 	}
 
@@ -856,7 +855,7 @@ void pilotfile_convert::csg_export_techroom()
 
 	for (idx = 0; idx < list_size; idx++) {
 		visible = csg->ships_techroom[idx] ? 1 : 0;
-		cfwrite_ubyte(visible, cfp);
+		cfile::write<ubyte>(visible, cfp);
 	}
 
 	// visible weapons
@@ -864,7 +863,7 @@ void pilotfile_convert::csg_export_techroom()
 
 	for (idx = 0; idx < list_size; idx++) {
 		visible = csg->weapons_techroom[idx] ? 1 : 0;
-		cfwrite_ubyte(visible, cfp);
+		cfile::write<ubyte>(visible, cfp);
 	}
 
 	// visible intel entries
@@ -872,7 +871,7 @@ void pilotfile_convert::csg_export_techroom()
 
 	for (idx = 0; idx < list_size; idx++) {
 		visible = csg->intel_techroom[idx] ? 1 : 0;
-		cfwrite_ubyte(visible, cfp);
+		cfile::write<ubyte>(visible, cfp);
 	}
 
 	endSection();
@@ -886,44 +885,44 @@ void pilotfile_convert::csg_export_loadout()
 	startSection(Section::Loadout);
 
 	// base info
-	cfwrite_string_len(csg->loadout.filename.c_str(), cfp);
-	cfwrite_string_len(csg->loadout.last_modified.c_str(), cfp);
+	cfile::writeStringLen(csg->loadout.filename.c_str(), cfp);
+	cfile::writeStringLen(csg->loadout.last_modified.c_str(), cfp);
 
 	// ship pool
 	list_size = csg->loadout.ship_pool.size();
 
 	for (idx = 0; idx < list_size; idx++) {
-		cfwrite_int(csg->loadout.ship_pool[idx], cfp);
+		cfile::write<int>(csg->loadout.ship_pool[idx], cfp);
 	}
 
 	// weapon pool
 	list_size = csg->loadout.weapon_pool.size();
 
 	for (idx = 0; idx < list_size; idx++) {
-		cfwrite_int(csg->loadout.weapon_pool[idx], cfp);
+		cfile::write<int>(csg->loadout.weapon_pool[idx], cfp);
 	}
 
 	// play ship loadout
-	cfwrite_ushort(12, cfp);
+	cfile::write<short>(12, cfp);
 
 	for (idx = 0; idx < 12; idx++) {
 		// ship
-		cfwrite_int(csg->loadout.slot[idx].ship_index, cfp);
+		cfile::write<int>(csg->loadout.slot[idx].ship_index, cfp);
 
 		// primary weapons
-		cfwrite_int(3, cfp);
+		cfile::write<int>(3, cfp);
 
 		for (j = 0; j < 3; j++) {
-			cfwrite_int(csg->loadout.slot[idx].wep[j], cfp);
-			cfwrite_int(csg->loadout.slot[idx].wep_count[j], cfp);
+			cfile::write<int>(csg->loadout.slot[idx].wep[j], cfp);
+			cfile::write<int>(csg->loadout.slot[idx].wep_count[j], cfp);
 		}
 
 		// secondary weapons
-		cfwrite_int(4, cfp);
+		cfile::write<int>(4, cfp);
 
 		for (j = 0; j < 4; j++) {
-			cfwrite_int(csg->loadout.slot[idx].wep[j+3], cfp);
-			cfwrite_int(csg->loadout.slot[idx].wep_count[j+3], cfp);
+			cfile::write<int>(csg->loadout.slot[idx].wep[j+3], cfp);
+			cfile::write<int>(csg->loadout.slot[idx].wep_count[j+3], cfp);
 		}
 	}
 
@@ -938,36 +937,36 @@ void pilotfile_convert::csg_export_stats()
 	startSection(Section::Scoring);
 
 	// scoring stats
-	cfwrite_int(csg->stats.score, cfp);
-	cfwrite_int(csg->stats.rank, cfp);
-	cfwrite_int(csg->stats.assists, cfp);
-	cfwrite_int(csg->stats.kill_count, cfp);
-	cfwrite_int(csg->stats.kill_count_ok, cfp);
-	cfwrite_int(csg->stats.bonehead_kills, cfp);
+	cfile::write<int>(csg->stats.score, cfp);
+	cfile::write<int>(csg->stats.rank, cfp);
+	cfile::write<int>(csg->stats.assists, cfp);
+	cfile::write<int>(csg->stats.kill_count, cfp);
+	cfile::write<int>(csg->stats.kill_count_ok, cfp);
+	cfile::write<int>(csg->stats.bonehead_kills, cfp);
 
-	cfwrite_uint(csg->stats.p_shots_fired, cfp);
-	cfwrite_uint(csg->stats.p_shots_hit, cfp);
-	cfwrite_uint(csg->stats.p_bonehead_hits, cfp);
+	cfile::write<uint>(csg->stats.p_shots_fired, cfp);
+	cfile::write<uint>(csg->stats.p_shots_hit, cfp);
+	cfile::write<uint>(csg->stats.p_bonehead_hits, cfp);
 
-	cfwrite_uint(csg->stats.s_shots_fired, cfp);
-	cfwrite_uint(csg->stats.s_shots_hit, cfp);
-	cfwrite_uint(csg->stats.s_bonehead_hits, cfp);
+	cfile::write<uint>(csg->stats.s_shots_fired, cfp);
+	cfile::write<uint>(csg->stats.s_shots_hit, cfp);
+	cfile::write<uint>(csg->stats.s_bonehead_hits, cfp);
 
-	cfwrite_uint(csg->stats.flight_time, cfp);
-	cfwrite_uint(csg->stats.missions_flown, cfp);
-	cfwrite_int((int)csg->stats.last_flown, cfp);
-	cfwrite_int((int)csg->stats.last_backup, cfp);
+	cfile::write<uint>(csg->stats.flight_time, cfp);
+	cfile::write<uint>(csg->stats.missions_flown, cfp);
+	cfile::write<int>((int)csg->stats.last_flown, cfp);
+	cfile::write<int>((int)csg->stats.last_backup, cfp);
 
 	// ship kills (scoring)
 	list_size = csg->stats.ship_kills.size();
 	for (idx = 0; idx < list_size; idx++) {
-		cfwrite_int(csg->stats.ship_kills[idx].val, cfp);
+		cfile::write<int>(csg->stats.ship_kills[idx].val, cfp);
 	}
 
 	// medals earned (scoring)
 	list_size = csg->stats.medals_earned.size();
 	for (idx = 0; idx < list_size; idx++) {
-		cfwrite_int(csg->stats.medals_earned[idx].val, cfp);
+		cfile::write<int>(csg->stats.medals_earned[idx].val, cfp);
 	}
 
 	endSection();
@@ -983,53 +982,53 @@ void pilotfile_convert::csg_export_redalert()
 
 	list_size = (int)csg->wingman_status.size();
 
-	cfwrite_int(list_size, cfp);
+	cfile::write<int>(list_size, cfp);
 
 	if (list_size) {
-		cfwrite_string_len(csg->precursor_mission.c_str(), cfp);
+		cfile::writeStringLen(csg->precursor_mission.c_str(), cfp);
 
 		for (idx = 0; idx < list_size; idx++) {
 			ras = &csg->wingman_status[idx];
 
-			cfwrite_string_len(ras->name.c_str(), cfp);
+			cfile::writeStringLen(ras->name.c_str(), cfp);
 
-			cfwrite_float(ras->hull, cfp);
+			cfile::write<float>(ras->hull, cfp);
 
 			// ship class, should be index into ship_list[] on load
-			cfwrite_int(ras->ship_class, cfp);
+			cfile::write<int>(ras->ship_class, cfp);
 
 			// subsystem hits
 			count = (int)ras->subsys_current_hits.size();
-			cfwrite_int(count, cfp);
+			cfile::write<int>(count, cfp);
 
 			for (j = 0; j < count; j++) {
-				cfwrite_float(ras->subsys_current_hits[j], cfp);
+				cfile::write<float>(ras->subsys_current_hits[j], cfp);
 			}
 
 			// subsystem aggregate hits
 			count = (int)ras->subsys_aggregate_current_hits.size();
-			cfwrite_int(count, cfp);
+			cfile::write<int>(count, cfp);
 
 			for (j = 0; j < count; j++) {
-				cfwrite_float(ras->subsys_aggregate_current_hits[j], cfp);
+				cfile::write<float>(ras->subsys_aggregate_current_hits[j], cfp);
 			}
 
 			// primary weapon loadout and status
 			count = (int)ras->primary_weapons.size();
-			cfwrite_int(count, cfp);
+			cfile::write<int>(count, cfp);
 
 			for (j = 0; j < count; j++) {
-				cfwrite_int(ras->primary_weapons[j].index, cfp);
-				cfwrite_int(ras->primary_weapons[j].count, cfp);
+				cfile::write<int>(ras->primary_weapons[j].index, cfp);
+				cfile::write<int>(ras->primary_weapons[j].count, cfp);
 			}
 
 			// secondary weapon loadout and status
 			count = (int)ras->secondary_weapons.size();
-			cfwrite_int(count, cfp);
+			cfile::write<int>(count, cfp);
 
 			for (j = 0; j < count; j++) {
-				cfwrite_int(ras->secondary_weapons[j].index, cfp);
-				cfwrite_int(ras->secondary_weapons[j].count, cfp);
+				cfile::write<int>(ras->secondary_weapons[j].index, cfp);
+				cfile::write<int>(ras->secondary_weapons[j].count, cfp);
 			}
 		}
 	}
@@ -1044,30 +1043,30 @@ void pilotfile_convert::csg_export_hud()
 	startSection(Section::HUD);
 
 	// flags
-	cfwrite_int(plr->hud_show_flags, cfp);
-	cfwrite_int(plr->hud_show_flags2, cfp);
+	cfile::write<int>(plr->hud_show_flags, cfp);
+	cfile::write<int>(plr->hud_show_flags2, cfp);
 
-	cfwrite_int(plr->hud_popup_flags, cfp);
-	cfwrite_int(plr->hud_popup_flags2, cfp);
+	cfile::write<int>(plr->hud_popup_flags, cfp);
+	cfile::write<int>(plr->hud_popup_flags2, cfp);
 
 	// settings
-	cfwrite_ubyte(plr->hud_num_lines, cfp);
+	cfile::write<ubyte>(plr->hud_num_lines, cfp);
 
-	cfwrite_int(plr->hud_rp_flags, cfp);
-	cfwrite_int(plr->hud_rp_dist, cfp);
+	cfile::write<int>(plr->hud_rp_flags, cfp);
+	cfile::write<int>(plr->hud_rp_dist, cfp);
 
 	// basic colors
-	cfwrite_int(0, cfp);	// color
-	cfwrite_int(8, cfp);	// alpha
+	cfile::write<int>(0, cfp);	// color
+	cfile::write<int>(8, cfp);	// alpha
 
 	// gauge-specific colors
-	cfwrite_int(39, cfp);
+	cfile::write<int>(39, cfp);
 
 	for (idx = 0; idx < 39; idx++) {
-		cfwrite_ubyte(plr->hud_colors[idx][0], cfp);
-		cfwrite_ubyte(plr->hud_colors[idx][1], cfp);
-		cfwrite_ubyte(plr->hud_colors[idx][2], cfp);
-		cfwrite_ubyte(plr->hud_colors[idx][3], cfp);
+		cfile::write<ubyte>(plr->hud_colors[idx][0], cfp);
+		cfile::write<ubyte>(plr->hud_colors[idx][1], cfp);
+		cfile::write<ubyte>(plr->hud_colors[idx][2], cfp);
+		cfile::write<ubyte>(plr->hud_colors[idx][3], cfp);
 	}
 
 	endSection();
@@ -1082,12 +1081,12 @@ void pilotfile_convert::csg_export_variables()
 
 	list_size = (int)csg->variables.size();
 
-	cfwrite_int(list_size, cfp);
+	cfile::write<int>(list_size, cfp);
 
 	for (idx = 0; idx < list_size; idx++) {
-		cfwrite_int(csg->variables[idx].type, cfp);
-		cfwrite_string_len(csg->variables[idx].text, cfp);
-		cfwrite_string_len(csg->variables[idx].variable_name, cfp);
+		cfile::write<int>(csg->variables[idx].type, cfp);
+		cfile::writeStringLen(csg->variables[idx].text, cfp);
+		cfile::writeStringLen(csg->variables[idx].variable_name, cfp);
 	}
 
 	endSection();
@@ -1098,8 +1097,8 @@ void pilotfile_convert::csg_export()
 	Assert( cfp != NULL );
 
 	// header and version
-	cfwrite_int(CSG_FILE_ID, cfp);
-	cfwrite_ubyte(CSG_VERSION, cfp);
+	cfile::write<int>(CSG_FILE_ID, cfp);
+	cfile::write<ubyte>(CSG_VERSION, cfp);
 
 	// flags and info sections go first
 	csg_export_flags();
@@ -1124,7 +1123,6 @@ bool pilotfile_convert::csg_convert(const char *fname, bool inferno)
 	Assert( plr != NULL);
 	Assert( csg == NULL );
 
-	SCP_string filename;
 	bool rval = true;
 
 	csg = new(std::nothrow) csg_data;
@@ -1133,20 +1131,12 @@ bool pilotfile_convert::csg_convert(const char *fname, bool inferno)
 		return false;
 	}
 
-	filename.reserve(200);
-
-	cf_create_default_path_string(filename, CF_TYPE_SINGLE_PLAYERS, (inferno) ? const_cast<char*>("inferno") : NULL);
-
-	if (inferno) {
-		filename.append(DIR_SEPARATOR_STR);
-	}
-
-	filename.append(fname);
+	SCP_string filename(fname);
 	filename.append(".cs2");
 
 	mprintf(("    CS2 => Converting '%s'...\n", filename.c_str()));
 
-	cfp = cfopen(const_cast<char*>(filename.c_str()), "rb", CFILE_NORMAL);
+	cfp = cfile::open(filename, cfile::MODE_READ, cfile::OPEN_NORMAL, inferno ? cfile::TYPE_SINGLE_PLAYERS_INFERNO : cfile::TYPE_SINGLE_PLAYERS);
 
 	if ( !cfp ) {
 		mprintf(("    CS2 => Unable to open for import!\n", fname));
@@ -1163,7 +1153,7 @@ bool pilotfile_convert::csg_convert(const char *fname, bool inferno)
 		rval = false;
 	}
 
-	cfclose(cfp);
+	cfile::close(cfp);
 	cfp = NULL;
 
 	if ( !rval ) {
@@ -1176,7 +1166,7 @@ bool pilotfile_convert::csg_convert(const char *fname, bool inferno)
 	filename.assign(fname);
 	filename.append(".csg");
 
-	cfp = cfopen(const_cast<char*>(filename.c_str()), "wb", CFILE_NORMAL, CF_TYPE_PLAYERS);
+	cfp = cfile::open(filename.c_str(), cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_PLAYERS);
 
 	if ( !cfp ) {
 		mprintf(("    CSG => Unable to open for export!\n", fname));
@@ -1190,7 +1180,7 @@ bool pilotfile_convert::csg_convert(const char *fname, bool inferno)
 		rval = false;
 	}
 
-	cfclose(cfp);
+	cfile::close(cfp);
 	cfp = NULL;
 
 	delete csg;

@@ -25,26 +25,20 @@
 
 #define MAX_AUDIO_STREAMS	30
 
-#ifdef NEED_STRHDL
-#ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <mmsystem.h>
-#endif
-
+#include "cfile/cfile.h"
 #include "sound/ogg/ogg.h"
+
+#ifdef NEED_STRHDL
 
 // audio stream file handle information
 typedef struct {
-	HMMIO cfp;		// handle for mmio
-
-	long true_offset;	// true offset of file into VP
-	uint size;			// total size of file being read
+	cfile::FileHandle *cfp;		// handle for io
 
 	// for OGGs
 	OggVorbis_File vorbis_file;	// vorbis file info
 } STRHDL;
-#endif	// NEED_STRHDL
+
+#endif
 
 // Initializes the audio streaming library.  Called
 // automatically when the sound stuff is inited.

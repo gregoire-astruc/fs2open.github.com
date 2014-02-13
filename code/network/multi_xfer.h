@@ -16,6 +16,7 @@
 // MULTI XFER DEFINES/VARS
 //
 #include "globalincs/pstypes.h"
+#include "cfile/cfile.h"
 
 typedef uint PSNET_SOCKET_RELIABLE;
 
@@ -54,7 +55,7 @@ void multi_xfer_do();
 void multi_xfer_reset();
 
 // send a file to the specified player, return a handle
-int multi_xfer_send_file(PSNET_SOCKET_RELIABLE who, char *filename, int cfile_flags, int flags = 0);
+int multi_xfer_send_file(PSNET_SOCKET_RELIABLE who, char *filename, cfile::DirType cfile_flags, int flags = 0);
 
 // get the status of the current file xfer
 int multi_xfer_get_status(int handle);
@@ -75,10 +76,10 @@ void multi_xfer_lock();
 void multi_xfer_unlock();
 
 // force all receives to go into the specified directory by cfile type
-void multi_xfer_force_dir(int cf_type);
+void multi_xfer_force_dir(cfile::DirType cf_type);
 
 // forces the given xfer entry to the specified directory type (only valid when called from the recv_callback function)
-void multi_xfer_handle_force_dir(int handle,int cf_type);
+void multi_xfer_handle_force_dir(int handle,cfile::DirType cf_type);
 
 // xor the flag on a given entry
 void multi_xfer_xor_flags(int handle,int flags);

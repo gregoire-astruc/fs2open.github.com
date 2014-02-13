@@ -58,7 +58,7 @@ ushort Multi_options_proxy_port = 0;
 #define SETTING(s)						( !stricmp(tok, s) )
 void multi_options_read_config()
 {
-	CFILE *in;
+	cfile::FileHandle *in;
 	char str[512];
 	char *tok = NULL;
 
@@ -71,16 +71,16 @@ void multi_options_read_config()
 
 
 	// read in the config file
-	in = cfopen(MULTI_CFG_FILE, "rt", CFILE_NORMAL, CF_TYPE_DATA);
+	in = cfile::open(MULTI_CFG_FILE, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_DATA);
 	
 	// if we failed to open the config file, user default settings
 	if (in == NULL) {
 		nprintf(("Network","Failed to open network config file, using default settings\n"));		
 	} else {
-		while ( !cfeof(in) ) {
+		while ( !cfile::eof(in) ) {
 			// read in the game info
 			memset(str, 0, 512);
-			cfgets(str, 512, in);
+			cfile::readLine(str, 512, in);
 
 			// parse the first line
 			tok = strtok(str, " \t");
@@ -305,7 +305,7 @@ void multi_options_read_config()
 		}
 
 		// close the config file
-		cfclose(in);
+		cfile::close(in);
 		in = NULL;
 	}
 

@@ -4234,7 +4234,7 @@ void interp_configure_vertex_buffers(polymodel *pm, int mn)
 		int ibx_verts = 0;
 		int ibx_size = 0;
 
-		ibx_verts = cfread_int( ibuffer_info.read );
+		ibx_verts = cfile::read<int>( ibuffer_info.read );
 		ibuffer_info.size -= sizeof(int);	// subtract
 
 		// vertex count (indexed vertex count)
@@ -4248,10 +4248,10 @@ void interp_configure_vertex_buffers(polymodel *pm, int mn)
 			// AAAAAHH! not enough stored data - Abort, Retry, Fail?
 			Warning(LOCATION, "IBX: Safety Check Failure!  The file doesn't contain enough data, deleting '%s'\n", ibuffer_info.name);
 
-			cfclose( ibuffer_info.read );
+			cfile::close( ibuffer_info.read );
 			ibuffer_info.read = NULL;
 			ibuffer_info.size = 0;
-			cf_delete( ibuffer_info.name, CF_TYPE_CACHE );
+			cfile::deleteFile( ibuffer_info.name, cfile::TYPE_CACHE );
 
 			// force generate
 			model_list->make_index_buffer(vertex_list);
@@ -4271,7 +4271,7 @@ void interp_configure_vertex_buffers(polymodel *pm, int mn)
 			model_list->calculate_tangent();
 
 			for (i = 0; i < ibx_verts; i++) {
-				int ivert = cfread_int( ibuffer_info.read );
+				int ivert = cfile::read<int>( ibuffer_info.read );
 
 				tlist->vert[i] = model_list->vert[ivert];
 				tlist->norm[i] = model_list->norm[ivert];
@@ -4298,13 +4298,13 @@ void interp_configure_vertex_buffers(polymodel *pm, int mn)
 		model_list->make_index_buffer(vertex_list);
 
 		if (ibuffer_info.write != NULL) {
-			cfwrite_int( model_list->n_verts, ibuffer_info.write );
+			cfile::write<int>( model_list->n_verts, ibuffer_info.write );
 
 			int count = (int)vertex_list.size();
 			Assert( model_list->n_verts == count );
 
 			for (i = 0; i < count; i++) {
-				cfwrite_int( vertex_list[i], ibuffer_info.write );
+				cfile::write<int>( vertex_list[i], ibuffer_info.write );
 			}
 		}
 
@@ -4331,7 +4331,7 @@ void interp_configure_vertex_buffers(polymodel *pm, int mn)
 
 		for (j = 0; j < polygon_list[i].n_verts; j++) {
 			if (ibuffer_info.read != NULL) {
-				first_index = cfread_int(ibuffer_info.read);
+				first_index = cfile::read<int>(ibuffer_info.read);
 				Assert( first_index >= 0 );
 
 				new_buffer.assign(j, first_index);
@@ -4342,7 +4342,7 @@ void interp_configure_vertex_buffers(polymodel *pm, int mn)
 				new_buffer.assign(j, first_index);
 
 				if (ibuffer_info.write != NULL) {
-					cfwrite_int(first_index, ibuffer_info.write);
+					cfile::write<int>(first_index, ibuffer_info.write);
 				}
 			}
 		}
@@ -4875,7 +4875,7 @@ int texture_info::LoadTexture(char *filename, char *dbg_name = "<UNKNOWN>")
 		mprintf(("Generated texture name %s is too long. Skipping...\n"));
 		return -1;
 	}
-	this->original_texture = bm_load_either(filename, NULL, NULL, NULL, 1, CF_TYPE_MAPS);
+	this->original_texture = bm_load_either(filename, NULL, NULL, NULL, 1, cfile::TYPE_MAPS);
 	if(this->original_texture < 0)
 		nprintf(("Maps", "For \"%s\" I couldn't find %s.ani\n", dbg_name, filename));
 	this->ResetTexture();

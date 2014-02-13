@@ -21,23 +21,23 @@
 void pilotfile::plr_read_flags()
 {
 	// tips?
-	p->tips = (int)cfread_ubyte(cfp);
+	p->tips = (int)cfile::read<ubyte>(cfp);
 
 	// saved flags
-	p->save_flags = cfread_int(cfp);
+	p->save_flags = cfile::read<int>(cfp);
 
 	// listing mode (single or campaign missions
-	p->readyroom_listing_mode = cfread_int(cfp);
+	p->readyroom_listing_mode = cfile::read<int>(cfp);
 
 	// briefing auto-play
-	p->auto_advance = cfread_int(cfp);
+	p->auto_advance = cfile::read<int>(cfp);
 
 	// special rank setting (to avoid having to read all stats on verify)
-	p->stats.rank = cfread_int(cfp);
+	p->stats.rank = cfile::read<int>(cfp);
 
 	if (version > 0) 
 	{
-		p->player_was_multi = cfread_int(cfp);
+		p->player_was_multi = cfile::read<int>(cfp);
 	} else 
 	{
 		p->player_was_multi = 0; // Default to single player
@@ -49,22 +49,22 @@ void pilotfile::plr_write_flags()
 	startSection(Section::Flags);
 
 	// tips
-	cfwrite_ubyte((unsigned char)p->tips, cfp);
+	cfile::write<ubyte>((unsigned char)p->tips, cfp);
 
 	// saved flags
-	cfwrite_int(p->save_flags, cfp);
+	cfile::write<int>(p->save_flags, cfp);
 
 	// listing mode (single or campaign missions)
-	cfwrite_int(p->readyroom_listing_mode, cfp);
+	cfile::write<int>(p->readyroom_listing_mode, cfp);
 
 	// briefing auto-play
-	cfwrite_int(p->auto_advance, cfp);
+	cfile::write<int>(p->auto_advance, cfp);
 
 	// special rank setting (to avoid having to read all stats on verify)
-	cfwrite_int(p->stats.rank, cfp);
+	cfile::write<int>(p->stats.rank, cfp);
 
 	// What game mode we were in last on this pilot
-	cfwrite_int(p->player_was_multi, cfp);
+	cfile::write<int>(p->player_was_multi, cfp);
 
 	endSection();
 }
@@ -76,16 +76,16 @@ void pilotfile::plr_read_info()
 	}
 
 	// pilot image
-	cfread_string_len(p->image_filename, MAX_FILENAME_LEN, cfp);
+	cfile::readStringLen(p->image_filename, MAX_FILENAME_LEN, cfp);
 
 	// multi squad name
-	cfread_string_len(p->m_squad_name, NAME_LENGTH, cfp);
+	cfile::readStringLen(p->m_squad_name, NAME_LENGTH, cfp);
 
 	// squad image
-	cfread_string_len(p->m_squad_filename, MAX_FILENAME_LEN, cfp);
+	cfile::readStringLen(p->m_squad_filename, MAX_FILENAME_LEN, cfp);
 
 	// active campaign
-	cfread_string_len(p->current_campaign, MAX_FILENAME_LEN, cfp);
+	cfile::readStringLen(p->current_campaign, MAX_FILENAME_LEN, cfp);
 }
 
 void pilotfile::plr_write_info()
@@ -93,16 +93,16 @@ void pilotfile::plr_write_info()
 	startSection(Section::Info);
 
 	// pilot image
-	cfwrite_string_len(p->image_filename, cfp);
+	cfile::writeStringLen(p->image_filename, cfp);
 
 	// multi squad name
-	cfwrite_string_len(p->m_squad_name, cfp);
+	cfile::writeStringLen(p->m_squad_name, cfp);
 
 	// squad image
-	cfwrite_string_len(p->m_squad_filename, cfp);
+	cfile::writeStringLen(p->m_squad_filename, cfp);
 
 	// active campaign
-	cfwrite_string_len(p->current_campaign, cfp);
+	cfile::writeStringLen(p->current_campaign, cfp);
 
 	endSection();
 }
@@ -112,21 +112,21 @@ void pilotfile::plr_read_hud()
 	int idx;
 
 	// flags
-	HUD_config.show_flags = cfread_int(cfp);
-	HUD_config.show_flags2 = cfread_int(cfp);
+	HUD_config.show_flags = cfile::read<int>(cfp);
+	HUD_config.show_flags2 = cfile::read<int>(cfp);
 
-	HUD_config.popup_flags = cfread_int(cfp);
-	HUD_config.popup_flags2 = cfread_int(cfp);
+	HUD_config.popup_flags = cfile::read<int>(cfp);
+	HUD_config.popup_flags2 = cfile::read<int>(cfp);
 
 	// settings
-	HUD_config.num_msg_window_lines = cfread_ubyte(cfp);
+	HUD_config.num_msg_window_lines = cfile::read<ubyte>(cfp);
 
-	HUD_config.rp_flags = cfread_int(cfp);
-	HUD_config.rp_dist = cfread_int(cfp);
+	HUD_config.rp_flags = cfile::read<int>(cfp);
+	HUD_config.rp_dist = cfile::read<int>(cfp);
 
 	// basic colors
-	HUD_config.main_color = cfread_int(cfp);
-	HUD_color_alpha = cfread_int(cfp);
+	HUD_config.main_color = cfile::read<int>(cfp);
+	HUD_color_alpha = cfile::read<int>(cfp);
 
 	if (HUD_color_alpha < HUD_COLOR_ALPHA_USER_MIN) {
 		HUD_color_alpha = HUD_COLOR_ALPHA_DEFAULT;
@@ -135,13 +135,13 @@ void pilotfile::plr_read_hud()
 	hud_config_set_color(HUD_config.main_color);
 
 	// gauge-specific colors
-	int num_gauges = cfread_int(cfp);
+	int num_gauges = cfile::read<int>(cfp);
 
 	for (idx = 0; idx < num_gauges; idx++) {
-		ubyte red = cfread_ubyte(cfp);
-		ubyte green = cfread_ubyte(cfp);
-		ubyte blue = cfread_ubyte(cfp);
-		ubyte alpha = cfread_ubyte(cfp);
+		ubyte red = cfile::read<ubyte>(cfp);
+		ubyte green = cfile::read<ubyte>(cfp);
+		ubyte blue = cfile::read<ubyte>(cfp);
+		ubyte alpha = cfile::read<ubyte>(cfp);
 
 		if (idx >= NUM_HUD_GAUGES) {
 			continue;
@@ -161,30 +161,30 @@ void pilotfile::plr_write_hud()
 	startSection(Section::HUD);
 
 	// flags
-	cfwrite_int(HUD_config.show_flags, cfp);
-	cfwrite_int(HUD_config.show_flags2, cfp);
+	cfile::write<int>(HUD_config.show_flags, cfp);
+	cfile::write<int>(HUD_config.show_flags2, cfp);
 
-	cfwrite_int(HUD_config.popup_flags, cfp);
-	cfwrite_int(HUD_config.popup_flags2, cfp);
+	cfile::write<int>(HUD_config.popup_flags, cfp);
+	cfile::write<int>(HUD_config.popup_flags2, cfp);
 
 	// settings
-	cfwrite_ubyte(HUD_config.num_msg_window_lines, cfp);
+	cfile::write<ubyte>(HUD_config.num_msg_window_lines, cfp);
 
-	cfwrite_int(HUD_config.rp_flags, cfp);
-	cfwrite_int(HUD_config.rp_dist, cfp);
+	cfile::write<int>(HUD_config.rp_flags, cfp);
+	cfile::write<int>(HUD_config.rp_dist, cfp);
 
 	// basic colors
-	cfwrite_int(HUD_config.main_color, cfp);
-	cfwrite_int(HUD_color_alpha, cfp);
+	cfile::write<int>(HUD_config.main_color, cfp);
+	cfile::write<int>(HUD_color_alpha, cfp);
 
 	// gauge-specific colors
-	cfwrite_int(NUM_HUD_GAUGES, cfp);
+	cfile::write<int>(NUM_HUD_GAUGES, cfp);
 
 	for (idx = 0; idx < NUM_HUD_GAUGES; idx++) {
-		cfwrite_ubyte(HUD_config.clr[idx].red, cfp);
-		cfwrite_ubyte(HUD_config.clr[idx].green, cfp);
-		cfwrite_ubyte(HUD_config.clr[idx].blue, cfp);
-		cfwrite_ubyte(HUD_config.clr[idx].alpha, cfp);
+		cfile::write<ubyte>(HUD_config.clr[idx].red, cfp);
+		cfile::write<ubyte>(HUD_config.clr[idx].green, cfp);
+		cfile::write<ubyte>(HUD_config.clr[idx].blue, cfp);
+		cfile::write<ubyte>(HUD_config.clr[idx].alpha, cfp);
 	}
 
 	endSection();
@@ -196,7 +196,7 @@ void pilotfile::plr_read_variables()
 	int idx;
 	sexp_variable n_var;
 
-	list_size = cfread_int(cfp);
+	list_size = cfile::read<int>(cfp);
 
 	if (list_size <= 0) {
 		return;
@@ -205,9 +205,9 @@ void pilotfile::plr_read_variables()
 	p->variables.reserve(list_size);
 
 	for (idx = 0; idx < list_size; idx++) {
-		n_var.type = cfread_int(cfp);
-		cfread_string_len(n_var.text, TOKEN_LENGTH, cfp);
-		cfread_string_len(n_var.variable_name, TOKEN_LENGTH, cfp);
+		n_var.type = cfile::read<int>(cfp);
+		cfile::readStringLen(n_var.text, TOKEN_LENGTH, cfp);
+		cfile::readStringLen(n_var.variable_name, TOKEN_LENGTH, cfp);
 
 		p->variables.push_back( n_var );
 	}
@@ -222,12 +222,12 @@ void pilotfile::plr_write_variables()
 
 	list_size = (int)p->variables.size();
 
-	cfwrite_int(list_size, cfp);
+	cfile::write<int>(list_size, cfp);
 
 	for (idx = 0; idx < list_size; idx++) {
-		cfwrite_int(p->variables[idx].type, cfp);
-		cfwrite_string_len(p->variables[idx].text, cfp);
-		cfwrite_string_len(p->variables[idx].variable_name, cfp);
+		cfile::write<int>(p->variables[idx].type, cfp);
+		cfile::writeStringLen(p->variables[idx].text, cfp);
+		cfile::writeStringLen(p->variables[idx].variable_name, cfp);
 	}
 
 	endSection();
@@ -236,24 +236,24 @@ void pilotfile::plr_write_variables()
 void pilotfile::plr_read_multiplayer()
 {
 	// netgame options
-	p->m_server_options.squad_set = cfread_ubyte(cfp);
-	p->m_server_options.endgame_set = cfread_ubyte(cfp);
-	p->m_server_options.flags = cfread_int(cfp);
-	p->m_server_options.respawn = cfread_uint(cfp);
-	p->m_server_options.max_observers = cfread_ubyte(cfp);
-	p->m_server_options.skill_level = cfread_ubyte(cfp);
-	p->m_server_options.voice_qos = cfread_ubyte(cfp);
-	p->m_server_options.voice_token_wait = cfread_int(cfp);
-	p->m_server_options.voice_record_time = cfread_int(cfp);
-	p->m_server_options.mission_time_limit = (fix)cfread_int(cfp);
-	p->m_server_options.kill_limit = cfread_int(cfp);
+	p->m_server_options.squad_set = cfile::read<ubyte>(cfp);
+	p->m_server_options.endgame_set = cfile::read<ubyte>(cfp);
+	p->m_server_options.flags = cfile::read<int>(cfp);
+	p->m_server_options.respawn = cfile::read<uint>(cfp);
+	p->m_server_options.max_observers = cfile::read<ubyte>(cfp);
+	p->m_server_options.skill_level = cfile::read<ubyte>(cfp);
+	p->m_server_options.voice_qos = cfile::read<ubyte>(cfp);
+	p->m_server_options.voice_token_wait = cfile::read<int>(cfp);
+	p->m_server_options.voice_record_time = cfile::read<int>(cfp);
+	p->m_server_options.mission_time_limit = (fix)cfile::read<int>(cfp);
+	p->m_server_options.kill_limit = cfile::read<int>(cfp);
 
 	// local options
-	p->m_local_options.flags = cfread_int(cfp);
-	p->m_local_options.obj_update_level = cfread_int(cfp);
+	p->m_local_options.flags = cfile::read<int>(cfp);
+	p->m_local_options.obj_update_level = cfile::read<int>(cfp);
 
 	// netgame protocol
-	Multi_options_g.protocol = cfread_int(cfp);
+	Multi_options_g.protocol = cfile::read<int>(cfp);
 
 	if (Multi_options_g.protocol == NET_VMT) {
 		Multi_options_g.protocol = NET_TCP;
@@ -267,24 +267,24 @@ void pilotfile::plr_write_multiplayer()
 	startSection(Section::Multiplayer);
 
 	// netgame options
-	cfwrite_ubyte(p->m_server_options.squad_set, cfp);
-	cfwrite_ubyte(p->m_server_options.endgame_set, cfp);
-	cfwrite_int(p->m_server_options.flags, cfp);
-	cfwrite_uint(p->m_server_options.respawn, cfp);
-	cfwrite_ubyte(p->m_server_options.max_observers, cfp);
-	cfwrite_ubyte(p->m_server_options.skill_level, cfp);
-	cfwrite_ubyte(p->m_server_options.voice_qos, cfp);
-	cfwrite_int(p->m_server_options.voice_token_wait, cfp);
-	cfwrite_int(p->m_server_options.voice_record_time, cfp);
-	cfwrite_int((int)p->m_server_options.mission_time_limit, cfp);
-	cfwrite_int(p->m_server_options.kill_limit, cfp);
+	cfile::write<ubyte>(p->m_server_options.squad_set, cfp);
+	cfile::write<ubyte>(p->m_server_options.endgame_set, cfp);
+	cfile::write<int>(p->m_server_options.flags, cfp);
+	cfile::write<uint>(p->m_server_options.respawn, cfp);
+	cfile::write<ubyte>(p->m_server_options.max_observers, cfp);
+	cfile::write<ubyte>(p->m_server_options.skill_level, cfp);
+	cfile::write<ubyte>(p->m_server_options.voice_qos, cfp);
+	cfile::write<int>(p->m_server_options.voice_token_wait, cfp);
+	cfile::write<int>(p->m_server_options.voice_record_time, cfp);
+	cfile::write<int>((int)p->m_server_options.mission_time_limit, cfp);
+	cfile::write<int>(p->m_server_options.kill_limit, cfp);
 
 	// local options
-	cfwrite_int(p->m_local_options.flags, cfp);
-	cfwrite_int(p->m_local_options.obj_update_level, cfp);
+	cfile::write<int>(p->m_local_options.flags, cfp);
+	cfile::write<int>(p->m_local_options.obj_update_level, cfp);
 
 	// netgame protocol
-	cfwrite_int(Multi_options_g.protocol, cfp);
+	cfile::write<int>(Multi_options_g.protocol, cfp);
 
 	endSection();
 }
@@ -296,50 +296,50 @@ void pilotfile::plr_read_stats()
 	char t_string[NAME_LENGTH+1];
 
 	// global, all-time stats (used only until campaign stats are loaded)
-	all_time_stats.score = cfread_int(cfp);
-	all_time_stats.rank = cfread_int(cfp);
-	all_time_stats.assists = cfread_int(cfp);
-	all_time_stats.kill_count = cfread_int(cfp);
-	all_time_stats.kill_count_ok = cfread_int(cfp);
-	all_time_stats.bonehead_kills = cfread_int(cfp);
+	all_time_stats.score = cfile::read<int>(cfp);
+	all_time_stats.rank = cfile::read<int>(cfp);
+	all_time_stats.assists = cfile::read<int>(cfp);
+	all_time_stats.kill_count = cfile::read<int>(cfp);
+	all_time_stats.kill_count_ok = cfile::read<int>(cfp);
+	all_time_stats.bonehead_kills = cfile::read<int>(cfp);
 
-	all_time_stats.p_shots_fired = cfread_uint(cfp);
-	all_time_stats.p_shots_hit = cfread_uint(cfp);
-	all_time_stats.p_bonehead_hits = cfread_uint(cfp);
+	all_time_stats.p_shots_fired = cfile::read<uint>(cfp);
+	all_time_stats.p_shots_hit = cfile::read<uint>(cfp);
+	all_time_stats.p_bonehead_hits = cfile::read<uint>(cfp);
 
-	all_time_stats.s_shots_fired = cfread_uint(cfp);
-	all_time_stats.s_shots_hit = cfread_uint(cfp);
-	all_time_stats.s_bonehead_hits = cfread_uint(cfp);
+	all_time_stats.s_shots_fired = cfile::read<uint>(cfp);
+	all_time_stats.s_shots_hit = cfile::read<uint>(cfp);
+	all_time_stats.s_bonehead_hits = cfile::read<uint>(cfp);
 
-	all_time_stats.flight_time = cfread_uint(cfp);
-	all_time_stats.missions_flown = cfread_uint(cfp);
-	all_time_stats.last_flown = (_fs_time_t)cfread_int(cfp);
-	all_time_stats.last_backup = (_fs_time_t)cfread_int(cfp);
+	all_time_stats.flight_time = cfile::read<uint>(cfp);
+	all_time_stats.missions_flown = cfile::read<uint>(cfp);
+	all_time_stats.last_flown = (_fs_time_t)cfile::read<int>(cfp);
+	all_time_stats.last_backup = (_fs_time_t)cfile::read<int>(cfp);
 
 	// ship kills (contains ships across all mods, not just current)
-	list_size = cfread_int(cfp);
+	list_size = cfile::read<int>(cfp);
 	all_time_stats.ship_kills.reserve(list_size);
 
 	for (idx = 0; idx < list_size; idx++) {
-		cfread_string_len(t_string, NAME_LENGTH, cfp);
+		cfile::readStringLen(t_string, NAME_LENGTH, cfp);
 
 		ilist.name = t_string;
 		ilist.index = ship_info_lookup(t_string);
-		ilist.val = cfread_int(cfp);
+		ilist.val = cfile::read<int>(cfp);
 
 		all_time_stats.ship_kills.push_back(ilist);
 	}
 
 	// medals earned (contains medals across all mods, not just current)
-	list_size = cfread_int(cfp);
+	list_size = cfile::read<int>(cfp);
 	all_time_stats.medals_earned.reserve(list_size);
 
 	for (idx = 0; idx < list_size; idx++) {
-		cfread_string_len(t_string, NAME_LENGTH,cfp);
+		cfile::readStringLen(t_string, NAME_LENGTH,cfp);
 
 		ilist.name = t_string;
 		ilist.index = medals_info_lookup(t_string);
-		ilist.val = cfread_int(cfp);
+		ilist.val = cfile::read<int>(cfp);
 
 		all_time_stats.medals_earned.push_back(ilist);
 	}
@@ -395,42 +395,42 @@ void pilotfile::plr_write_stats()
 	startSection(Section::Scoring);
 
 	// global, all-time stats
-	cfwrite_int(all_time_stats.score, cfp);
-	cfwrite_int(all_time_stats.rank, cfp);
-	cfwrite_int(all_time_stats.assists, cfp);
-	cfwrite_int(all_time_stats.kill_count, cfp);
-	cfwrite_int(all_time_stats.kill_count_ok, cfp);
-	cfwrite_int(all_time_stats.bonehead_kills, cfp);
+	cfile::write<int>(all_time_stats.score, cfp);
+	cfile::write<int>(all_time_stats.rank, cfp);
+	cfile::write<int>(all_time_stats.assists, cfp);
+	cfile::write<int>(all_time_stats.kill_count, cfp);
+	cfile::write<int>(all_time_stats.kill_count_ok, cfp);
+	cfile::write<int>(all_time_stats.bonehead_kills, cfp);
 
-	cfwrite_uint(all_time_stats.p_shots_fired, cfp);
-	cfwrite_uint(all_time_stats.p_shots_hit, cfp);
-	cfwrite_uint(all_time_stats.p_bonehead_hits, cfp);
+	cfile::write<uint>(all_time_stats.p_shots_fired, cfp);
+	cfile::write<uint>(all_time_stats.p_shots_hit, cfp);
+	cfile::write<uint>(all_time_stats.p_bonehead_hits, cfp);
 
-	cfwrite_uint(all_time_stats.s_shots_fired, cfp);
-	cfwrite_uint(all_time_stats.s_shots_hit, cfp);
-	cfwrite_uint(all_time_stats.s_bonehead_hits, cfp);
+	cfile::write<uint>(all_time_stats.s_shots_fired, cfp);
+	cfile::write<uint>(all_time_stats.s_shots_hit, cfp);
+	cfile::write<uint>(all_time_stats.s_bonehead_hits, cfp);
 
-	cfwrite_uint(all_time_stats.flight_time, cfp);
-	cfwrite_uint(all_time_stats.missions_flown, cfp);
-	cfwrite_int((int)all_time_stats.last_flown, cfp);
-	cfwrite_int((int)all_time_stats.last_backup, cfp);
+	cfile::write<uint>(all_time_stats.flight_time, cfp);
+	cfile::write<uint>(all_time_stats.missions_flown, cfp);
+	cfile::write<int>((int)all_time_stats.last_flown, cfp);
+	cfile::write<int>((int)all_time_stats.last_backup, cfp);
 
 	// ship kills (contains ships across all mods, not just current)
 	list_size = (int)all_time_stats.ship_kills.size();
-	cfwrite_int(list_size, cfp);
+	cfile::write<int>(list_size, cfp);
 
 	for (idx = 0; idx < list_size; idx++) {
-		cfwrite_string_len(all_time_stats.ship_kills[idx].name.c_str(), cfp);
-		cfwrite_int(all_time_stats.ship_kills[idx].val, cfp);
+		cfile::writeStringLen(all_time_stats.ship_kills[idx].name.c_str(), cfp);
+		cfile::write<int>(all_time_stats.ship_kills[idx].val, cfp);
 	}
 
 	// medals earned (contains medals across all mods, not just current)
 	list_size = (int)all_time_stats.medals_earned.size();
-	cfwrite_int(list_size, cfp);
+	cfile::write<int>(list_size, cfp);
 
 	for (idx = 0; idx < list_size; idx++) {
-		cfwrite_string_len(all_time_stats.medals_earned[idx].name.c_str(), cfp);
-		cfwrite_int(all_time_stats.medals_earned[idx].val, cfp);
+		cfile::writeStringLen(all_time_stats.medals_earned[idx].name.c_str(), cfp);
+		cfile::write<int>(all_time_stats.medals_earned[idx].val, cfp);
 	}
 
 	endSection();
@@ -443,50 +443,50 @@ void pilotfile::plr_read_stats_multi()
 	char t_string[NAME_LENGTH+1];
 
 	// global, all-time stats (used only until campaign stats are loaded)
-	multi_stats.score = cfread_int(cfp);
-	multi_stats.rank = cfread_int(cfp);
-	multi_stats.assists = cfread_int(cfp);
-	multi_stats.kill_count = cfread_int(cfp);
-	multi_stats.kill_count_ok = cfread_int(cfp);
-	multi_stats.bonehead_kills = cfread_int(cfp);
+	multi_stats.score = cfile::read<int>(cfp);
+	multi_stats.rank = cfile::read<int>(cfp);
+	multi_stats.assists = cfile::read<int>(cfp);
+	multi_stats.kill_count = cfile::read<int>(cfp);
+	multi_stats.kill_count_ok = cfile::read<int>(cfp);
+	multi_stats.bonehead_kills = cfile::read<int>(cfp);
 
-	multi_stats.p_shots_fired = cfread_uint(cfp);
-	multi_stats.p_shots_hit = cfread_uint(cfp);
-	multi_stats.p_bonehead_hits = cfread_uint(cfp);
+	multi_stats.p_shots_fired = cfile::read<uint>(cfp);
+	multi_stats.p_shots_hit = cfile::read<uint>(cfp);
+	multi_stats.p_bonehead_hits = cfile::read<uint>(cfp);
 
-	multi_stats.s_shots_fired = cfread_uint(cfp);
-	multi_stats.s_shots_hit = cfread_uint(cfp);
-	multi_stats.s_bonehead_hits = cfread_uint(cfp);
+	multi_stats.s_shots_fired = cfile::read<uint>(cfp);
+	multi_stats.s_shots_hit = cfile::read<uint>(cfp);
+	multi_stats.s_bonehead_hits = cfile::read<uint>(cfp);
 
-	multi_stats.flight_time = cfread_uint(cfp);
-	multi_stats.missions_flown = cfread_uint(cfp);
-	multi_stats.last_flown = (_fs_time_t)cfread_int(cfp);
-	multi_stats.last_backup = (_fs_time_t)cfread_int(cfp);
+	multi_stats.flight_time = cfile::read<uint>(cfp);
+	multi_stats.missions_flown = cfile::read<uint>(cfp);
+	multi_stats.last_flown = (_fs_time_t)cfile::read<int>(cfp);
+	multi_stats.last_backup = (_fs_time_t)cfile::read<int>(cfp);
 
 	// ship kills (contains ships across all mods, not just current)
-	list_size = cfread_int(cfp);
+	list_size = cfile::read<int>(cfp);
 	multi_stats.ship_kills.reserve(list_size);
 
 	for (idx = 0; idx < list_size; idx++) {
-		cfread_string_len(t_string, NAME_LENGTH, cfp);
+		cfile::readStringLen(t_string, NAME_LENGTH, cfp);
 
 		ilist.name = t_string;
 		ilist.index = ship_info_lookup(t_string);
-		ilist.val = cfread_int(cfp);
+		ilist.val = cfile::read<int>(cfp);
 
 		multi_stats.ship_kills.push_back(ilist);
 	}
 
 	// medals earned (contains medals across all mods, not just current)
-	list_size = cfread_int(cfp);
+	list_size = cfile::read<int>(cfp);
 	multi_stats.medals_earned.reserve(list_size);
 
 	for (idx = 0; idx < list_size; idx++) {
-		cfread_string_len(t_string, NAME_LENGTH,cfp);
+		cfile::readStringLen(t_string, NAME_LENGTH,cfp);
 
 		ilist.name = t_string;
 		ilist.index = medals_info_lookup(t_string);
-		ilist.val = cfread_int(cfp);
+		ilist.val = cfile::read<int>(cfp);
 
 		multi_stats.medals_earned.push_back(ilist);
 	}
@@ -542,42 +542,42 @@ void pilotfile::plr_write_stats_multi()
 	startSection(Section::ScoringMulti);
 
 	// global, all-time stats
-	cfwrite_int(multi_stats.score, cfp);
-	cfwrite_int(multi_stats.rank, cfp);
-	cfwrite_int(multi_stats.assists, cfp);
-	cfwrite_int(multi_stats.kill_count, cfp);
-	cfwrite_int(multi_stats.kill_count_ok, cfp);
-	cfwrite_int(multi_stats.bonehead_kills, cfp);
+	cfile::write<int>(multi_stats.score, cfp);
+	cfile::write<int>(multi_stats.rank, cfp);
+	cfile::write<int>(multi_stats.assists, cfp);
+	cfile::write<int>(multi_stats.kill_count, cfp);
+	cfile::write<int>(multi_stats.kill_count_ok, cfp);
+	cfile::write<int>(multi_stats.bonehead_kills, cfp);
 
-	cfwrite_uint(multi_stats.p_shots_fired, cfp);
-	cfwrite_uint(multi_stats.p_shots_hit, cfp);
-	cfwrite_uint(multi_stats.p_bonehead_hits, cfp);
+	cfile::write<uint>(multi_stats.p_shots_fired, cfp);
+	cfile::write<uint>(multi_stats.p_shots_hit, cfp);
+	cfile::write<uint>(multi_stats.p_bonehead_hits, cfp);
 
-	cfwrite_uint(multi_stats.s_shots_fired, cfp);
-	cfwrite_uint(multi_stats.s_shots_hit, cfp);
-	cfwrite_uint(multi_stats.s_bonehead_hits, cfp);
+	cfile::write<uint>(multi_stats.s_shots_fired, cfp);
+	cfile::write<uint>(multi_stats.s_shots_hit, cfp);
+	cfile::write<uint>(multi_stats.s_bonehead_hits, cfp);
 
-	cfwrite_uint(multi_stats.flight_time, cfp);
-	cfwrite_uint(multi_stats.missions_flown, cfp);
-	cfwrite_int((int)multi_stats.last_flown, cfp);
-	cfwrite_int((int)multi_stats.last_backup, cfp);
+	cfile::write<uint>(multi_stats.flight_time, cfp);
+	cfile::write<uint>(multi_stats.missions_flown, cfp);
+	cfile::write<int>((int)multi_stats.last_flown, cfp);
+	cfile::write<int>((int)multi_stats.last_backup, cfp);
 
 	// ship kills (contains medals across all mods, not just current)
 	list_size = (int)multi_stats.ship_kills.size();
-	cfwrite_int(list_size, cfp);
+	cfile::write<int>(list_size, cfp);
 
 	for (idx = 0; idx < list_size; idx++) {
-		cfwrite_string_len(multi_stats.ship_kills[idx].name.c_str(), cfp);
-		cfwrite_int(multi_stats.ship_kills[idx].val, cfp);
+		cfile::writeStringLen(multi_stats.ship_kills[idx].name.c_str(), cfp);
+		cfile::write<int>(multi_stats.ship_kills[idx].val, cfp);
 	}
 
 	// medals earned (contains medals across all mods, not just current)
 	list_size = (int)multi_stats.medals_earned.size();
-	cfwrite_int(list_size, cfp);
+	cfile::write<int>(list_size, cfp);
 
 	for (idx = 0; idx < list_size; idx++) {
-		cfwrite_string_len(multi_stats.medals_earned[idx].name.c_str(), cfp);
-		cfwrite_int(multi_stats.medals_earned[idx].val, cfp);
+		cfile::writeStringLen(multi_stats.medals_earned[idx].name.c_str(), cfp);
+		cfile::write<int>(multi_stats.medals_earned[idx].val, cfp);
 	}
 
 	endSection();
@@ -589,11 +589,11 @@ void pilotfile::plr_read_controls()
 	short id1, id2, id3;
 	int axi, inv;
 
-	list_size = (int)cfread_ushort(cfp);
+	list_size = (int)cfile::read<ushort>(cfp);
 	for (idx = 0; idx < list_size; idx++) {
-		id1 = cfread_short(cfp);
-		id2 = cfread_short(cfp);
-		id3 = cfread_short(cfp);	// unused, at the moment
+		id1 = cfile::read<short>(cfp);
+		id2 = cfile::read<short>(cfp);
+		id3 = cfile::read<short>(cfp);	// unused, at the moment
 
 		if (idx < CCFG_MAX) {
 			Control_config[idx].key_id = id1;
@@ -601,10 +601,10 @@ void pilotfile::plr_read_controls()
 		}
 	}
 
-	list_axis = cfread_int(cfp);
+	list_axis = cfile::read<int>(cfp);
 	for (idx = 0; idx < list_axis; idx++) {
-		axi = cfread_int(cfp);
-		inv = cfread_int(cfp);
+		axi = cfile::read<int>(cfp);
+		inv = cfile::read<int>(cfp);
 
 		if (idx < NUM_JOY_AXIS_ACTIONS) {
 			Axis_map_to[idx] = axi;
@@ -619,20 +619,20 @@ void pilotfile::plr_write_controls()
 
 	startSection(Section::Controls);
 
-	cfwrite_ushort(CCFG_MAX, cfp);
+	cfile::write<short>(CCFG_MAX, cfp);
 
 	for (idx = 0; idx < CCFG_MAX; idx++) {
-		cfwrite_short(Control_config[idx].key_id, cfp);
-		cfwrite_short(Control_config[idx].joy_id, cfp);
+		cfile::write<short>(Control_config[idx].key_id, cfp);
+		cfile::write<short>(Control_config[idx].joy_id, cfp);
 		// placeholder? for future mouse_id?
-		cfwrite_short(-1, cfp);
+		cfile::write<short>(-1, cfp);
 	}
 
-	cfwrite_int(NUM_JOY_AXIS_ACTIONS, cfp);
+	cfile::write<int>(NUM_JOY_AXIS_ACTIONS, cfp);
 
 	for (idx = 0; idx < NUM_JOY_AXIS_ACTIONS; idx++) {
-		cfwrite_int(Axis_map_to[idx], cfp);
-		cfwrite_int(Invert_axis[idx], cfp);
+		cfile::write<int>(Axis_map_to[idx], cfp);
+		cfile::write<int>(Invert_axis[idx], cfp);
 	}
 
 	endSection();
@@ -641,9 +641,9 @@ void pilotfile::plr_write_controls()
 void pilotfile::plr_read_settings()
 {
 	// sound/voice/music
-	Master_sound_volume = cfread_float(cfp);
-	Master_event_music_volume = cfread_float(cfp);
-	Master_voice_volume = cfread_float(cfp);
+	Master_sound_volume = cfile::read<float>(cfp);
+	Master_event_music_volume = cfile::read<float>(cfp);
+	Master_voice_volume = cfile::read<float>(cfp);
 
 	audiostream_set_volume_all(Master_voice_volume, ASF_VOICE);
 	audiostream_set_volume_all(Master_event_music_volume, ASF_EVENTMUSIC);
@@ -654,30 +654,30 @@ void pilotfile::plr_read_settings()
 		Event_music_enabled = 0;
 	}
 
-	Briefing_voice_enabled = cfread_int(cfp);
+	Briefing_voice_enabled = cfile::read<int>(cfp);
 
 	// skill level
-	Game_skill_level = cfread_int(cfp);
+	Game_skill_level = cfile::read<int>(cfp);
 
 	// input options
-	Use_mouse_to_fly = cfread_int(cfp);
-	Mouse_sensitivity = cfread_int(cfp);
-	Joy_sensitivity = cfread_int(cfp);
-	Dead_zone_size = cfread_int(cfp);
+	Use_mouse_to_fly = cfile::read<int>(cfp);
+	Mouse_sensitivity = cfile::read<int>(cfp);
+	Joy_sensitivity = cfile::read<int>(cfp);
+	Dead_zone_size = cfile::read<int>(cfp);
 
 	// detail
-	Detail.setting = cfread_int(cfp);
-	Detail.nebula_detail = cfread_int(cfp);
-	Detail.detail_distance = cfread_int(cfp);
-	Detail.hardware_textures = cfread_int(cfp);
-	Detail.num_small_debris = cfread_int(cfp);
-	Detail.num_particles = cfread_int(cfp);
-	Detail.num_stars = cfread_int(cfp);
-	Detail.shield_effects = cfread_int(cfp);
-	Detail.lighting = cfread_int(cfp);
-	Detail.targetview_model = cfread_int(cfp);
-	Detail.planets_suns = cfread_int(cfp);
-	Detail.weapon_extras = cfread_int(cfp);
+	Detail.setting = cfile::read<int>(cfp);
+	Detail.nebula_detail = cfile::read<int>(cfp);
+	Detail.detail_distance = cfile::read<int>(cfp);
+	Detail.hardware_textures = cfile::read<int>(cfp);
+	Detail.num_small_debris = cfile::read<int>(cfp);
+	Detail.num_particles = cfile::read<int>(cfp);
+	Detail.num_stars = cfile::read<int>(cfp);
+	Detail.shield_effects = cfile::read<int>(cfp);
+	Detail.lighting = cfile::read<int>(cfp);
+	Detail.targetview_model = cfile::read<int>(cfp);
+	Detail.planets_suns = cfile::read<int>(cfp);
+	Detail.weapon_extras = cfile::read<int>(cfp);
 }
 
 void pilotfile::plr_write_settings()
@@ -685,34 +685,34 @@ void pilotfile::plr_write_settings()
 	startSection(Section::Settings);
 
 	// sound/voice/music
-	cfwrite_float(Master_sound_volume, cfp);
-	cfwrite_float(Master_event_music_volume, cfp);
-	cfwrite_float(Master_voice_volume, cfp);
+	cfile::write<float>(Master_sound_volume, cfp);
+	cfile::write<float>(Master_event_music_volume, cfp);
+	cfile::write<float>(Master_voice_volume, cfp);
 
-	cfwrite_int(Briefing_voice_enabled, cfp);
+	cfile::write<int>(Briefing_voice_enabled, cfp);
 
 	// skill level
-	cfwrite_int(Game_skill_level, cfp);
+	cfile::write<int>(Game_skill_level, cfp);
 
 	// input options
-	cfwrite_int(Use_mouse_to_fly, cfp);
-	cfwrite_int(Mouse_sensitivity, cfp);
-	cfwrite_int(Joy_sensitivity, cfp);
-	cfwrite_int(Dead_zone_size, cfp);
+	cfile::write<int>(Use_mouse_to_fly, cfp);
+	cfile::write<int>(Mouse_sensitivity, cfp);
+	cfile::write<int>(Joy_sensitivity, cfp);
+	cfile::write<int>(Dead_zone_size, cfp);
 
 	// detail
-	cfwrite_int(Detail.setting, cfp);
-	cfwrite_int(Detail.nebula_detail, cfp);
-	cfwrite_int(Detail.detail_distance, cfp);
-	cfwrite_int(Detail.hardware_textures, cfp);
-	cfwrite_int(Detail.num_small_debris, cfp);
-	cfwrite_int(Detail.num_particles, cfp);
-	cfwrite_int(Detail.num_stars, cfp);
-	cfwrite_int(Detail.shield_effects, cfp);
-	cfwrite_int(Detail.lighting, cfp);
-	cfwrite_int(Detail.targetview_model, cfp);
-	cfwrite_int(Detail.planets_suns, cfp);
-	cfwrite_int(Detail.weapon_extras, cfp);
+	cfile::write<int>(Detail.setting, cfp);
+	cfile::write<int>(Detail.nebula_detail, cfp);
+	cfile::write<int>(Detail.detail_distance, cfp);
+	cfile::write<int>(Detail.hardware_textures, cfp);
+	cfile::write<int>(Detail.num_small_debris, cfp);
+	cfile::write<int>(Detail.num_particles, cfp);
+	cfile::write<int>(Detail.num_stars, cfp);
+	cfile::write<int>(Detail.shield_effects, cfp);
+	cfile::write<int>(Detail.lighting, cfp);
+	cfile::write<int>(Detail.targetview_model, cfp);
+	cfile::write<int>(Detail.planets_suns, cfp);
+	cfile::write<int>(Detail.weapon_extras, cfp);
 
 	endSection();
 }
@@ -748,7 +748,7 @@ void pilotfile::plr_reset_data()
 void pilotfile::plr_close()
 {
 	if (cfp) {
-		cfclose(cfp);
+		cfile::close(cfp);
 		cfp = NULL;
 	}
 
@@ -792,14 +792,14 @@ bool pilotfile::load_player(const char *callsign, player *_p)
 		return false;
 	}
 
-	cfp = cfopen((char*)filename.c_str(), "rb", CFILE_NORMAL, CF_TYPE_PLAYERS);
+	cfp = cfile::open(filename, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_PLAYERS);
 
 	if ( !cfp ) {
 		mprintf(("PLR => Unable to open '%s' for reading!\n", filename.c_str()));
 		return false;
 	}
 
-	unsigned int plr_id = cfread_uint(cfp);
+	unsigned int plr_id = cfile::read<uint>(cfp);
 
 	if (plr_id != PLR_FILE_ID) {
 		mprintf(("PLR => Invalid header id for '%s'!\n", filename.c_str()));
@@ -808,21 +808,21 @@ bool pilotfile::load_player(const char *callsign, player *_p)
 	}
 
 	// version, should be able to just ignore it
-	version = cfread_ubyte(cfp);
+	version = cfile::read<ubyte>(cfp);
 
 	mprintf(("PLR => Loading '%s' with version %d...\n", filename.c_str(), version));
 
 	plr_reset_data();
 
 	// the point of all this: read in the PLR contents
-	while ( !cfeof(cfp) ) {
-		ushort section_id = cfread_ushort(cfp);
-		uint section_size = cfread_uint(cfp);
+	while ( !cfile::eof(cfp) ) {
+		ushort section_id = cfile::read<ushort>(cfp);
+		uint section_size = cfile::read<uint>(cfp);
 
-		size_t start_pos = cftell(cfp);
+		size_t start_pos = cfile::tell(cfp);
 
 		// safety, to help protect against long reads
-		cf_set_max_read_len(cfp, section_size);
+		cfile::setMaxReadLength(cfp, section_size);
 
 		try {
 			switch (section_id) {
@@ -877,7 +877,7 @@ bool pilotfile::load_player(const char *callsign, player *_p)
 					mprintf(("PLR => Skipping unknown section 0x%04x!\n", section_id));
 					break;
 			}
-		} catch (cfile::max_read_length &msg) {
+		} catch (cfile::MaxReadLengthException &msg) {
 			// read to max section size, move to next section, discarding
 			// extra/unknown data
 			mprintf(("PLR => (0x%04x) %s\n", section_id, msg.what()));
@@ -888,13 +888,13 @@ bool pilotfile::load_player(const char *callsign, player *_p)
 		}
 
 		// reset safety catch
-		cf_set_max_read_len(cfp, 0);
+		cfile::setMaxReadLength(cfp, 0);
 
 		// skip to next section (if not already there)
-		size_t offset_pos = (start_pos + section_size) - cftell(cfp);
+		size_t offset_pos = (start_pos + section_size) - cfile::tell(cfp);
 
 		if (offset_pos) {
-			cfseek(cfp, offset_pos, CF_SEEK_CUR);
+			cfile::seek(cfp, offset_pos, cfile::SEEK_MODE_CUR);
 			mprintf(("PLR => WARNING: Advancing to the next section. %i bytes were skipped!\n", offset_pos));
 		}
 	}
@@ -948,7 +948,7 @@ bool pilotfile::save_player(player *_p)
 	}
 
 	// open it, hopefully...
-	cfp = cfopen((char*)filename.c_str(), "wb", CFILE_NORMAL, CF_TYPE_PLAYERS);
+	cfp = cfile::open(filename, cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_PLAYERS);
 
 	if ( !cfp ) {
 		mprintf(("PLR => Unable to open '%s' for saving!\n", filename.c_str()));
@@ -956,8 +956,8 @@ bool pilotfile::save_player(player *_p)
 	}
 
 	// header and version
-	cfwrite_int(PLR_FILE_ID, cfp);
-	cfwrite_ubyte(PLR_VERSION, cfp);
+	cfile::write<int>(PLR_FILE_ID, cfp);
+	cfile::write<ubyte>(PLR_VERSION, cfp);
 
 	mprintf(("PLR => Saving '%s' with version %d...\n", filename.c_str(), (int)PLR_VERSION));
 
@@ -1005,14 +1005,14 @@ bool pilotfile::verify(const char *fname, int *rank)
 		return false;
 	}
 
-	cfp = cfopen((char*)filename.c_str(), "rb", CFILE_NORMAL, CF_TYPE_PLAYERS);
+	cfp = cfile::open((char*)filename.c_str(), cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_PLAYERS);
 
 	if ( !cfp ) {
 		mprintf(("PLR => Unable to open '%s'!\n", filename.c_str()));
 		return false;
 	}
 
-	unsigned int plr_id = cfread_uint(cfp);
+	unsigned int plr_id = cfile::read<uint>(cfp);
 
 	if (plr_id != PLR_FILE_ID) {
 		mprintf(("PLR => Invalid header id for '%s'!\n", filename.c_str()));
@@ -1021,19 +1021,19 @@ bool pilotfile::verify(const char *fname, int *rank)
 	}
 
 	// version, should be able to just ignore it
-	ubyte plr_ver = cfread_ubyte(cfp);
+	ubyte plr_ver = cfile::read<ubyte>(cfp);
 
 	mprintf(("PLR => Verifying '%s' with version %d...\n", filename.c_str(), (int)plr_ver));
 
 	// the point of all this: read in the PLR contents
-	while ( !m_have_flags && !cfeof(cfp) ) {
-		ushort section_id = cfread_ushort(cfp);
-		uint section_size = cfread_uint(cfp);
+	while ( !m_have_flags && !cfile::eof(cfp) ) {
+		ushort section_id = cfile::read<ushort>(cfp);
+		uint section_size = cfile::read<uint>(cfp);
 
-		size_t start_pos = cftell(cfp);
+		size_t start_pos = cfile::tell(cfp);
 
 		// safety, to help protect against long reads
-		cf_set_max_read_len(cfp, section_size);
+		cfile::setMaxReadLength(cfp, section_size);
 
 		try {
 			switch (section_id) {
@@ -1046,7 +1046,7 @@ bool pilotfile::verify(const char *fname, int *rank)
 				default:
 					break;
 			}
-		} catch (cfile::max_read_length &msg) {
+		} catch (cfile::MaxReadLengthException &msg) {
 			// read to max section size, move to next section, discarding
 			// extra/unknown data
 			mprintf(("PLR => (0x%04x) %s\n", section_id, msg.what()));
@@ -1057,14 +1057,14 @@ bool pilotfile::verify(const char *fname, int *rank)
 		}
 
 		// reset safety catch
-		cf_set_max_read_len(cfp, 0);
+		cfile::setMaxReadLength(cfp, 0);
 
 		// skip to next section (if not already there)
-		size_t offset_pos = (start_pos + section_size) - cftell(cfp);
+		size_t offset_pos = (start_pos + section_size) - cfile::tell(cfp);
 
 		if (offset_pos) {
 			mprintf(("PLR => Warning: (0x%04x) Short read, information may have been lost!\n", section_id));
-			cfseek(cfp, offset_pos, CF_SEEK_CUR);
+			cfile::seek(cfp, offset_pos, cfile::SEEK_MODE_CUR);
 		}
 	}
 

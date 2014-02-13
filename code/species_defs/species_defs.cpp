@@ -169,7 +169,7 @@ void parse_species_tbl(const char *filename)
 	if (filename == NULL)
 		read_file_text_from_array(defaults_get_file("species_defs.tbl"));
 	else
-		read_file_text(filename, CF_TYPE_TABLES);
+		read_file_text(filename, cfile::TYPE_TABLES);
 
 	reset_parse();		
 
@@ -369,7 +369,7 @@ void species_init()
 	Species_info.clear();
 
 
-	if (cf_exists_full("species_defs.tbl", CF_TYPE_TABLES))
+	if (cfile::exists("species_defs.tbl", cfile::TYPE_TABLES))
 		parse_species_tbl("species_defs.tbl");
 	else
 		parse_species_tbl(NULL);

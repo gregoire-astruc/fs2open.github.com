@@ -175,12 +175,12 @@ void snd_spew_info()
 {
 	size_t idx;
 	char txt[512] = "";
-	CFILE *out = cfopen("sounds.txt", "wt", CFILE_NORMAL, CF_TYPE_DATA);
+	cfile::FileHandle *out = cfile::open("sounds.txt", cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_DATA);
 	if(out == NULL){
 		return;
 	}
 	
-	cfwrite_string("Sounds loaded :\n", out);
+	cfile::write<const char*>("Sounds loaded :\n", out);
 
 	// spew info for all sounds
 	for (idx = 0; idx < Sounds.size(); idx++) {
@@ -189,12 +189,12 @@ void snd_spew_info()
 		}
 		
 		sprintf(txt, "%s (%ds)\n", Sounds[idx].filename, Sounds[idx].info.duration); 
-		cfwrite_string(txt, out);
+		cfile::write<const char*>(txt, out);
 	}
 
 	// close the outfile
 	if(out != NULL){
-		cfclose(out);
+		cfile::close(out);
 		out = NULL;
 	}
 }
@@ -278,8 +278,6 @@ int snd_load( game_snd *gs, int allow_hardware_load )
 	sound_info		*si;
 	sound			*snd;
 	WAVEFORMATEX	*header = NULL;
-	int				rc, FileSize, FileOffset;
-	char			fullpath[MAX_PATH];
 	char			filename[MAX_FILENAME_LEN];
 	const int		NUM_EXT = 2;
 	const char		*audio_ext[NUM_EXT] = { ".ogg", ".wav" };
@@ -327,21 +325,24 @@ int snd_load( game_snd *gs, int allow_hardware_load )
 	char *p = strrchr(filename, '.');
 	if ( p ) *p = 0;
 
-	rc = cf_find_file_location_ext(filename, NUM_EXT, audio_ext, CF_TYPE_ANY, sizeof(fullpath) - 1, fullpath, &FileSize, &FileOffset);
+	SCP_string fullName;
+	size_t extIndex;
 
-	if (rc < 0)
+	if (!cfile::findFile(filename, fullName, cfile::TYPE_ANY, audio_ext, NUM_EXT, &extIndex))
+	{
 		return -1;
+	}
 
 	// open the file
-	CFILE *fp = cfopen_special(fullpath, "rb", FileSize, FileOffset);
+	cfile::FileHandle *fp = cfile::open(fullName);
 
 	// ok, we got it, so set the proper filename for logging purposes
-	strcat_s(filename, audio_ext[rc]);
+	strcat_s(filename, audio_ext[extIndex]);
 
 	nprintf(("Sound", "SOUND => Loading '%s'\n", filename));
 
 	// ds_parse_sound() will do a NULL check on fp for us
-	if ( ds_parse_sound(fp, &si->data, &si->size, &header, (rc == 0), &si->ogg_info) == -1 ) {
+	if (ds_parse_sound(fp, &si->data, &si->size, &header, (extIndex == 0), &si->ogg_info) == -1) {
 		nprintf(("Sound", "SOUND ==> Could not read sound file!\n"));
  		return -1;
 	}
@@ -360,7 +361,7 @@ int snd_load( game_snd *gs, int allow_hardware_load )
 		type |= DS_3D;
 	}
 
-	rc = ds_load_buffer(&snd->sid, &snd->uncompressed_size, header, si, type);
+	int rc = ds_load_buffer(&snd->sid, &snd->uncompressed_size, header, si, type);
 
 	// NOTE: "si" values can change once loaded in the buffer
 	snd->duration = fl2i(1000.0f * ((si->size / (si->bits/8.0f)) / si->sample_rate / si->n_channels));
@@ -377,7 +378,7 @@ int snd_load( game_snd *gs, int allow_hardware_load )
  
 	// make sure the file handle is closed
 	if (fp != NULL)
-		cfclose(fp);
+		cfile::close(fp);
 
 	if ( rc == -1 ) {
 		nprintf(("Sound", "SOUND ==> Failed to load '%s'\n", filename));

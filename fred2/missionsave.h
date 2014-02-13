@@ -30,7 +30,7 @@ private:
 	char *raw_ptr;
 	SCP_vector<SCP_string> fso_ver_comment;
 	int err;
-	CFILE *fp;
+	cfile::FileHandle *fp;
 
 	int save_mission_info();
 	int save_plot_info();

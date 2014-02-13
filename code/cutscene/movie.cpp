@@ -41,7 +41,6 @@ int movie_find(char *filename, char *out_name)
 {
 	char full_path[MAX_PATH];
 	char tmp_name[MAX_PATH];
-	int size, offset = 0;
 	const int NUM_EXT = 2;
 	const char *movie_ext[NUM_EXT] = { ".ogg", ".mve" };
 
@@ -57,14 +56,20 @@ int movie_find(char *filename, char *out_name)
 	char *p = strrchr(tmp_name, '.');
 	if ( p ) *p = 0;
 
-    int rc = cf_find_file_location_ext(tmp_name, NUM_EXT, movie_ext, CF_TYPE_ANY, sizeof(full_path) - 1, full_path, &size, &offset, 0);
+	SCP_string outName;
+	size_t extIndex;
 
-	if (rc == MOVIE_NONE)
+	if (!cfile::findFile(tmp_name, outName, cfile::TYPE_ANY, movie_ext, NUM_EXT, &extIndex))
+	{
 		return MOVIE_NONE;
+	}
 
-	strcpy( out_name, full_path );
+	// Make sure we don't write out of bounds as we can't use the safe version here...
+	Assert(outName.size() < MAX_PATH);
 
-	return rc;
+	strcpy(out_name, outName.c_str());
+
+	return (int) extIndex;
 }
 
 // Play one movie

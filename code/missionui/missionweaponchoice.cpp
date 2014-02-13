@@ -3304,7 +3304,7 @@ void wl_update_parse_object_weapons(p_object *pobjp, wss_unit *slot)
 void start_weapon_animation(int weapon_class) 
 {
 	char *p;
-	char animation_filename[CF_MAX_FILENAME_LENGTH+4];
+	char animation_filename[MAX_FILENAME_LEN + 4];
 
 	anim_timer_start = timer_get_milliseconds();
 

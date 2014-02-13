@@ -402,11 +402,11 @@ int sim_room_line_add(int type, char *name, char *filename, int x, int y, int fl
 }
 
 // build up a list of all missions in all campaigns.
-int sim_room_campaign_mission_filter(const char *filename)
+bool sim_room_campaign_mission_filter(const SCP_string& filename)
 {
 	int num;
 
-	num = mission_campaign_get_mission_list(filename, &Campaign_missions[Num_campaign_missions], MAX_MISSIONS - Num_campaign_missions);
+	num = mission_campaign_get_mission_list(filename.c_str(), &Campaign_missions[Num_campaign_missions], MAX_MISSIONS - Num_campaign_missions);
 	if (num < 0)
 		return 0;
 
@@ -416,22 +416,22 @@ int sim_room_campaign_mission_filter(const char *filename)
 }
 
 // filter out all missions already used in existing campaigns
-int sim_room_standalone_mission_filter(const char *filename)
+bool sim_room_standalone_mission_filter(const SCP_string& filename)
 {
 	int type;
 	char mission_name[255];
 
 	// Check if a campaign mission (single and multi)
-	if (campaign_mission_hash_collision(filename)) {
-		return 0;
+	if (campaign_mission_hash_collision(filename.c_str())) {
+		return false;
 	} 
 
 	// Check if a standalone multi mission OR Mdisk mission with data
-	type = mission_parse_is_multi(filename, mission_name);
+	type = mission_parse_is_multi(filename.c_str(), mission_name);
 	if (type && !(type & MISSION_TYPE_SINGLE))
-		return 0;
+		return false;
 
-	return 1;
+	return true;
 }
 
 // builds up list of standalone missions and adds them to missions simulator
@@ -578,7 +578,7 @@ void sim_room_build_listing()
 						// determine some extra information
 						int flags = 0;
 						memset(full_filename, 0, 256);
-						strcpy_s(full_filename, cf_add_ext(Mission_filenames[i], FS_MISSION_FILE_EXT));
+						strcpy_s(full_filename, cfile::legacy::add_ext(Mission_filenames[i], FS_MISSION_FILE_EXT));
 						fs_builtin_mission *fb = game_find_builtin_mission(full_filename);						
 						if((fb != NULL) && (fb->flags & FSB_FROM_VOLITION)){
 							flags |= READYROOM_FLAG_FROM_VOLITION;
@@ -604,7 +604,7 @@ void sim_room_build_listing()
 					// determine some extra information
 					int flags = 0;
 					memset(full_filename, 0, 256);
-					strcpy_s(full_filename, cf_add_ext(Campaign.missions[i].name, FS_MISSION_FILE_EXT));
+					strcpy_s(full_filename, cfile::legacy::add_ext(Campaign.missions[i].name, FS_MISSION_FILE_EXT));
 					fs_builtin_mission *fb = game_find_builtin_mission(full_filename);
 					if((fb != NULL) && (fb->flags & FSB_FROM_VOLITION)){
 						flags |= READYROOM_FLAG_FROM_VOLITION;
@@ -1065,9 +1065,8 @@ void sim_room_init()
 	}
 
 	Num_campaign_missions = 0;
-	Get_file_list_filter = sim_room_campaign_mission_filter;
 
-	mission_campaign_build_list(false, false);	// no descs, no sorting
+	mission_campaign_build_list(false, false, false, sim_room_campaign_mission_filter);	// no descs, no sorting
 
 	Hash_table_inited = 0;
 	if (build_campaign_mission_filename_hash_table()) {
@@ -1085,13 +1084,29 @@ void sim_room_init()
 		gr_bitmap(0, 0);
 	}
 	Ui_window.draw();
-	gr_flip();		
+	gr_flip();
 
-	Get_file_list_filter = sim_room_standalone_mission_filter;
 	memset(wild_card, 0, 256);
 	strcpy_s(wild_card, NOX("*"));
 	strcat_s(wild_card, FS_MISSION_FILE_EXT);
-	Num_standalone_missions = cf_get_file_list(MAX_MISSIONS, Mission_filenames, CF_TYPE_MISSIONS, wild_card, CF_SORT_NAME);
+
+	SCP_vector<SCP_string> missionNames;
+
+	cfile::listFiles(missionNames, cfile::TYPE_MISSIONS, wild_card, cfile::SORT_NAME, sim_room_standalone_mission_filter);
+
+	Assert(missionNames.size() <= MAX_MISSIONS);
+
+	i = 0;
+	SCP_vector<SCP_string>::iterator iter;
+	for (iter = missionNames.begin(); iter != missionNames.end(); ++iter)
+	{
+		Mission_filenames[i] = (char*)vm_malloc(iter->size() + 1);
+		memset(Mission_filenames[i], 0, iter->size() + 1);
+
+		strcpy(Mission_filenames[i], iter->c_str());
+	}
+
+	Num_standalone_missions = (int) missionNames.size();
 
 	// set up slider with 0 items to start
 	Sim_room_slider.create(&Ui_window, Sim_room_slider_coords[gr_screen.res][X_COORD], Sim_room_slider_coords[gr_screen.res][Y_COORD], Sim_room_slider_coords[gr_screen.res][W_COORD], Sim_room_slider_coords[gr_screen.res][H_COORD], 0, Sim_room_slider_filename[gr_screen.res], &sim_room_scroll_screen_up, &sim_room_scroll_screen_down, &sim_room_scroll_capture);
@@ -1308,7 +1323,7 @@ void sim_room_do_frame(float frametime)
 			// blit the proper icons if necessary
 			char full_name[256];
 			memset(full_name, 0, 256);
-			strcpy_s(full_name, cf_add_ext(Campaign.filename,FS_CAMPAIGN_FILE_EXT));
+			strcpy_s(full_name, cfile::legacy::add_ext(Campaign.filename, FS_CAMPAIGN_FILE_EXT));
 			fs_builtin_mission *fb = game_find_builtin_mission(full_name);
 			if(fb != NULL){
 				// sim_room_blit_icons(0, Mission_list_coords[gr_screen.res][1], fb, 0);

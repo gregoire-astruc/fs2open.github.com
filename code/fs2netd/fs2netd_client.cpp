@@ -30,7 +30,6 @@
 #include "globalincs/alphacolors.h"
 #include "network/multi_options.h"
 #include "cmdline/cmdline.h"
-#include "cfile/cfilesystem.h"
 #include "network/multimsgs.h"
 #include "mod_table/mod_table.h"
 
@@ -958,7 +957,7 @@ bool fs2netd_check_mission(char *mission_name)
 	}
 
 	strcpy_s(Chk_mission_name, mission_name);
-	cf_chksum_long(Chk_mission_name, &Chk_mission_crc);
+	cfile::checksum::crc::doLong(Chk_mission_name, &Chk_mission_crc);
 
 	do_full_packet = true;
 
@@ -1187,7 +1186,7 @@ void fs2netd_update_ban_list()
 	}
 
 	// destroy the file prior to updating
-	cf_delete( "banlist.cfg", CF_TYPE_DATA );
+	cfile::deleteFile("banlist.cfg", cfile::TYPE_DATA);
 
 	do_full_packet = true;
 
@@ -1203,14 +1202,14 @@ void fs2netd_update_ban_list()
 	Local_timeout = -1;
 
 	if ( !FS2NetD_ban_list.empty() ) {
-		CFILE *banlist_cfg = cfopen("banlist.cfg", "wt", CFILE_NORMAL, CF_TYPE_DATA);
+		cfile::FileHandle *banlist_cfg = cfile::open("banlist.cfg", cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_DATA);
 
 		if (banlist_cfg != NULL) {
 			for (SCP_vector<SCP_string>::iterator bl = FS2NetD_ban_list.begin(); bl != FS2NetD_ban_list.end(); ++bl) {
-				cfputs( const_cast<char*>(bl->c_str()), banlist_cfg );
+				cfile::write<const char*>(bl->c_str(), banlist_cfg);
 			}
 
-			cfclose(banlist_cfg);
+			cfile::close(banlist_cfg);
 		}
 	}
 
@@ -1229,7 +1228,7 @@ bool fs2netd_player_banned(net_addr *addr)
 	memset(line, 0, 32);
 
 	bool retval = false;
-	CFILE *banlist_cfg = cfopen("banlist.cfg", "rt", CFILE_NORMAL, CF_TYPE_DATA);
+	cfile::FileHandle *banlist_cfg = cfile::open("banlist.cfg", cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_DATA);
 
 	if (banlist_cfg == NULL) {
 		return false;
@@ -1237,15 +1236,15 @@ bool fs2netd_player_banned(net_addr *addr)
 
 	psnet_addr_to_string( ip_str, addr );
 
-	while ( !cfeof(banlist_cfg) && !retval ) {
-		cfgets(line, 32, banlist_cfg);
+	while ( !cfile::eof(banlist_cfg) && !retval ) {
+		cfile::readString(line, 32, banlist_cfg);
 
 		if ( !strnicmp(ip_str, line, strlen(line)) ) {
 			retval = true; // BANNINATED!!!
 		}
 	}
 
-	cfclose(banlist_cfg);
+	cfile::close(banlist_cfg);
 
 	return retval;
 }
@@ -1293,19 +1292,36 @@ int fs2netd_get_valid_missions_do()
 		uint checksum = 0;
 
 		if (file_names == NULL) {
-			// allocate filename space	
-			file_names = (char**) vm_malloc_q( sizeof(char*) * 1024 ); // 1024 files should be safe!
+			// allocate filename space
+
+			memset( wild_card, 0, sizeof(wild_card) );
+			strcpy_s( wild_card, NOX("*") );
+			strcat_s( wild_card, FS_MISSION_FILE_EXT );
+
+			// Convert the new way to the old data-structure
+			SCP_vector<SCP_string> missionNames;
+
+			cfile::listFiles(missionNames, cfile::TYPE_MISSIONS, wild_card);
+
+			idx = count = (int)missionNames.size();
+
+			file_names = (char**)vm_malloc_q(sizeof(char*)* count);
 
 			if (file_names == NULL) {
 				Local_timeout = -1;
 				return 3;
 			}
 
-			memset( wild_card, 0, sizeof(wild_card) );
-			strcpy_s( wild_card, NOX("*") );
-			strcat_s( wild_card, FS_MISSION_FILE_EXT );
+			SCP_vector<SCP_string>::iterator iter;
 
-			idx = count = cf_get_file_list(1024, file_names, CF_TYPE_MISSIONS, wild_card);
+			int i = 0;
+			for (iter = missionNames.begin(); iter != missionNames.end(); ++iter, ++i)
+			{
+				file_names[i] = (char*) vm_malloc(iter->size() + 1);
+				memset(file_names[i], 0, iter->size() + 1);
+
+				strcpy(file_names[i], iter->c_str());
+			}
 		}
 
 		// drop idx first thing
@@ -1333,7 +1349,7 @@ int fs2netd_get_valid_missions_do()
 		// verify all filenames that we know about with their CRCs
 		// NOTE: that this is done for one file per frame, since this is inside of a popup
 		memset( full_name, 0, MAX_FILENAME_LEN );
-		strncpy( full_name, cf_add_ext(file_names[idx], FS_MISSION_FILE_EXT), sizeof(full_name) - 1 );
+		strncpy( full_name, cfile::legacy::add_ext(file_names[idx], FS_MISSION_FILE_EXT), sizeof(full_name) - 1 );
 
 		memset( val_text, 0, sizeof(val_text) );
 		snprintf( val_text, sizeof(val_text) - 1, "Validating:  %s", full_name );
@@ -1346,7 +1362,7 @@ int fs2netd_get_valid_missions_do()
 			popup_change_text(val_text);
 		}
 
-		cf_chksum_long(full_name, &checksum);
+		cfile::checksum::crc::doLong(full_name, &checksum);
 
 		// try and find the file
 		file_index = multi_create_lookup_mission(full_name);
@@ -1560,15 +1576,15 @@ void fs2netd_add_table_validation(const char *tblname)
 		return;
 	}
 
-	CFILE *tbl = cfopen(tblname, "rt", CFILE_NORMAL, CF_TYPE_TABLES);
+	cfile::FileHandle *tbl = cfile::open(tblname, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_TABLES);
 
 	if (tbl == NULL) {
 		return;
 	}
 
-	cf_chksum_long(tbl, &chksum);
+	cfile::checksum::crc::doLong(tbl, &chksum);
 
-	cfclose(tbl);
+	cfile::close(tbl);
 
 	crc_valid_status tbl_crc;
 
@@ -1661,8 +1677,6 @@ void fs2netd_update_game_count(const char *chan_name)
 
 void fs2netd_spew_table_checksums(char *outfile)
 {
-	char full_name[MAX_PATH_LEN];
-	FILE *out = NULL;
 	char description[512] = { 0 };
 	char filename[65] = { 0 };
 	size_t offset = 0;
@@ -1672,14 +1686,13 @@ void fs2netd_spew_table_checksums(char *outfile)
 		return;
 	}
 
-	cf_create_default_path_string(full_name, sizeof(full_name) - 1, CF_TYPE_ROOT, outfile);
+	cfile::FileHandle* handle = cfile::open(outfile, cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_ROOT);
 
-	// open the outfile
-	out = fopen(full_name, "wt");
-
-	if (out == NULL) {
+	if (handle == NULL) {
 		return;
 	}
+
+	std::ostream& stream = cfile::getStream(handle);
 
 	p = Cmdline_spew_table_crcs;
 
@@ -1695,7 +1708,7 @@ void fs2netd_spew_table_checksums(char *outfile)
 	}
 
 	// header
-	fprintf(out, "filename,CRC32,description\r\n");
+	 stream << "filename,CRC32,description" << std::endl;
 
 	// do all the checksums
 	for (SCP_vector<crc_valid_status>::iterator tvs = Table_valid_status.begin(); tvs != Table_valid_status.end(); ++tvs) {
@@ -1719,9 +1732,8 @@ void fs2netd_spew_table_checksums(char *outfile)
 			filename[sizeof(filename)-1] = '\0';
 		}
 
-		fprintf(out, "\"%s\",%u,\"%s\"\r\n", filename, tvs->crc32, description);
+		stream << '"' << filename << "\"," << tvs->crc32 << ",\"" << description << '"' << std::endl;
 	}
 
-	fflush(out);
-	fclose(out);
+	cfile::close(handle);
 }

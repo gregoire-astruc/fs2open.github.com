@@ -332,7 +332,7 @@ void parse_weapon_expl_tbl(const char *filename)
 		return;
 	}
 
-	read_file_text(filename, CF_TYPE_TABLES);
+	read_file_text(filename, cfile::TYPE_TABLES);
 	reset_parse();		
 
 	required_string("#Start");
@@ -2779,7 +2779,7 @@ void parse_weaponstbl(const char *filename)
 		return;
 	}
 
-	read_file_text(filename, CF_TYPE_TABLES);
+	read_file_text(filename, cfile::TYPE_TABLES);
 	reset_parse();
 
 	if(optional_string("#Primary Weapons"))

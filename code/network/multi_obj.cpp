@@ -1195,8 +1195,8 @@ int multi_oo_maybe_update(net_player *pl, object *obj, ubyte *data)
 	}		
 
 	// get current position and orient checksums		
-	cur_pos_chksum = cf_add_chksum_short(cur_pos_chksum, (ubyte*)(&obj->pos), sizeof(vec3d));
-	cur_orient_chksum = cf_add_chksum_short(cur_orient_chksum, (ubyte*)(&obj->orient), sizeof(matrix));
+	cur_pos_chksum = cfile::checksum::crc::addShort(cur_pos_chksum, (ubyte*)(&obj->pos), sizeof(vec3d));
+	cur_orient_chksum = cfile::checksum::crc::addShort(cur_orient_chksum, (ubyte*)(&obj->orient), sizeof(matrix));
 
 	// if position or orientation haven't changed	
 	if((shipp->np_updates[player_index].pos_chksum != 0) && (shipp->np_updates[player_index].pos_chksum == cur_pos_chksum)){

@@ -16,11 +16,16 @@
 #include <stdarg.h>
 #include <string.h>
 
+#include <time.h>
+
 // to disable otherwise well-lodged compiler warning
 #pragma warning(disable: 4201)	// nameless struct/union
 
 #include <winioctl.h>
 #include <conio.h>
+
+#include <fstream>
+#include <sstream>
 
 #include "osapi/osapi.h"
 #include "osapi/outwnd.h"
@@ -28,7 +33,6 @@
 #include "graphics/2d.h"
 #include "freespaceresource.h"
 #include "globalincs/systemvars.h"
-#include "cfile/cfilesystem.h"
 #include "globalincs/globals.h"
 #include "parse/parselo.h"
 
@@ -95,7 +99,7 @@ ubyte Outwnd_no_filter_file = 0;		// 0 = .cfg file found, 1 = not found and warn
 
 // used for file logging
 int Log_debug_output_to_file = 1;
-FILE *Log_fp = NULL;
+std::ofstream Log_stream;
 char *FreeSpace_logfilename = NULL;
 
 SCP_string safe_string;
@@ -166,20 +170,18 @@ inline void fix_marking_coords(int &x, int &y, LPARAM l_parm)
 
 void load_filter_info(void)
 {
-	FILE *fp = NULL;
-	char pathname[MAX_PATH_LEN];
 	char inbuf[NAME_LENGTH+4];
 	outwnd_filter_struct new_filter;
 	int z;
 
 	outwnd_filter_loaded = 1;
 
-	memset( pathname, 0, sizeof(pathname) );
-	snprintf( pathname, MAX_PATH_LEN, "%s\\%s\\%s", detect_home(), Pathtypes[CF_TYPE_DATA].path, NOX("debug_filter.cfg") );
+	SCP_stringstream ss;
+	ss << detect_home() << cfile::util::PlatformDirectorySeparator << "data" << cfile::util::PlatformDirectorySeparator << "debug_filter.cfg";
 
-	fp = fopen(pathname, "rt");
+	std::ifstream inStream(ss.str().c_str());
 
-	if (!fp) {
+	if (!inStream.is_open()) {
 		Outwnd_no_filter_file = 1;
 
 		strcpy_s( new_filter.name, "error" );
@@ -199,7 +201,7 @@ void load_filter_info(void)
 
 	Outwnd_no_filter_file = 0;
 
-	while ( fgets(inbuf, NAME_LENGTH+3, fp) ) {
+	while ( inStream.getline(inbuf, NAME_LENGTH+3) ) {
 
 		if (*inbuf == '+')
 			new_filter.enabled = true;
@@ -226,16 +228,12 @@ void load_filter_info(void)
 		OutwndFilter.push_back( new_filter );
 	}
 
-	if ( ferror(fp) && !feof(fp) )
-		nprintf(("Error", "Error reading \"%s\"\n", pathname));
-
-	fclose(fp);
+	inStream.close();
 }
 
 void save_filter_info(void)
 {
-	FILE *fp = NULL;
-	char pathname[MAX_PATH_LEN];
+	cfile::FileHandle *fp = NULL;
 
 	if ( !outwnd_filter_loaded )
 		return;
@@ -243,17 +241,17 @@ void save_filter_info(void)
 	if (Outwnd_no_filter_file)
 		return;	// No file, don't save
 
-
-	memset( pathname, 0, sizeof(pathname) );
-	snprintf( pathname, MAX_PATH_LEN, "%s\\%s\\%s", detect_home(), Pathtypes[CF_TYPE_DATA].path, NOX("debug_filter.cfg") );
-
-	fp = fopen(pathname, "wt");
+	fp = cfile::open("debug_filter.cfg", cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_DATA);
 
 	if (fp) {
-		for (uint i = 0; i < OutwndFilter.size(); i++)
-			fprintf(fp, "%c%s\n", OutwndFilter[i].enabled ? '+' : '-', OutwndFilter[i].name);
+		std::iostream& stream = cfile::getStream(fp);
 
-		fclose(fp);
+		for (uint i = 0; i < OutwndFilter.size(); i++)
+		{
+			stream << (OutwndFilter[i].enabled ? '+' : '-') << OutwndFilter[i].name << std::endl;
+		}
+
+		cfile::close(fp);
 	}
 }
 
@@ -428,9 +426,9 @@ void outwnd_print(const char *id, const char *tmp)
 		return;
 
 	if (Log_debug_output_to_file) {
-		if (Log_fp != NULL) {
-			fputs(tmp, Log_fp);	
-			fflush(Log_fp);
+		if (Log_stream.is_open()) {
+			Log_stream << tmp;
+			Log_stream.flush();
 		}
 	}
 
@@ -1185,7 +1183,7 @@ void outwnd_init(int display_under_freespace_window)
 #endif
 	}
 */
-	if (Log_fp == NULL) {
+	if (!Log_stream.is_open()) {
 		char pathname[MAX_PATH_LEN];
 
 		/* Set where the log file is going to go */
@@ -1198,12 +1196,12 @@ void outwnd_init(int display_under_freespace_window)
 			FreeSpace_logfilename = "fs2_open.log";
 		}
 
-		memset( pathname, 0, sizeof(pathname) );
-		snprintf(pathname, MAX_PATH_LEN-1, "%s\\%s\\%s", detect_home(), Pathtypes[CF_TYPE_DATA].path, FreeSpace_logfilename);
+		SCP_stringstream ss;
+		ss << detect_home() << cfile::util::PlatformDirectorySeparator << "data" << cfile::util::PlatformDirectorySeparator << FreeSpace_logfilename;
 
-		Log_fp = fopen(pathname, "wb");
+		Log_stream.open(ss.str().c_str());
 
-		if (Log_fp == NULL) {
+		if (!Log_stream.is_open()) {
 			outwnd_printf("Error", "Error opening %s\n", pathname);
 		} else {
 			time_t timedate = time(NULL);
@@ -1319,7 +1317,7 @@ void find_text_in_outwindow(int n, int p)
 
 void outwnd_close()
 {
-	if ( Log_fp != NULL ) {
+	if (Log_stream.is_open()) {
 		time_t timedate = time(NULL);
 		char datestr[50];
 
@@ -1328,8 +1326,7 @@ void outwnd_close()
 
 		outwnd_printf("General", "... Log closed, %s\n", datestr);
 
-		fclose(Log_fp);
-		Log_fp = NULL;
+		Log_stream.close();
 	}
 
 	outwnd_inited = false;

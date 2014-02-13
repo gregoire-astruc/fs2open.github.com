@@ -240,7 +240,7 @@ int ds_initialized = FALSE;
  *	NOTE: memory is malloced for the header and dest (if not OGG) in this function.  It is the responsibility
  *	of the caller to free this memory later.
  */
-int ds_parse_sound(CFILE* fp, ubyte **dest, uint *dest_size, WAVEFORMATEX **header, bool ogg, OggVorbis_File *ovf)
+int ds_parse_sound(cfile::FileHandle* fp, ubyte **dest, uint *dest_size, WAVEFORMATEX **header, bool ogg, OggVorbis_File *ovf)
 {
 	PCMWAVEFORMAT	PCM_header;
 	ushort			cbExtra = 0;
@@ -317,32 +317,32 @@ int ds_parse_sound(CFILE* fp, ubyte **dest, uint *dest_size, WAVEFORMATEX **head
 		// Skip the "RIFF" tag and file size (8 bytes)
 		// Skip the "WAVE" tag (4 bytes)
 		// IMPORTANT!! Look at snd_load before even THINKING about changing this.
-		cfseek( fp, 12, CF_SEEK_SET );
+		cfile::seek( fp, 12, cfile::SEEK_MODE_SET );
 
 		// Now read RIFF tags until the end of file
 		while (1) {
-			if ( cfread( &tag, sizeof(uint), 1, fp ) != 1 ) {
+			if ( cfile::read( &tag, sizeof(uint), 1, fp ) != 1 ) {
 				break;
 			}
 
 			tag = INTEL_INT( tag );
 
-			if ( cfread( &size, sizeof(uint), 1, fp ) != 1 ) {
+			if ( cfile::read( &size, sizeof(uint), 1, fp ) != 1 ) {
 				break;
 			}
 
 			size = INTEL_INT( size );
 
-			next_chunk = cftell(fp) + size;
+			next_chunk = cfile::tell(fp) + size;
 
 			switch (tag) {
 				case 0x20746d66: { // The 'fmt ' tag
-					PCM_header.wf.wFormatTag		= cfread_ushort(fp);
-					PCM_header.wf.nChannels			= cfread_ushort(fp);
-					PCM_header.wf.nSamplesPerSec	= cfread_uint(fp);
-					PCM_header.wf.nAvgBytesPerSec	= cfread_uint(fp);
-					PCM_header.wf.nBlockAlign		= cfread_ushort(fp);
-					PCM_header.wBitsPerSample		= cfread_ushort(fp);
+					PCM_header.wf.wFormatTag		= cfile::read<ushort>(fp);
+					PCM_header.wf.nChannels			= cfile::read<ushort>(fp);
+					PCM_header.wf.nSamplesPerSec	= cfile::read<uint>(fp);
+					PCM_header.wf.nAvgBytesPerSec	= cfile::read<uint>(fp);
+					PCM_header.wf.nBlockAlign		= cfile::read<ushort>(fp);
+					PCM_header.wBitsPerSample		= cfile::read<ushort>(fp);
 
 					// should be either: WAVE_FORMAT_PCM, WAVE_FORMAT_ADPCM, WAVE_FORMAT_IEEE_FLOAT
 					switch (PCM_header.wf.wFormatTag) {
@@ -391,7 +391,7 @@ int ds_parse_sound(CFILE* fp, ubyte **dest, uint *dest_size, WAVEFORMATEX **head
 					}
 
 					if (PCM_header.wf.wFormatTag == WAVE_FORMAT_ADPCM) {
-						cbExtra = cfread_ushort(fp);
+						cbExtra = cfile::read<ushort>(fp);
 					}
 
 					// Allocate memory for WAVEFORMATEX structure + extra bytes
@@ -402,7 +402,7 @@ int ds_parse_sound(CFILE* fp, ubyte **dest, uint *dest_size, WAVEFORMATEX **head
 
 						// Read those extra bytes, append to WAVEFORMATEX structure
 						if (cbExtra != 0) {
-							cfread( ((ubyte *)(*header) + sizeof(WAVEFORMATEX)), cbExtra, 1, fp);
+							cfile::read( ((ubyte *)(*header) + sizeof(WAVEFORMATEX)), cbExtra, 1, fp);
 						}
 					} else {
 						// malloc failed
@@ -418,7 +418,7 @@ int ds_parse_sound(CFILE* fp, ubyte **dest, uint *dest_size, WAVEFORMATEX **head
 					(*dest) = (ubyte *)vm_malloc(size);
 					Assert( *dest != NULL );
 
-					cfread( *dest, size, 1, fp );
+					cfile::read( *dest, size, 1, fp );
 
 					got_data = true;
 
@@ -435,7 +435,7 @@ int ds_parse_sound(CFILE* fp, ubyte **dest, uint *dest_size, WAVEFORMATEX **head
 				break;
 			}
 
-			cfseek( fp, next_chunk, CF_SEEK_SET );
+			cfile::seek( fp, next_chunk, cfile::SEEK_MODE_SET );
 		}
 
 		// we're all good, can leave now
@@ -457,8 +457,6 @@ int ds_parse_sound_info(char *real_filename, sound_info *s_info)
 	uint			tag, size, next_chunk;
 	bool			got_fmt = false, got_data = false;
 	OggVorbis_File	ovf;
-	int				rc, FileSize, FileOffset;
-	char			fullpath[MAX_PATH];
 	char			filename[MAX_FILENAME_LEN];
 	const int		NUM_EXT = 2;
 	const char		*audio_ext[NUM_EXT] = { ".ogg", ".wav" };
@@ -473,21 +471,24 @@ int ds_parse_sound_info(char *real_filename, sound_info *s_info)
 	char *p = strrchr(filename, '.');
 	if ( p ) *p = 0;
 
-	rc = cf_find_file_location_ext(filename, NUM_EXT, audio_ext, CF_TYPE_ANY, sizeof(fullpath) - 1, fullpath, &FileSize, &FileOffset);
+	SCP_string fullName;
+	size_t extIndex;
 
-	if (rc < 0) {
+	if (!cfile::findFile(filename, fullName, cfile::TYPE_ANY, audio_ext, NUM_EXT, &extIndex))
+	{
 		return -1;
 	}
 
+
 	// open the file
-	CFILE *fp = cfopen_special(fullpath, "rb", FileSize, FileOffset);
+	cfile::FileHandle *fp = cfile::open(fullName);
 
 	if (fp == NULL) {
 		return -1;
 	}
 
 	// Ogg Vorbis
-	if (rc == 0) {
+	if (extIndex == 0) {
 		if ( !ov_open_callbacks(fp, &ovf, NULL, 0, cfile_callbacks) ) {
 			// got one, now read all of the needed header info
 			ov_info(&ovf, -1);
@@ -530,35 +531,35 @@ int ds_parse_sound_info(char *real_filename, sound_info *s_info)
 		}
 	}
 	// PCM Wave
-	else if (rc == 1) {
+	else if (extIndex == 1) {
 		// Skip the "RIFF" tag and file size (8 bytes)
 		// Skip the "WAVE" tag (4 bytes)
 		// IMPORTANT!! Look at snd_load before even THINKING about changing this.
-		cfseek( fp, 12, CF_SEEK_SET );
+		cfile::seek( fp, 12, cfile::SEEK_MODE_SET );
 
 		// Now read RIFF tags until the end of file
 		while (1) {
-			if ( cfread( &tag, sizeof(uint), 1, fp ) != 1 ) {
+			if ( cfile::read( &tag, sizeof(uint), 1, fp ) != 1 ) {
 				break;
 			}
 
 			tag = INTEL_INT( tag );
 
-			if ( cfread( &size, sizeof(uint), 1, fp ) != 1 ) {
+			if ( cfile::read( &size, sizeof(uint), 1, fp ) != 1 ) {
 				break;
 			}
 
 			size = INTEL_INT( size );
-			next_chunk = cftell(fp) + size;
+			next_chunk = cfile::tell(fp) + size;
 
 			switch (tag) {
 				case 0x20746d66: // The 'fmt ' tag
-					PCM_header.wf.wFormatTag		= cfread_ushort(fp);
-					PCM_header.wf.nChannels			= cfread_ushort(fp);
-					PCM_header.wf.nSamplesPerSec	= cfread_uint(fp);
-					PCM_header.wf.nAvgBytesPerSec	= cfread_uint(fp);
-					PCM_header.wf.nBlockAlign		= cfread_ushort(fp);
-					PCM_header.wBitsPerSample		= cfread_ushort(fp);
+					PCM_header.wf.wFormatTag		= cfile::read<ushort>(fp);
+					PCM_header.wf.nChannels			= cfile::read<ushort>(fp);
+					PCM_header.wf.nSamplesPerSec	= cfile::read<uint>(fp);
+					PCM_header.wf.nAvgBytesPerSec	= cfile::read<uint>(fp);
+					PCM_header.wf.nBlockAlign		= cfile::read<ushort>(fp);
+					PCM_header.wBitsPerSample		= cfile::read<ushort>(fp);
 
 					// should be either: WAVE_FORMAT_PCM, WAVE_FORMAT_ADPCM, WAVE_FORMAT_IEEE_FLOAT
 					switch (PCM_header.wf.wFormatTag) {
@@ -629,11 +630,11 @@ int ds_parse_sound_info(char *real_filename, sound_info *s_info)
 				rval = 0;
 				goto Done;
 			}
-			cfseek( fp, next_chunk, CF_SEEK_SET );
+			cfile::seek( fp, next_chunk, cfile::SEEK_MODE_SET );
 		}
 	}
 Done:
-	cfclose(fp);
+	cfile::close(fp);
 	return rval;
 }
 

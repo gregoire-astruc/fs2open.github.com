@@ -13,6 +13,7 @@
 #define _MISSION_CAMPAIGN_H
 
 #include "stats/scoring.h"
+#include "cfile/cfile.h"
 
 struct sexp_variable;
 
@@ -189,7 +190,7 @@ extern void mission_campaign_savefile_delete( char *cfilename );
 extern void mission_campaign_delete_all_savefiles( char *pilot_name );
 
 // if a given campaign is a multiplayer campaign, we can load and save the multiplayer info portion with these functions
-extern int mission_campaign_parse_is_multi(char *filename, char *name);
+extern int mission_campaign_parse_is_multi(const char *filename, char *name);
 
 // function which sets up internal variable for player to play next mission in the campaign
 extern int mission_campaign_next_mission( void );
@@ -206,7 +207,7 @@ int mission_campaign_load_fred(char *filename, char *name_verify = NULL);
 // used by Fred to get a mission's list of goals.
 void read_mission_goal_list(int num);
 
-void mission_campaign_build_list(bool desc = false, bool sort = true, bool multiplayer = false);
+void mission_campaign_build_list(bool desc = false, bool sort = true, bool multiplayer = false, cfile::ListFilterFunction filterFunction = NULL);
 void mission_campaign_free_list();
 
 // returns index of mission with passed name

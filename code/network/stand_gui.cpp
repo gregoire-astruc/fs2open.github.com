@@ -159,7 +159,7 @@ void std_destroy_gen_dialog()
 
 // set the text in the filename of the validate dialog
 // valid values for field_num == 0 .. 2
-void std_gen_set_text(char *str, int field_num)
+void std_gen_set_text(const char *str, int field_num)
 {
 	HWND ctrl;
 
@@ -525,7 +525,7 @@ BOOL CALLBACK connect_proc(HWND hwndDlg,UINT uMsg,WPARAM wParam,LPARAM lParam)
 			case IDC_PXO_REFRESH:				
 				if(MULTI_IS_TRACKER_GAME){
 					// delete mvalid.cfg if it exists
-					cf_delete(MULTI_VALID_MISSION_FILE, CF_TYPE_DATA);
+					cfile::deleteFile(MULTI_VALID_MISSION_FILE, cfile::TYPE_DATA);
 
 					// refresh missions
 					multi_update_valid_missions();

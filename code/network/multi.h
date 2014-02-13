@@ -12,6 +12,7 @@
 #ifndef _MULTI_H
 #define _MULTI_H
 
+#include "cfile/cfile.h"
 #include "globalincs/pstypes.h"
 #include "network/psnet2.h"					// for PSNET_SOCKET		
 #include "network/multi_ping.h"
@@ -20,7 +21,6 @@
 #include "globalincs/globals.h"
 
 class p_object;
-struct CFILE;
 class player;
 
 // ----------------------------------------------------------------------------------------
@@ -769,7 +769,7 @@ extern int HEADER_LENGTH;												// 1 byte (packet type)
 // misc data
 extern active_game* Active_game_head;								// linked list of active games displayed on Join screen
 extern int Active_game_count;											// for interface screens as well
-extern CFILE* Multi_chat_stream;										// for streaming multiplayer chat strings to a file
+extern cfile::FileHandle* Multi_chat_stream;										// for streaming multiplayer chat strings to a file
 extern int Multi_has_cd;												// if this machine has a cd or not (call multi_common_verify_cd() to set this)
 extern int Multi_num_players_at_start;								// the # of players present (kept track of only on the server) at the very start of the mission
 extern short Multi_id_num;												// for assigning player id #'s

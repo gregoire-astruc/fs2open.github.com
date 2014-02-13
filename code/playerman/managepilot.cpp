@@ -63,7 +63,7 @@ int delete_pilot_file(char *pilot_name)
 	strcpy_s( filename, basename );
 	strcat_s( filename, NOX(".plr") );
 
-	delreturn = cf_delete(filename, CF_TYPE_PLAYERS);
+	delreturn = cfile::deleteFile(filename, cfile::TYPE_PLAYERS);
 
 	// we must try and delete the campaign save files for a pilot as well.
 	if (delreturn) {
@@ -148,13 +148,13 @@ void init_new_pilot(player *p, int reset)
 
 int local_num_campaigns = 0;
 
-int campaign_file_list_filter(const char *filename)
+bool campaign_file_list_filter(const SCP_string& filename)
 {
 	char name[NAME_LENGTH];
 	char *desc = NULL;
 	int type, max_players;
 
-	if ( mission_campaign_get_info( filename, name, &type, &max_players, &desc) ) {
+	if ( mission_campaign_get_info( filename.c_str(), name, &type, &max_players, &desc) ) {
 		if ( type == CAMPAIGN_TYPE_SINGLE) {
 			Campaign_names[local_num_campaigns] = vm_strdup(name);
 			local_num_campaigns++;
@@ -174,27 +174,23 @@ void pilot_set_start_campaign(player* p)
 {
 	char wild_card[10];
 	int i, j, incr = 0;
-	char *t = NULL;
-	int rc = 0;
-	char *campaign_file_list[MAX_CAMPAIGNS];
+	SCP_string t = NULL;
 
 	memset(wild_card, 0, sizeof(wild_card));
 	strcpy_s(wild_card, NOX("*"));
 	strcat_s(wild_card, FS_CAMPAIGN_FILE_EXT);
 
-	// set filter for cf_get_file_list() if there isn't one set already (the simroom has a special one)
-	if (Get_file_list_filter == NULL)
-		Get_file_list_filter = campaign_file_list_filter;
-
 	// now get the list of all campaign names
 	// NOTE: we don't do sorting here, but we assume CF_SORT_NAME, and do it manually below
-	rc = cf_get_file_list(MAX_CAMPAIGNS, campaign_file_list, CF_TYPE_MISSIONS, wild_card, CF_SORT_NONE);
+	SCP_vector<SCP_string> campaigns;
+	cfile::listFiles(campaigns, cfile::TYPE_MISSIONS, wild_card, cfile::SORT_NONE, campaign_file_list_filter);
 
-	for (i = 0; i < rc; i++) 
+	SCP_vector<SCP_string>::iterator iter;
+	for (iter = campaigns.begin(); iter != campaigns.end(); ++iter)
 	{
-		if (!stricmp(campaign_file_list[i], Default_campaign_file_name))
+		if (!stricmp(iter->c_str(), Default_campaign_file_name))
 		{
-			strcpy_s(p->current_campaign, campaign_file_list[i]);
+			strcpy_s(p->current_campaign, iter->c_str());
 			return;
 		}
 	}
@@ -224,9 +220,9 @@ void pilot_set_start_campaign(player* p)
 
 				if (stricmp(name1, name2) > 0) {
 					// first, do filenames
-					t = campaign_file_list[j];
-					campaign_file_list[j] = campaign_file_list[j + incr];
-					campaign_file_list[j + incr] = t;
+					t = campaigns[j];
+					campaigns[j] = campaigns[j + incr];
+					campaigns[j + incr] = t;
 
 					j -= incr;
 				} else {
@@ -238,8 +234,8 @@ void pilot_set_start_campaign(player* p)
 		incr /= 2;
 	}
 
-	if (rc > 0)
-		strcpy_s(p->current_campaign, campaign_file_list[0]);
+	if (!campaigns.empty())
+		strcpy_s(p->current_campaign, campaigns.front().c_str());
 	else
 		strcpy_s(p->current_campaign, "<none>");
 
@@ -319,23 +315,41 @@ void pilot_load_pic_list()
 {
 	Num_pilot_images = 0;
 	
-	// load pilot images from the player images directory
-	Num_pilot_images = cf_get_file_list_preallocated(MAX_PILOT_IMAGES, Pilot_images_arr, Pilot_image_names, CF_TYPE_PLAYER_IMAGES, NOX("*.pcx"));
+	SCP_vector<SCP_string> images;
+	cfile::listFiles(images, cfile::TYPE_PLAYER_IMAGES, "*.pcx", cfile::SORT_NAME);
 
-	// sort all filenames
-	cf_sort_filenames(Num_pilot_images, Pilot_image_names, CF_SORT_NAME);
+	Assert(images.size() < MAX_PILOT_IMAGES);
+
+	Num_pilot_images = static_cast<int>(images.size());
+
+	int i = 0;
+	SCP_vector<SCP_string>::iterator iter;
+	for (iter = images.begin(); iter != images.end(); ++iter, ++i)
+	{
+		strcpy_s(Pilot_images_arr[i], iter->c_str());
+		Pilot_image_names[i] = Pilot_images_arr[i];
+	}
 }
 
 // load up the list of pilot squad filenames
 void pilot_load_squad_pic_list()
 {
 	Num_pilot_squad_images = 0;
-	
-	// load pilot images from the player images directory
-	Num_pilot_squad_images = cf_get_file_list_preallocated(MAX_PILOT_IMAGES, Pilot_squad_images_arr, Pilot_squad_image_names, CF_TYPE_SQUAD_IMAGES, NOX("*.pcx"));
 
-	// sort all filenames
-	cf_sort_filenames(Num_pilot_squad_images, Pilot_squad_image_names, CF_SORT_NAME);
+	SCP_vector<SCP_string> images;
+	cfile::listFiles(images, cfile::TYPE_SQUAD_IMAGES, "*.pcx", cfile::SORT_NAME);
+
+	Assert(images.size() < MAX_PILOT_IMAGES);
+
+	Num_pilot_squad_images = static_cast<int>(images.size());
+
+	int i = 0;
+	SCP_vector<SCP_string>::iterator iter;
+	for (iter = images.begin(); iter != images.end(); ++iter, ++i)
+	{
+		strcpy_s(Pilot_squad_images_arr[i], iter->c_str());
+		Pilot_squad_image_names[i] = Pilot_squad_images_arr[i];
+	}
 }
 
 // will attempt to load an insignia bitmap and set it as active for the player

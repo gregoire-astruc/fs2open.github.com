@@ -287,7 +287,7 @@ void bm_init()
 		bm_bitmaps[i].filename[0] = '\0';
 		bm_bitmaps[i].type = BM_TYPE_NONE;
 		bm_bitmaps[i].comp_type = BM_TYPE_NONE;
-		bm_bitmaps[i].dir_type = CF_TYPE_ANY;
+		bm_bitmaps[i].dir_type = cfile::TYPE_ANY;
 		bm_bitmaps[i].info.user.data = NULL;
 		bm_bitmaps[i].mem_taken = 0;
 		bm_bitmaps[i].bm.data = 0;
@@ -416,25 +416,27 @@ int bm_create( int bpp, int w, int h, void *data, int flags )
  *
  * @return  -1 if it could not be found index into ext_list[] if it was found as a file, fills img_cfg if available
  */
-int bm_load_sub_slow(const char *real_filename, const int num_ext, const char **ext_list, CFILE **img_cfp = NULL, int dir_type = CF_TYPE_ANY)
-{	
-	char full_path[MAX_PATH];
-	int size = 0, offset = 0;
-	int rval = -1;
+int bm_load_sub_slow(const char *real_filename, const int num_ext, const char **ext_list, cfile::FileHandle **img_cfp = NULL, cfile::DirType dir_type = cfile::TYPE_ANY)
+{
+	size_t rval;
 
-	rval = cf_find_file_location_ext(real_filename, num_ext, ext_list, dir_type, sizeof(full_path) - 1, full_path, &size, &offset, 0);
+	SCP_string fullPath;
+	if (!cfile::findFile(real_filename, fullPath, dir_type, ext_list, num_ext, &rval))
+	{
+		return -1;
+	}
 
 	// could not be found, or is invalid for some reason
-	if ( (rval < 0) || (rval >= num_ext) )
+	if (rval >= (size_t) num_ext)
 		return -1;
 
-	CFILE *test = cfopen_special(full_path, "rb", size, offset, dir_type);
+	cfile::FileHandle *test = cfile::open(fullPath);
 
 	if (test != NULL) {
 		if (img_cfp != NULL)
 			*img_cfp = test;
 
-		return rval;
+		return (int) rval;
 	}
 
 	// umm, that's not good...
@@ -445,7 +447,7 @@ int bm_load_sub_slow(const char *real_filename, const int num_ext, const char **
  * Given a raw filename, try and find a bitmap that's already loaded
  * @return  0 if it could not be found, 1 if it already exists, fills in handle
  */
-int bm_load_sub_fast(const char *real_filename, int *handle, int dir_type = CF_TYPE_ANY, bool animated_type = false)
+int bm_load_sub_fast(const char *real_filename, int *handle, cfile::DirType dir_type = cfile::TYPE_ANY, bool animated_type = false)
 {
 	if (Bm_ignore_duplicates)
 		return 0;
@@ -494,7 +496,7 @@ int bm_load( const char *real_filename )
 	char filename[MAX_FILENAME_LEN];
 	ubyte type = BM_TYPE_NONE;
 	ubyte c_type = BM_TYPE_NONE;
-	CFILE *img_cfp = NULL;
+	cfile::FileHandle *img_cfp = NULL;
 	int handle = -1;
 
 	if ( !bm_inited )
@@ -592,7 +594,7 @@ int bm_load( const char *real_filename )
 	bm_bitmaps[free_slot].bm.palette = NULL;
 	bm_bitmaps[free_slot].num_mipmaps = mm_lvl;
 	bm_bitmaps[free_slot].mem_taken = bm_size;
-	bm_bitmaps[free_slot].dir_type = CF_TYPE_ANY;
+	bm_bitmaps[free_slot].dir_type = cfile::TYPE_ANY;
 	bm_bitmaps[free_slot].palette_checksum = 0;
 	bm_bitmaps[free_slot].handle = handle;
 	bm_bitmaps[free_slot].last_used = -1;
@@ -601,7 +603,7 @@ int bm_load( const char *real_filename )
 
 Done:
 	if (img_cfp != NULL)
-		cfclose(img_cfp);
+		cfile::close(img_cfp);
 
 	return handle;
 }
@@ -737,7 +739,7 @@ static int find_block_of(int n)
 	return -1;
 }
 
-int bm_load_and_parse_eff(const char *filename, int dir_type, int *nframes, int *nfps, int *key, ubyte *type)
+int bm_load_and_parse_eff(const char *filename, cfile::DirType dir_type, int *nframes, int *nfps, int *key, ubyte *type)
 {
 	int frames = 0, fps = 30, keyframe = 0, rval;
 	char ext[8];
@@ -825,11 +827,11 @@ int bm_load_and_parse_eff(const char *filename, int dir_type, int *nframes, int 
  *
  * @returns	Bitmap number of first frame in the animation
  */
-int bm_load_animation( const char *real_filename, int *nframes, int *fps, int *keyframe, int can_drop_frames, int dir_type)
+int bm_load_animation( const char *real_filename, int *nframes, int *fps, int *keyframe, int can_drop_frames, cfile::DirType dir_type)
 {
 	int	i, n;
 	anim	the_anim;
-	CFILE	*img_cfp = NULL;
+	cfile::FileHandle	*img_cfp = NULL;
 	char filename[MAX_FILENAME_LEN];
 	int reduced = 0;
 	int anim_fps = 0, anim_frames = 0, key = 0;
@@ -952,8 +954,8 @@ int bm_load_animation( const char *real_filename, int *nframes, int *fps, int *k
 
 			for(i=0;i<the_anim.num_keys;i++){
 				the_anim.keys[i].frame_num = 0;
-				cfread(&the_anim.keys[i].frame_num, 2, 1, img_cfp);
-				cfread(&the_anim.keys[i].offset, 4, 1, img_cfp);
+				cfile::read(&the_anim.keys[i].frame_num, 2, 1, img_cfp);
+				cfile::read(&the_anim.keys[i].offset, 4, 1, img_cfp);
 				the_anim.keys[i].frame_num = INTEL_INT( the_anim.keys[i].frame_num ); //-V570
 				the_anim.keys[i].offset = INTEL_INT( the_anim.keys[i].offset ); //-V570
 			}
@@ -979,7 +981,7 @@ int bm_load_animation( const char *real_filename, int *nframes, int *fps, int *k
 
 	if (n < 0) {
 		if (img_cfp != NULL)
-			cfclose(img_cfp);
+			cfile::close(img_cfp);
 
 		return -1;
 	}
@@ -1001,7 +1003,7 @@ int bm_load_animation( const char *real_filename, int *nframes, int *fps, int *k
 					Warning(LOCATION, "EFF: No frame images were found.  EFF, %s, is invalid.\n", filename);
 
 					if (img_cfp != NULL)
-						cfclose(img_cfp);
+						cfile::close(img_cfp);
 
 					return -1;
 				}
@@ -1067,7 +1069,7 @@ int bm_load_animation( const char *real_filename, int *nframes, int *fps, int *k
 		*fps = anim_fps;
 
 	if (img_cfp != NULL)
-		cfclose(img_cfp);
+		cfile::close(img_cfp);
 
 	if (keyframe)
 		*keyframe = key;
@@ -1075,7 +1077,7 @@ int bm_load_animation( const char *real_filename, int *nframes, int *fps, int *k
 	return bm_bitmaps[n].handle;
 }
 
-int bm_load_either(const char *filename, int *nframes, int *fps, int *keyframe, int can_drop_frames, int dir_type)
+int bm_load_either(const char *filename, int *nframes, int *fps, int *keyframe, int can_drop_frames, cfile::DirType dir_type)
 {
 	if(nframes != NULL)
 		*nframes = 0;
@@ -1886,7 +1888,7 @@ int bm_release(int handle, int clear_render_targets)
 
 			bm_bitmaps[first+i].type = BM_TYPE_NONE;
 			bm_bitmaps[first+i].comp_type = BM_TYPE_NONE;
-			bm_bitmaps[first+i].dir_type = CF_TYPE_ANY;
+			bm_bitmaps[first + i].dir_type = cfile::TYPE_ANY;
 			// Fill in bogus structures!
 
 			// For debugging:
@@ -1909,7 +1911,7 @@ int bm_release(int handle, int clear_render_targets)
 
 		bm_bitmaps[n].type = BM_TYPE_NONE;
 		bm_bitmaps[n].comp_type = BM_TYPE_NONE;
-		bm_bitmaps[n].dir_type = CF_TYPE_ANY;
+		bm_bitmaps[n].dir_type = cfile::TYPE_ANY;
 		// Fill in bogus structures!
 
 		// For debugging:
@@ -2807,7 +2809,7 @@ int bm_make_render_target( int width, int height, int flags )
 	bm_bitmaps[n].bm.palette = NULL;
 	bm_bitmaps[n].num_mipmaps = mm_lvl;
 	bm_bitmaps[n].mem_taken = size;
-	bm_bitmaps[n].dir_type = CF_TYPE_ANY;
+	bm_bitmaps[n].dir_type = cfile::TYPE_ANY;
 
 	bm_bitmaps[n].palette_checksum = 0;
 	bm_bitmaps[n].handle = bm_get_next_handle() * MAX_BITMAPS + n;

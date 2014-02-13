@@ -1,0 +1,3 @@
+[submodule "lib/vfspp"]
+	path = lib/vfspp
+	url = https://github.com/asarium/vfspp.git

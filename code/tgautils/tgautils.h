@@ -30,8 +30,8 @@
 //
 // --------------------
 
-int targa_read_header(const char *filename, CFILE *img_cfp = NULL, int *w = 0, int *h = 0, int *bpp = 0, ubyte *palette=NULL );
-int targa_read_bitmap(const char *filename, ubyte *data, ubyte *palette, int dest_size, int cf_type = CF_TYPE_ANY );
+int targa_read_header(const char *filename, cfile::FileHandle *img_cfp = NULL, int *w = 0, int *h = 0, int *bpp = 0, ubyte *palette=NULL );
+int targa_read_bitmap(const char *filename, ubyte *data, ubyte *palette, int dest_size, cfile::DirType cf_type = cfile::TYPE_ANY);
 int targa_write_bitmap(const char *filename, ubyte *data, ubyte *palette, int w, int h, int bpp);
 
 // The following are used by the tools\vani code.

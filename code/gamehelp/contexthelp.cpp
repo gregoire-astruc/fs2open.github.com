@@ -395,7 +395,7 @@ void parse_helptbl()
 		return;
 	} 
 
-	read_file_text(HELP_OVERLAY_FILENAME, CF_TYPE_TABLES);
+	read_file_text(HELP_OVERLAY_FILENAME, cfile::TYPE_TABLES);
 
 	// for each overlay...
 	for (overlay_id=0; overlay_id<MAX_HELP_OVERLAYS; overlay_id++) {

@@ -1918,7 +1918,7 @@ void asteroid_parse_tbl()
 		return;
 	}
 
-	read_file_text("asteroid.tbl", CF_TYPE_TABLES);
+	read_file_text("asteroid.tbl", cfile::TYPE_TABLES);
 	reset_parse();
 
 	required_string("#Asteroid Types");

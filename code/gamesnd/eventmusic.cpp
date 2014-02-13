@@ -1299,7 +1299,7 @@ void parse_soundtrack()
 			continue;
 
 		// check for file
-		if (!cf_exists_full(Soundtracks[strack_idx].pattern_fnames[i], CF_TYPE_MUSIC))
+		if (!cfile::exists(Soundtracks[strack_idx].pattern_fnames[i], cfile::TYPE_MUSIC))
 			return;
 	}
 
@@ -1360,7 +1360,8 @@ void parse_menumusic()
 	const int NUM_EXT = 2;
 	const char *exts[NUM_EXT] = { ".ogg", ".wav" };
 
-	if ( cf_exists_full_ext(Spooled_music[idx].filename, CF_TYPE_MUSIC, NUM_EXT, exts) )
+	SCP_string temp;
+	if (cfile::findFile(Spooled_music[idx].filename, temp, cfile::TYPE_MUSIC, exts, NUM_EXT))
 		Spooled_music[idx].flags |= SMF_VALID;
 
 	if (!nocreate)
@@ -1383,7 +1384,7 @@ void event_music_parse_musictbl(const char *filename)
 		// open localization
 		lcl_ext_open();
 
-		read_file_text(filename, CF_TYPE_TABLES);
+		read_file_text(filename, cfile::TYPE_TABLES);
 		reset_parse();		
 
 		while ( skip_to_start_of_string_either("#Soundtrack Start", "#Menu Music Start", NULL ) )

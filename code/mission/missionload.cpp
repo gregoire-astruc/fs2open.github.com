@@ -20,7 +20,6 @@
 #include "ui/ui.h"
 #include "hud/hudparse.h"
 #include "globalincs/alphacolors.h"
-#include "cfile/cfilesystem.h"
 
 
 
@@ -181,7 +180,20 @@ void mission_load_menu_init()
 	memset(wild_card, 0, 256);
 	strcpy_s(wild_card, NOX("*"));
 	strcat_s(wild_card, FS_MISSION_FILE_EXT);
-	mlm_nfiles = cf_get_file_list( MLM_MAX_MISSIONS, mlm_missions, CF_TYPE_MISSIONS, wild_card, CF_SORT_NAME );
+
+	SCP_vector<SCP_string> missionNames;
+	cfile::listFiles(missionNames, cfile::TYPE_MISSIONS, wild_card, cfile::SORT_NAME);
+
+	mlm_nfiles = (int) missionNames.size();
+
+	for (int i = 0; i < mlm_nfiles; ++i)
+	{
+		mlm_missions[i] = (char*) vm_malloc(missionNames[i].size() + 1);
+		memset(mlm_missions[i], 0, missionNames[i].size() + 1);
+
+		strcpy(mlm_missions[i], missionNames[i].c_str());
+	}
+
 	jtmp_nfiles = 0;	
 		
 	Assert(mlm_nfiles <= MLM_MAX_MISSIONS);

@@ -5802,15 +5802,15 @@ int get_mission_info(const char *filename, mission *mission_p, bool basic)
 	lcl_ext_open();
 
 	do {
-		CFILE *ftemp = cfopen(real_fname, "rt");
+		cfile::FileHandle *ftemp = cfile::open(real_fname);
 		if (!ftemp) {
 			rval = -1;
 			break;
 		}
 
 		// 7/9/98 -- MWA -- check for 0 length file.
-		filelength = cfilelength(ftemp);
-		cfclose(ftemp);
+		filelength = cfile::fileLength(ftemp);
+		cfile::close(ftemp);
 		if (filelength == 0) {
 			rval = -1;
 			break;
@@ -5821,7 +5821,7 @@ int get_mission_info(const char *filename, mission *mission_p, bool basic)
 			break;
 		}
 
-		read_file_text(real_fname, CF_TYPE_MISSIONS);
+		read_file_text(real_fname, cfile::TYPE_MISSIONS);
 		mission_p->Reset( );
 		parse_init(basic);
 		parse_mission_info(mission_p, basic);
@@ -5877,7 +5877,7 @@ int parse_main(const char *mission_name, int flags)
 	do {
 		// don't do this for imports
 		if (!(flags & MPF_IMPORT_FSM)) {
-			CFILE *ftemp = cfopen(mission_name, "rt", CFILE_NORMAL, CF_TYPE_MISSIONS);
+			cfile::FileHandle *ftemp = cfile::open(mission_name, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_MISSIONS);
 
 			// fail situation.
 			if (!ftemp) {
@@ -5891,8 +5891,8 @@ int parse_main(const char *mission_name, int flags)
 				break;
 			}
 
-			Current_file_length = cfilelength(ftemp);
-			cfclose(ftemp);
+			Current_file_length = cfile::fileLength(ftemp);
+			cfile::close(ftemp);
 		}
 
 		if ((rval = setjmp(parse_abort)) != 0) {
@@ -5902,10 +5902,10 @@ int parse_main(const char *mission_name, int flags)
 
 		// import?
 		if (flags & MPF_IMPORT_FSM) {
-			read_file_text(mission_name, CF_TYPE_ANY);
+			read_file_text(mission_name, cfile::TYPE_ANY);
 			convertFSMtoFS2();
 		} else {
-			read_file_text(mission_name, CF_TYPE_MISSIONS);
+			read_file_text(mission_name, cfile::TYPE_MISSIONS);
 		}
 
 		The_mission.Reset( );
@@ -6257,18 +6257,18 @@ int mission_parse_is_multi(const char *filename, char *mission_name)
 {
 	int rval, game_type;
 	int filelength;
-	CFILE *ftemp;
+	cfile::FileHandle *ftemp;
 
 	// new way of getting information.  Open the file, and just get the name and the game_type flags.
 	// return the flags if a multiplayer mission
 
-	ftemp = cfopen(filename, "rt");
+	ftemp = cfile::open(filename);
 	if (!ftemp)
 		return 0;
 
 	// 7/9/98 -- MWA -- check for 0 length file.
-	filelength = cfilelength(ftemp);
-	cfclose(ftemp);
+	filelength = cfile::fileLength(ftemp);
+	cfile::close(ftemp);
 	if ( filelength == 0 )
 		return 0;
 
@@ -6282,7 +6282,7 @@ int mission_parse_is_multi(const char *filename, char *mission_name)
 			break;
 		}
 
-		read_file_text(filename, CF_TYPE_MISSIONS);
+		read_file_text(filename, cfile::TYPE_MISSIONS);
 		reset_parse();
 
 		if ( skip_to_string("$Name:") != 1 ) {

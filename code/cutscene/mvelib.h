@@ -5,13 +5,12 @@
 
 
 #include "globalincs/pstypes.h"
-
-struct CFILE;
+#include "cfile/cfile.h"
 
 // structure for maintaining info on a MVEFILE stream
 typedef struct MVEFILE
 {
-	CFILE	*stream;
+	cfile::FileHandle	*stream;
 	ubyte	*cur_chunk;
 	int		buf_size;
 	int		cur_fill;

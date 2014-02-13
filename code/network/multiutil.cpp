@@ -57,7 +57,6 @@
 #include "network/multi.h"
 #include "cmdline/cmdline.h"
 #include "cfile/cfile.h"
-#include "cfile/cfilesystem.h"
 #include "network/multimsgs.h"
 #include "network/multi_xfer.h"
 #include "network/multiteamselect.h"
@@ -1332,7 +1331,7 @@ int multi_is_builtin_mission()
 	// get the full filename
 	memset(name,0,512);
 	strcpy_s(name,Game_current_mission_filename);
-	cf_add_ext(name, FS_MISSION_FILE_EXT);
+	cfile::legacy::add_ext(name, FS_MISSION_FILE_EXT);
 
 	// if this mission is builtin	
 	if(game_find_builtin_mission(name) != NULL){
@@ -1385,7 +1384,7 @@ void server_verify_filesig(short player_id, ushort sum_sig, int length_sig)
 			// if the netgame settings allow in-mission file xfers
 			if(Netgame.options.flags & MSO_FLAG_INGAME_XFER){
 				pl->s_info.ingame_join_flags |= INGAME_JOIN_FLAG_FILE_XFER;
-				pl->s_info.xfer_handle = multi_xfer_send_file(pl->reliable_socket, Netgame.mission_name, CF_TYPE_MISSIONS);
+				pl->s_info.xfer_handle = multi_xfer_send_file(pl->reliable_socket, Netgame.mission_name, cfile::TYPE_MISSIONS);
 			}
 			// otherwise send him a nak and tell him to get away 
 			else {
@@ -1399,7 +1398,7 @@ void server_verify_filesig(short player_id, ushort sum_sig, int length_sig)
 	else {
 		// if the file does not check out, send it to him
 		if(!ok){			
-			pl->s_info.xfer_handle = multi_xfer_send_file(pl->reliable_socket, Netgame.mission_name, CF_TYPE_MISSIONS);
+			pl->s_info.xfer_handle = multi_xfer_send_file(pl->reliable_socket, Netgame.mission_name, cfile::TYPE_MISSIONS);
 		}
 		// otherwise mark him as having a valid mission
 		else {
@@ -2346,7 +2345,7 @@ void multi_file_xfer_notify(int handle)
 	char *filename;
 	int len,idx;
 	int force_dir;
-	int cf_type;
+	cfile::DirType cf_type;
 	int is_mission = 0;	
 
 	// get the filename of the file we are receiving
@@ -2372,14 +2371,14 @@ void multi_file_xfer_notify(int handle)
 	
 	// determine where its going to go
 	if(is_mission){
-		cf_type = Net_player->p_info.options.flags & MLO_FLAG_XFER_MULTIDATA ? CF_TYPE_MULTI_CACHE : CF_TYPE_MISSIONS;
+		cf_type = Net_player->p_info.options.flags & MLO_FLAG_XFER_MULTIDATA ? cfile::TYPE_MULTI_CACHE : cfile::TYPE_MISSIONS;
 	} else {
-		cf_type = CF_TYPE_MULTI_CACHE;
+		cf_type = cfile::TYPE_MULTI_CACHE;
 	}
 
 	// QUICK FIX
-	// check to see if the file is read-only			
-	if((filename[0] != '\0') && !cf_access(filename, cf_type, 00) && (cf_access(filename, cf_type, 02) == -1)){	
+	// check to see if the file is read-only
+	if ((filename[0] != '\0') && cfile::access(filename, cf_type, 00) && (!cfile::access(filename, cf_type, 02))){
 		multi_xfer_xor_flags(handle, MULTI_XFER_FLAG_REJECT);
 
 		Net_player->flags &= ~(NETINFO_FLAG_DO_NETWORKING);
@@ -2801,7 +2800,7 @@ void multi_flush_multidata_cache()
 	nprintf(("Network","FLUSHING MULTIDATA CACHE\n"));
 	
 	// call the cfile function to flush the directory
-	cfile_flush_dir(CF_TYPE_MULTI_CACHE);
+	cfile::flushDir(cfile::TYPE_MULTI_CACHE);
 }
 
 // flush all data from a previous mission before starting the next
@@ -2941,25 +2940,25 @@ void multi_display_chat_msg(const char *msg, int player_index, int add_id)
 // fill in Current_file_checksum and Current_file_length
 void multi_get_mission_checksum(const char *filename)
 {
-	CFILE *in;
+	cfile::FileHandle *in;
 
 	Multi_current_file_checksum = 0xffff;
 	Multi_current_file_length = -1;
 
 	// get the filename
-	in = cfopen(filename,"rb");
+	in = cfile::open(filename);
 	if(in != NULL){
 		// get the length of the file
-		Multi_current_file_length = cfilelength(in);
-		cfclose(in);
+		Multi_current_file_length = cfile::fileLength(in);
+		cfile::close(in);
 
-		in = cfopen(filename,"rb");
+		in = cfile::open(filename);
 		if(in != NULL){
 			// get the checksum of the file
-			cf_chksum_short(in,&Multi_current_file_checksum);
+			cfile::checksum::crc::doShort(in, &Multi_current_file_checksum);
 
 			// close the file
-			cfclose(in);
+			cfile::close(in);
 			in = NULL;
 		}
 		// if the file doesn't exist, setup some special values, so the server recognizes this
@@ -3066,7 +3065,7 @@ void multi_update_valid_missions()
 	char status_string[50];
 	char temp[256];
 	char *tok;
-	CFILE *in;
+	cfile::FileHandle *in;
 	int file_index;
 	uint idx;	
 	bool was_cancelled = false;
@@ -3085,14 +3084,15 @@ void multi_update_valid_missions()
 	}
 	
 	// attempt to open the valid mission config file
-	in = cfopen(MULTI_VALID_MISSION_FILE, "rt", CFILE_NORMAL, CF_TYPE_DATA);
+	in = cfile::open(MULTI_VALID_MISSION_FILE, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_DATA);
 
 	if (in != NULL) {		
 		// read in all listed missions
-		while ( !cfeof(in) ) {
+		while ( !cfile::eof(in) ) {
 			// read in a line
 			memset(next_line, 0, 512);
-			cfgets(next_line, 512, in);
+			cfile::readLine(next_line, 512, in);
+
 			drop_trailing_white_space(next_line);
 			drop_leading_white_space(next_line);
 
@@ -3130,7 +3130,7 @@ void multi_update_valid_missions()
 		}
 
 		// close the infile
-		cfclose(in);
+		cfile::close(in);
 		in = NULL;	
 	}
 
@@ -3148,7 +3148,7 @@ void multi_update_valid_missions()
 	}
 
 	// now rewrite the outfile with the new mission info
-	in = cfopen(MULTI_VALID_MISSION_FILE, "wt", CFILE_NORMAL, CF_TYPE_DATA);
+	in = cfile::open(MULTI_VALID_MISSION_FILE, cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_DATA);
 	if(in == NULL){
 		// if we're a standalone, kill the validate dialog
 		if(Game_mode & GM_STANDALONE_SERVER){
@@ -3161,21 +3161,21 @@ void multi_update_valid_missions()
 	for (idx = 0; idx < Multi_create_mission_list.size(); idx++) {
 		switch(Multi_create_mission_list[idx].valid_status){
 		case MVALID_STATUS_VALID:
-			cfputs(Multi_create_mission_list[idx].filename, in);
-			cfputs(NOX("   valid"), in);
-			cfputs(NOX("\n"), in);
+			cfile::write<const char*>(Multi_create_mission_list[idx].filename, in);
+			cfile::write<const char*>(NOX("   valid"), in);
+			cfile::write<const char*>(NOX("\n"), in);
 			break;
 
 		case MVALID_STATUS_INVALID:
-			cfputs(Multi_create_mission_list[idx].filename, in);
-			cfputs(NOX("   invalid"), in);
-			cfputs(NOX("\n"), in);
+			cfile::write<const char*>(Multi_create_mission_list[idx].filename, in);
+			cfile::write<const char*>(NOX("   invalid"), in);
+			cfile::write<const char*>(NOX("\n"), in);
 			break;
 		}
 	}
 
 	// close the outfile
-	cfclose(in);
+	cfile::close(in);
 	in = NULL;
 
 	// if we're a standalone, kill the validate dialog
@@ -3267,114 +3267,96 @@ DCF(multi,"changes multiplayer settings")
 
 void multi_spew_pxo_checksums(int max_files, char *outfile)
 {
-	char **file_names;
-	char full_name[MAX_PATH_LEN];
 	char wild_card[10];
-	int count = 0, idx;
 	uint checksum;
-	FILE *out;
 	char description[512] = { 0 };
 	char filename[65] = { 0 };
 	char gametype[32] = { 0 };
 	size_t offset = 0;
-	char *p = NULL;
+	const char *p = NULL;
 
-	// allocate filename space	
-	file_names = (char**)vm_malloc(sizeof(char*) * max_files);
+	memset(wild_card, 0, 10);
+	strcpy_s(wild_card, NOX("*"));
+	strcat_s(wild_card, FS_MISSION_FILE_EXT);
 
-	if (file_names != NULL) {
-		memset(wild_card, 0, 10);
-		strcpy_s(wild_card, NOX("*"));
-		strcat_s(wild_card, FS_MISSION_FILE_EXT);
-		count = cf_get_file_list(max_files, file_names, CF_TYPE_MISSIONS, wild_card);	
+	SCP_vector<SCP_string> fileNames;
+	cfile::listFiles(fileNames, cfile::TYPE_MISSIONS, wild_card);
 
-		if (count <= 0)
-			goto Done;
+	// open the outfile
+	cfile::FileHandle *out = cfile::open(outfile, cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_ROOT);
 
-		cf_create_default_path_string(full_name, sizeof(full_name) - 1, CF_TYPE_ROOT, outfile);
+	if (out == NULL)
+		return;
 
-		// open the outfile
-		out = fopen(full_name, "wt");
+	std::iostream& stream = cfile::getStream(out);
 
-		if (out == NULL)
-			goto Done;
+	p = Cmdline_spew_mission_crcs;
 
-		p = Cmdline_spew_mission_crcs;
+	while (*p && (offset < sizeof(description))) {
+		if (*p == '"') {
+			description[offset++] = '"';
+			description[offset++] = '"';
+		} else {
+			description[offset++] = *p;
+		}
 
-		while (*p && (offset < sizeof(description))) {
+		p++;
+	}
+
+	// header
+	stream << "filename,CRC32,mission type,max players,description" << std::endl;
+
+	// do all the checksums
+
+	SCP_vector<SCP_string>::iterator iter;
+	for (iter = fileNames.begin(); iter != fileNames.end(); ++iter)
+	{
+		const char* full_name = iter->c_str();
+		
+		if (!cfile::checksum::crc::doLong(full_name, &checksum)) {
+			continue;
+		}
+
+		if (get_mission_info(full_name)) {
+			continue;
+		}
+
+		if ( !(The_mission.game_type & MISSION_TYPE_MULTI) ) {
+			continue;
+		}
+
+		offset = 0;
+		p = full_name;
+
+		while (*p && (offset < sizeof(filename))) {
 			if (*p == '"') {
-				description[offset++] = '"';
-				description[offset++] = '"';
+				filename[offset++] = '"';
+				filename[offset++] = '"';
 			} else {
-				description[offset++] = *p;
+				filename[offset++] = *p;
 			}
 
 			p++;
 		}
 
-		// header
-		fprintf(out, "filename,CRC32,mission type,max players,description\r\n");
+		filename[offset] = '\0';
 
-		// do all the checksums
-		for (idx = 0; idx < count; idx++) {
-			memset( full_name, 0, sizeof(full_name) );			
-			strcpy_s( full_name, cf_add_ext(file_names[idx], FS_MISSION_FILE_EXT) );
-
-			if ( !cf_chksum_long(full_name, &checksum) ) {
-				continue;
-			}
-
-			if (get_mission_info(full_name)) {
-				continue;
-			}
-
-			if ( !(The_mission.game_type & MISSION_TYPE_MULTI) ) {
-				continue;
-			}
-
-			offset = 0;
-			p = full_name;
-
-			while (*p && (offset < sizeof(filename))) {
-				if (*p == '"') {
-					filename[offset++] = '"';
-					filename[offset++] = '"';
-				} else {
-					filename[offset++] = *p;
-				}
-
-				p++;
-			}
-
-			filename[offset] = '\0';
-
-			if (IS_MISSION_MULTI_DOGFIGHT) {
-				strcpy_s(gametype, "dogfight");
-			} else if (IS_MISSION_MULTI_COOP) {
-				strcpy_s(gametype, "coop");
-			} else if (IS_MISSION_MULTI_TEAMS) {
-				strcpy_s(gametype, "TvT");
-			}
-
-			fprintf(out, "\"%s\",%u,\"%s\",%d,\"%s\"\r\n", filename, checksum, gametype, The_mission.num_players, description);
+		if (IS_MISSION_MULTI_DOGFIGHT) {
+			strcpy_s(gametype, "dogfight");
+		} else if (IS_MISSION_MULTI_COOP) {
+			strcpy_s(gametype, "coop");
+		} else if (IS_MISSION_MULTI_TEAMS) {
+			strcpy_s(gametype, "TvT");
 		}
 
-		fflush(out);
-		fclose(out);
-
-Done:
-		if (file_names != NULL) {
-			for (idx = 0; idx < count; idx++) {
-				if (file_names[idx] != NULL) {
-					vm_free(file_names[idx]);
-					file_names[idx] = NULL;
-				}
-			}
-
-			vm_free(file_names);
-			file_names = NULL;
-		}
+		stream << '"' << filename << '"';
+		stream << ',' << checksum << ',';
+		stream << '"' << gametype << '"';
+		stream << ',' << The_mission.num_players << ',';
+		stream << '"' << description << '"' << std::endl;
 	}
+
+	cfile::close(out);
 }
 
 /*

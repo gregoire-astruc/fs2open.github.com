@@ -67,7 +67,7 @@ MVEFILE *mvefile_open(char *filename)
 
 	// NOTE: CF_TYPE *must* be ANY to get movies off of the CDs
 	// assume lower case filename for *nix
-	file->stream = cfopen(lower_name, "rb", CFILE_NORMAL, CF_TYPE_ANY);
+	file->stream = cfile::open(lower_name, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_ANY);
 	if ( file->stream ) {
 		cf_opened = 1;
 	}
@@ -82,18 +82,18 @@ MVEFILE *mvefile_open(char *filename)
 	file->buf_size = 100 + 1024;
 
 	// verify the file's header
-	cfread_string(buffer, 20, file->stream);
+	cfile::readString(buffer, 20, file->stream);
 	
 	if (strcmp(buffer, MVE_HEADER))
 		mve_valid = 0;
 
-	if (cfread_short(file->stream) != MVE_HDRCONST1)
+	if (cfile::read<short>(file->stream) != MVE_HDRCONST1)
 		mve_valid = 0;
 
-	if (cfread_short(file->stream) != MVE_HDRCONST2)
+	if (cfile::read<short>(file->stream) != MVE_HDRCONST2)
 		mve_valid = 0;
 
-	if (cfread_short(file->stream) != MVE_HDRCONST3)
+	if (cfile::read<short>(file->stream) != MVE_HDRCONST3)
 		mve_valid = 0;
 
 	if (!mve_valid) {
@@ -112,7 +112,7 @@ void mvefile_close(MVEFILE *file)
 {
 	// free the stream
 	if (file->stream)
-		cfclose(file->stream);
+		cfile::close(file->stream);
 
 	file->stream = NULL;
 
@@ -218,7 +218,7 @@ int mvefile_fetch_next_chunk(MVEFILE *file)
 		return 0;
 
 	// fail if we can't read the next segment descriptor
-	if (cfread(buffer, 1, 4, file->stream) < 4)
+	if (cfile::read(buffer, 1, 4, file->stream) < 4)
 		return 0;
 
 	// pull out the next length
@@ -247,7 +247,7 @@ int mvefile_fetch_next_chunk(MVEFILE *file)
 
 	// read the chunk
 	if (length > 0) {
-		if (cfread(file->cur_chunk, 1, length, file->stream) < length)
+		if (cfile::read(file->cur_chunk, 1, length, file->stream) < length)
 			return 0;
 	}
 

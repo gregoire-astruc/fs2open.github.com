@@ -9,8 +9,9 @@
 
 
 
-
+#include <time.h>
 #include <stdarg.h>
+
 #include "network/multi_log.h"
 #include "parse/generic_log.h"
 #include "cfile/cfile.h"

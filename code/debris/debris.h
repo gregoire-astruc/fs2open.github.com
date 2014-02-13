@@ -15,7 +15,6 @@
 #include "globalincs/pstypes.h"
 
 class object;
-struct CFILE;
 
 #define MAX_DEBRIS_ARCS 8		// Must be less than MAX_ARC_EFFECTS in model.h
 

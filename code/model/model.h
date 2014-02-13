@@ -252,8 +252,8 @@ typedef struct model_special {
 
 // IBX stuff
 typedef struct IBX {
-	CFILE *read;		// reads, if an IBX file already exists
-	CFILE *write;		// writes, if new file created
+	cfile::FileHandle *read;		// reads, if an IBX file already exists
+	cfile::FileHandle *write;		// writes, if new file created
 	int size;			// file size used to make sure an IBX contains enough data for the whole model
 	int version;		// IBX file version to use: v1 is USHORT only, v2 can mix USHORT and UINT
 	char name[MAX_FILENAME_LEN];	// filename of the ibx, this is used in case a safety check fails and we delete the file
@@ -784,7 +784,7 @@ void model_free_all();
 void model_instance_free_all();
 
 // Loads a model from disk and returns the model number it loaded into.
-int model_load(char *filename, int n_subsystems, model_subsystem *subsystems, int ferror = 1, int duplicate = 0);
+int model_load(const char *filename, int n_subsystems, model_subsystem *subsystems, int ferror = 1, int duplicate = 0);
 
 int model_create_instance(int model_num, int submodel_num = -1);
 void model_delete_instance(int model_instance_num);

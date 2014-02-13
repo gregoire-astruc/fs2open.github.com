@@ -487,7 +487,7 @@ void gr_stub_update_texture(int bitmap_handle, int bpp, ubyte* data, int width, 
 }
 
 // bitmap functions
-int gr_stub_bm_load(ubyte type, int n, const char *filename, CFILE *img_cfp, int *w, int *h, int *bpp, ubyte *c_type, int *mm_lvl, int *size)
+int gr_stub_bm_load(ubyte type, int n, const char *filename, cfile::FileHandle *img_cfp, int *w, int *h, int *bpp, ubyte *c_type, int *mm_lvl, int *size)
 {
 	int dds_ct;
 

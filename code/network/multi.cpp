@@ -106,7 +106,7 @@ int HEADER_LENGTH;													// 1 byte (packet type)
 // misc data
 active_game* Active_game_head;									// linked list of active games displayed on Join screen
 int Active_game_count;												// for interface screens as well
-CFILE* Multi_chat_stream;											// for streaming multiplayer chat strings to a file
+cfile::FileHandle* Multi_chat_stream;											// for streaming multiplayer chat strings to a file
 int Multi_has_cd = 0;												// if this machine has a cd or not (call multi_common_verify_cd() to set this)
 int Multi_connection_speed;										// connection speed of this machine.
 int Multi_num_players_at_start = 0;								// the # of players present (kept track of only on the server) at the very start of the mission
@@ -1485,7 +1485,7 @@ void standalone_main_init()
 
 	// clear the file xfer system
 	multi_xfer_reset();
-	multi_xfer_force_dir(CF_TYPE_MULTI_CACHE);
+	multi_xfer_force_dir(cfile::TYPE_MULTI_CACHE);
 
 	// reset timer
 	timestamp_reset();

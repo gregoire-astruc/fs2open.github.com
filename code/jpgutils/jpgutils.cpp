@@ -26,13 +26,13 @@
 
 
 // forward declarations
-void jpeg_cfile_src(j_decompress_ptr cinfo, CFILE *cfp);
+void jpeg_cfile_src(j_decompress_ptr cinfo, cfile::FileHandle *cfp);
 
 // structs
 typedef struct {
   struct jpeg_source_mgr pub;	// public fields
 
-  CFILE *infile;		// source stream
+  cfile::FileHandle *infile;		// source stream
   JOCTET *buffer;		// start of buffer
   boolean start_of_file;	// have we gotten any data yet?
 } cfile_source_mgr;
@@ -96,9 +96,9 @@ void jpg_output_message(j_common_ptr cinfo)
 //
 // returns - JPEG_ERROR_NONE if successful, otherwise error code
 //
-int jpeg_read_header(const char *real_filename, CFILE *img_cfp, int *w, int *h, int *bpp, ubyte *palette)
+int jpeg_read_header(const char *real_filename, cfile::FileHandle *img_cfp, int *w, int *h, int *bpp, ubyte *palette)
 {
-	CFILE *jpeg_file = NULL;
+	cfile::FileHandle *jpeg_file = NULL;
 	char filename[MAX_FILENAME_LEN];
 
 	if (img_cfp == NULL) {
@@ -111,7 +111,7 @@ int jpeg_read_header(const char *real_filename, CFILE *img_cfp, int *w, int *h, 
 
 		strcat_s( filename, ".jpg" );
 
-		jpeg_file = cfopen( filename , "rb" );
+		jpeg_file = cfile::open(filename);
 
 		if ( !jpeg_file ) {
 			return JPEG_ERROR_READING;
@@ -149,7 +149,7 @@ int jpeg_read_header(const char *real_filename, CFILE *img_cfp, int *w, int *h, 
 	jpeg_destroy_decompress(&jpeg_info);
 
 	if (img_cfp == NULL) {
-		cfclose(jpeg_file);
+		cfile::close(jpeg_file);
 		jpeg_file = NULL;
 	}
 
@@ -164,10 +164,10 @@ int jpeg_read_header(const char *real_filename, CFILE *img_cfp, int *w, int *h, 
 //
 // returns - true if succesful, false otherwise
 //
-int jpeg_read_bitmap(const char *real_filename, ubyte *image_data, ubyte *palette, int dest_size, int cf_type)
+int jpeg_read_bitmap(const char *real_filename, ubyte *image_data, ubyte *palette, int dest_size, cfile::DirType cf_type)
 {
 	char filename[MAX_FILENAME_LEN];
-	CFILE *img_cfp = NULL;
+	cfile::FileHandle *img_cfp = NULL;
 	JSAMPARRAY buffer = NULL;
 
 	strcpy_s( filename, real_filename );
@@ -176,7 +176,7 @@ int jpeg_read_bitmap(const char *real_filename, ubyte *image_data, ubyte *palett
 	strcat_s( filename, ".jpg" );
 
 
-	img_cfp = cfopen(filename, "rb", CFILE_NORMAL, cf_type);
+	img_cfp = cfile::open(filename, cfile::MODE_READ, cfile::OPEN_NORMAL, cf_type);
 
 	if (img_cfp == NULL)
 		return JPEG_ERROR_READING;
@@ -246,7 +246,7 @@ int jpeg_read_bitmap(const char *real_filename, ubyte *image_data, ubyte *palett
 		jpeg_destroy_decompress(&jpeg_info);
 	}
 
-	cfclose(img_cfp);
+	cfile::close(img_cfp);
 
 
 	return jpeg_error_code;
@@ -274,7 +274,7 @@ boolean jpeg_cf_fill_input_buffer(j_decompress_ptr cinfo)
 	cfile_src_ptr src = (cfile_src_ptr) cinfo->src;
 	size_t nbytes;
 
-	nbytes = cfread(src->buffer, 1, INPUT_BUF_SIZE, src->infile);
+	nbytes = cfile::read(src->buffer, 1, INPUT_BUF_SIZE, src->infile);
 
 	if (nbytes <= 0) {
 		if (src->start_of_file) {	// Treat empty input file as fatal error
@@ -318,7 +318,7 @@ void jpeg_cf_term_source(j_decompress_ptr cinfo)
 	// no work necessary here
 }
 
-void jpeg_cfile_src(j_decompress_ptr cinfo, CFILE *cfp)
+void jpeg_cfile_src(j_decompress_ptr cinfo, cfile::FileHandle *cfp)
 {
 	cfile_src_ptr src;
 

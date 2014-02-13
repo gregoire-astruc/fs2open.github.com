@@ -183,7 +183,7 @@ void parse_hud_gauges_tbl(const char *filename)
 		return;
 	}
 
-	read_file_text(filename, CF_TYPE_TABLES);
+	read_file_text(filename, cfile::TYPE_TABLES);
 	reset_parse();
 
 	if(optional_string("$Load Retail Configuration:")) {
@@ -470,7 +470,7 @@ void hud_positions_init()
 
 	default_hud_gauges.clear();
 
-	if (cf_exists_full("hud_gauges.tbl", CF_TYPE_TABLES))
+	if (cfile::exists("hud_gauges.tbl", cfile::TYPE_TABLES))
 		parse_hud_gauges_tbl("hud_gauges.tbl");
 
 	parse_modular_table(NOX("*-hdg.tbm"), parse_hud_gauges_tbl);

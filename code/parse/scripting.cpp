@@ -114,7 +114,7 @@ void script_parse_table(const char *filename)
 		return;
 	}
 
-	read_file_text(filename, CF_TYPE_TABLES);
+	read_file_text(filename, cfile::TYPE_TABLES);
 	reset_parse();
 
 	if(optional_string("#Global Hooks"))
@@ -1161,20 +1161,20 @@ void script_state::ParseChunkSub(int *out_lang, int *out_index, char* debug_str)
 		char *filename = alloc_block("[[", "]]");
 
 		//Load from file
-		CFILE *cfp = cfopen(filename, "rb", CFILE_NORMAL, CF_TYPE_SCRIPTS );
+		cfile::FileHandle *cfp = cfile::open(filename, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_SCRIPTS );
 		if(cfp == NULL)
 		{
 			Warning(LOCATION, "Could not load lua script file '%s'", filename);
 		}
 		else
 		{
-			int len = cfilelength(cfp);
+			int len = cfile::fileLength(cfp);
 
 			char *raw_lua = (char*)vm_malloc(len+1);
 			raw_lua[len] = '\0';
 
-			cfread(raw_lua, len, 1, cfp);
-			cfclose(cfp);
+			cfile::read(raw_lua, len, 1, cfp);
+			cfile::close(cfp);
 
 			//WMC - use filename instead of debug_str so that the filename
 			//gets passed.

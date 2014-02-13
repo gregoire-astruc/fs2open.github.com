@@ -55,7 +55,7 @@ class pilotfile {
 		// --------------------------------------------------------------------
 		// info shared between PLR and CSG ...
 		// --------------------------------------------------------------------
-		CFILE *cfp;
+		cfile::FileHandle *cfp;
 		SCP_string filename;
 		player *p;
 

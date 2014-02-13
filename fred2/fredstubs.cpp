@@ -24,7 +24,7 @@ int	game_zbuffer = 1;
 int	Current_mission = 0xdeadbeef;
 char **Builtin_mission_names;
 char Game_current_mission_filename[MAX_FILENAME_LEN];
-CFILE *Working_demo;
+cfile::FileHandle *Working_demo;
 struct beam_info;
 bool Env_cubemap_drawn = false;
 int Multi_ping_timestamp = -1;
@@ -124,8 +124,8 @@ void multi_server_respawn() {}
 
 void multi_build_respawn_points() {}
 
-void store_p_object( p_object *pbojp, CFILE *fp ) {}
-void restore_p_object( p_object *pobjp, CFILE *dp) {}
+void store_p_object( p_object *pbojp, cfile::FileHandle *fp ) {}
+void restore_p_object( p_object *pobjp, cfile::FileHandle *dp) {}
 
 int Multi_squad_msg_targ;
 int Multi_squad_msg_local;
@@ -137,20 +137,20 @@ int demo_query_debug(int id) { return 0; };
 void send_support_warpin_packet(int){}
 void game_whack_apply(float x, float y) {}
 
-void save_restore_vector(vec3d *vec, CFILE *fp, int version, vec3d *deflt) {}
-void save_restore_matrix(matrix *mat, CFILE *fp, int version, matrix *deflt) {}
-void save_restore_float(float *fl, CFILE *fp, int version, float deflt) {}
-void save_restore_angles(angles *ang, CFILE *fp, int version, angles *deflt) {}
-void save_restore_int(int *n, CFILE *fp, int version, int deflt) {}
-void save_restore_uint(uint *n, CFILE *fp, int version, uint deflt) {}
-void save_restore_short(short *n, CFILE *fp, int version, short deflt) {}
-void save_restore_ushort(ushort *n, CFILE *fp, int version, ushort deflt) {}
-void save_restore_ubyte(ubyte *n, CFILE *fp, int version, ubyte deflt) {}
-void save_restore_fix(fix *n, CFILE *fp, int version, fix deflt) {}
-void save_restore_string(char *str, CFILE *fp, int len, int version, char *deflt) {}
-char *restore_string_alloc(CFILE *fp, int version, char *deflt) { return NULL; }
+void save_restore_vector(vec3d *vec, cfile::FileHandle *fp, int version, vec3d *deflt) {}
+void save_restore_matrix(matrix *mat, cfile::FileHandle *fp, int version, matrix *deflt) {}
+void save_restore_float(float *fl, cfile::FileHandle *fp, int version, float deflt) {}
+void save_restore_angles(angles *ang, cfile::FileHandle *fp, int version, angles *deflt) {}
+void save_restore_int(int *n, cfile::FileHandle *fp, int version, int deflt) {}
+void save_restore_uint(uint *n, cfile::FileHandle *fp, int version, uint deflt) {}
+void save_restore_short(short *n, cfile::FileHandle *fp, int version, short deflt) {}
+void save_restore_ushort(ushort *n, cfile::FileHandle *fp, int version, ushort deflt) {}
+void save_restore_ubyte(ubyte *n, cfile::FileHandle *fp, int version, ubyte deflt) {}
+void save_restore_fix(fix *n, cfile::FileHandle *fp, int version, fix deflt) {}
+void save_restore_string(char *str, cfile::FileHandle *fp, int len, int version, char *deflt) {}
+char *restore_string_alloc(cfile::FileHandle *fp, int version, char *deflt) { return NULL; }
 
-void save_restore_p_object(p_object *pobj, CFILE *fp) {}
+void save_restore_p_object(p_object *pobj, cfile::FileHandle *fp) {}
 
 void demo_write_char(char x) {}
 char demo_read_char() { return 0; }
@@ -200,7 +200,7 @@ int Show_target_weapons;
 int Show_target_debug_info;
 int Game_do_state_should_skip;
 long Game_time_compression;
-struct fs_builtin_mission *game_find_builtin_mission(char*){return NULL;}
+struct fs_builtin_mission *game_find_builtin_mission(const char*){return NULL;}
 void game_format_time(long, char*){}
 void game_do_state(int){}
 void game_process_event(int, int){}

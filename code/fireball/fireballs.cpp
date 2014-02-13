@@ -172,7 +172,7 @@ void parse_fireball_tbl(const char *filename)
 		return;
 	}
 
-	read_file_text(filename, CF_TYPE_TABLES);
+	read_file_text(filename, cfile::TYPE_TABLES);
 	reset_parse();
 
 	required_string("#Start");
@@ -363,7 +363,7 @@ void fireball_init()
 	Warp_model = -1;
 
 	// Goober5000 - check for existence of file before trying to load it
-	if (cf_exists_full("warp.pof", CF_TYPE_MODELS))
+	if (cfile::exists("warp.pof", cfile::TYPE_MODELS))
 	{
 		Warp_model = model_load("warp.pof", 0, NULL, 0);
 	}

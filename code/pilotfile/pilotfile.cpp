@@ -24,7 +24,7 @@ pilotfile::pilotfile()
 pilotfile::~pilotfile()
 {
 	if (cfp) {
-		cfclose(cfp);
+		cfile::close(cfp);
 	}
 }
 
@@ -34,13 +34,13 @@ void pilotfile::startSection(Section::id section_id)
 
 	const int zero = 0;
 
-	cfwrite_ushort( (ushort)section_id, cfp );
+	cfile::write<short>( (ushort)section_id, cfp );
 
 	// to be updated when endSection() is called
-	cfwrite_int(zero, cfp);
+	cfile::write<int>(zero, cfp);
 
 	// starting offset, for size of section
-	m_size_offset = cftell(cfp);
+	m_size_offset = cfile::tell(cfp);
 }
 
 void pilotfile::endSection()
@@ -48,7 +48,7 @@ void pilotfile::endSection()
 	Assert( cfp );
 	Assert( m_size_offset > 0 );
 
-	size_t cur = cftell(cfp);
+	size_t cur = cfile::tell(cfp);
 
 	Assert( cur >= m_size_offset );
 
@@ -56,11 +56,11 @@ void pilotfile::endSection()
 
 	if (section_size) {
 		// go back to section size in file and write proper value
-		cfseek(cfp, cur - section_size - sizeof(int), CF_SEEK_SET);
-		cfwrite_int((int)section_size, cfp);
+		cfile::seek(cfp, cur - section_size - sizeof(int), cfile::SEEK_MODE_SET);
+		cfile::write<int>((int)section_size, cfp);
 
 		// go back to previous location for next section
-		cfseek(cfp, cur, CF_SEEK_SET);
+		cfile::seek(cfp, cur, cfile::SEEK_MODE_SET);
 	}
 }
 

@@ -117,9 +117,9 @@ void DumpStats::OnDumpToFile()
 	CString dump_filename;
 	dump_filename.Format("%s.dmp", Mission_filename);
 
-	CFILE *fp;
+	cfile::FileHandle *fp;
 
-	fp = cfopen((char *)LPCTSTR(dump_filename), "wt", CFILE_NORMAL, CF_TYPE_MISSIONS);
+	fp = cfile::open((char *)LPCTSTR(dump_filename), "wt", CFILE_NORMAL, CF_TYPE_MISSIONS);
 	cfputs((char *)LPCTSTR(buffer), fp);
 	cfclose(fp);
 }

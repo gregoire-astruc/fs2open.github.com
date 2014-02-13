@@ -47,7 +47,7 @@ int multi_update_http_init()
 	strcpy_s(url_file, VERSION_URL);
 
 	// local file
-	strcpy_s(local_file, Cfile_root_dir);
+	strcpy_s(local_file, cfile::rootDir.c_str());
 	strcat_s(local_file, DIR_SEPARATOR_STR);
 	strcat_s(local_file, VERSION_LOC_FNAME);
 

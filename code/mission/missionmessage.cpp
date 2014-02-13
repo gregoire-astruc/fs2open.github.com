@@ -540,7 +540,7 @@ void parse_msgtbl()
 	Message_waves.reserve(300);
 	Message_avis.reserve(30);
 
-	read_file_text("messages.tbl", CF_TYPE_TABLES);
+	read_file_text("messages.tbl", cfile::TYPE_TABLES);
 	reset_parse();
 	Num_messages = 0;
 	Num_personas = 0;

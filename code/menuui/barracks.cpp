@@ -867,12 +867,12 @@ void barracks_delete_pilot()
 }
 
 // Filter out pilots of wrong type (which shouldn't be in the directory we are checking, but just to be safe..)
-int barracks_pilot_filter(const char *filename)
+bool barracks_pilot_filter(const SCP_string& filename)
 {
 	bool r = false;
 	int rank = 0;
 
-	r = Pilot.verify(filename, &rank);
+	r = Pilot.verify(filename.c_str(), &rank);
 
 	if (rank >= Rank_pips_count)
 		rank = Rank_pips_count - 1;
@@ -881,7 +881,7 @@ int barracks_pilot_filter(const char *filename)
 		Pilot_ranks[Num_pilots++] = rank;
 	}
 
-	return (int)r;
+	return r;
 }
 
 // callback handler for the squadon selection buttons when they are disabled (in single player)
@@ -900,10 +900,16 @@ void barracks_init_player_stuff(int mode)
 	Player_sel_mode = mode;
 	
 	// get the list of pilots based upon whether we're in single or multiplayer mode
-	Num_pilots = 0;
-	Get_file_list_filter = barracks_pilot_filter;
+	SCP_vector<SCP_string> fileNames;
 
-	Num_pilots = cf_get_file_list_preallocated(MAX_PILOTS, Pilots_arr, Pilots, CF_TYPE_PLAYERS, NOX("*.plr"), CF_SORT_TIME);
+	cfile::listFiles(fileNames, cfile::TYPE_PLAYERS, "*.plr", cfile::SORT_TIME, barracks_pilot_filter);
+
+	Num_pilots = (int)fileNames.size();
+
+	for (int i = 0; i < Num_pilots; ++i)
+	{
+		strcpy_s(Pilots_arr[i], fileNames[i].c_str());
+	}
 
 	// single player specific stuff
 	if (mode == PLAYER_SELECT_MODE_SINGLE) {

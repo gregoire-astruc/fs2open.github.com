@@ -184,7 +184,7 @@ int mission_campaign_get_mission_list(const char *filename, char **list, int max
 	int rval, i, num = 0;
 	char name[MAX_FILENAME_LEN];
 
-	filename = cf_add_ext(filename, FS_CAMPAIGN_FILE_EXT);
+	filename = cfile::legacy::add_ext(filename, FS_CAMPAIGN_FILE_EXT);
 
 	// read the campaign file and get the list of mission filenames
 	if ((rval = setjmp(parse_abort)) != 0) {
@@ -240,18 +240,18 @@ void mission_campaign_free_list()
 	Campaign_names_inited = 0;
 }
 
-int mission_campaign_maybe_add(const char *filename)
+bool mission_campaign_maybe_add(const SCP_string& filename)
 {
 	char name[NAME_LENGTH];
 	char *desc = NULL;
 	int type, max_players;
 
 		// don't add ignored campaigns
-		if (campaign_is_ignored(filename)) {
-			return 0;
+		if (campaign_is_ignored(filename.c_str())) {
+			return false;
 		}
 
-	if ( mission_campaign_get_info( filename, name, &type, &max_players, &desc) ) {
+	if ( mission_campaign_get_info( filename.c_str(), name, &type, &max_players, &desc) ) {
 		if ( !MC_multiplayer && (type == CAMPAIGN_TYPE_SINGLE) ) {
 			Campaign_names[Num_campaigns] = vm_strdup(name);
 
@@ -260,14 +260,14 @@ int mission_campaign_maybe_add(const char *filename)
 
 			Num_campaigns++;
 
-			return 1;
+			return true;
 		}
 	}
 
 	if (desc != NULL)
 		vm_free(desc);
  
-	return 0;
+	return false;
 }
 
 /**
@@ -275,7 +275,7 @@ int mission_campaign_maybe_add(const char *filename)
  * It uses the multiplayer flag to tell if we should display a list of single or multiplayer campaigns.
  * This routine sets the Num_campaigns and Campaign_names global variables
  */
-void mission_campaign_build_list(bool desc, bool sort, bool multiplayer)
+void mission_campaign_build_list(bool desc, bool sort, bool multiplayer, cfile::ListFilterFunction filterFunction)
 {
 	char wild_card[10];
 	int i, j, incr = 0;
@@ -297,12 +297,27 @@ void mission_campaign_build_list(bool desc, bool sort, bool multiplayer)
 		mission_campaign_free_list();
 
 	// set filter for cf_get_file_list() if there isn't one set already (the simroom has a special one)
-	if (Get_file_list_filter == NULL)
-		Get_file_list_filter = mission_campaign_maybe_add;
+	if (filterFunction == NULL)
+		filterFunction = mission_campaign_maybe_add;
 
 	// now get the list of all mission names
 	// NOTE: we don't do sorting here, but we assume CF_SORT_NAME, and do it manually below
-	rc = cf_get_file_list(MAX_CAMPAIGNS, Campaign_file_names, CF_TYPE_MISSIONS, wild_card, CF_SORT_NONE);
+
+	SCP_vector<SCP_string> campaignVector;
+	cfile::listFiles(campaignVector, cfile::TYPE_MISSIONS, NULL, cfile::SORT_NONE, filterFunction);
+
+	Assert(campaignVector.size() <= MAX_CAMPAIGNS);
+
+	SCP_vector<SCP_string>::iterator iter;
+	i = 0;
+	for (iter = campaignVector.begin(); iter != campaignVector.end(); ++iter, ++i)
+	{
+		Campaign_names[i] = (char*) vm_malloc(iter->size() + 1);
+		memset(Campaign_names[i], 0, iter->size() + 1);
+
+		strcpy(Campaign_names[i], iter->c_str());
+	}
+
 	Assert( rc == Num_campaigns );
 
 	// now sort everything, if we are supposed to
@@ -423,7 +438,7 @@ int mission_campaign_load( char *filename, player *pl, int load_savefile )
 		return CAMPAIGN_ERROR_IGNORED;
 	}
 
-	filename = cf_add_ext(filename, FS_CAMPAIGN_FILE_EXT);
+	filename = cfile::legacy::add_ext(filename, FS_CAMPAIGN_FILE_EXT);
 
 	// open localization
 	lcl_ext_open();	
@@ -830,7 +845,7 @@ void mission_campaign_savefile_delete( char *cfilename )
 
 	sprintf( filename, NOX("%s.%s.csg"), Player->callsign, base ); // only support the new filename here - taylor
 
-	cf_delete( filename, CF_TYPE_PLAYERS );
+	cfile::deleteFile(filename, cfile::TYPE_PLAYERS);
 }
 
 void campaign_delete_save( char *cfn, char *pname)
@@ -847,28 +862,26 @@ void campaign_delete_save( char *cfn, char *pname)
  */
 void mission_campaign_delete_all_savefiles( char *pilot_name )
 {
-	int dir_type, num_files, i;
+	cfile::DirType dir_type;
+
 	char file_spec[MAX_FILENAME_LEN + 2], *ext;
-	char filename[1024];
-	int (*filter_save)(const char *filename);
-	SCP_vector<SCP_string> names;
 
 	ext = NOX(".csg");
-	dir_type = CF_TYPE_PLAYERS;
+	dir_type = cfile::TYPE_PLAYERS;
 
 	sprintf(file_spec, NOX("%s.*%s"), pilot_name, ext);
 
 	// HACK HACK HACK HACK!!!!  cf_get_file_list is not reentrant.  Pretty dumb because it should
 	// be.  I have to save any file filters
-	filter_save = Get_file_list_filter;
-	Get_file_list_filter = NULL;
-	num_files = cf_get_file_list(names, dir_type, const_cast<char *>(file_spec));
-	Get_file_list_filter = filter_save;
 
-	for (i=0; i<num_files; i++) {
-		strcpy_s(filename, names[i].c_str());
-		strcat_s(filename, ext);
-		cf_delete(filename, dir_type);
+	SCP_vector<SCP_string> names;
+
+	cfile::listFiles(names, dir_type, file_spec);
+
+	SCP_vector<SCP_string>::iterator iter;
+	for (iter = names.begin(); iter != names.end(); ++iter)
+	{
+		cfile::deleteFile(iter->append(ext), dir_type);
 	}
 }
 
@@ -1584,7 +1597,7 @@ void mission_campaign_maybe_play_movie(int type)
 /**
  * Return the type of campaign of the passed filename
  */
-int mission_campaign_parse_is_multi(char *filename, char *name)
+int mission_campaign_parse_is_multi(const char *filename, char *name)
 {	
 	int i, rval;
 	char temp[NAME_LENGTH];

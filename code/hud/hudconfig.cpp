@@ -30,10 +30,10 @@
 // Game-wide Globals
 //////////////////////////////////////////////////////////////////////////////
 
-#define MAX_HCF_FILES			30
 int HC_num_files = -1;						// num known hcf files
 int HC_current_file = -1;					// current hcf file
-char *HC_filenames[MAX_HCF_FILES];
+
+SCP_vector<SCP_string> HC_filenames;
 
 char HC_fname[MAX_FILENAME_LEN+1] = "";
 UI_INPUTBOX HC_fname_input;
@@ -1093,7 +1093,6 @@ void hud_config_handle_keypresses(int k)
 // Handlers for when buttons get pressed
 void hud_config_button_do(int n)
 {
-	int idx;
 	char name[256] = "";
 
 	switch (n) {
@@ -1222,32 +1221,22 @@ void hud_config_button_do(int n)
 		break;
 
 	case HCB_SAVE_HCF:		
-		int exists;
+		bool exists;
 		char *out;
 
 		// get the text in the input control
 		exists = 0;
 		HC_fname_input.get_text(name);
-		if(name[0] != '\0'){
+		if (name[0] != '\0'){
 			// if the filename in there already exists
-			for(idx=0; idx<HC_num_files; idx++){
-				if(!stricmp(HC_filenames[idx], name)){
-					exists = 1;
-				}
-			}
+			exists = std::find(HC_filenames.begin(), HC_filenames.end(), name) != HC_filenames.end();
 		}
 
 		// already exists?
 		if(exists){
 			// save the file			
-			out = cf_add_ext(name, ".hcf");
+			out = cfile::legacy::add_ext(name, ".hcf");
 			hud_config_color_save(out);
-			break;
-		}
-
-		// otherwise we have to create a new file
-		if(HC_num_files >= MAX_HCF_FILES){
-			popup(PF_USE_AFFIRMATIVE_ICON, 1, "OK", "Max number of hud config files reached!");
 			break;
 		}
 
@@ -1256,7 +1245,7 @@ void hud_config_button_do(int n)
 			sprintf(name, "hud_%d.hcf", HC_num_files + 1);
 			out = name;
 		} else {
-			out = cf_add_ext(name, ".hcf");
+			out = cfile::legacy::add_ext(name, ".hcf");
 		}
 		HC_filenames[HC_num_files++] = vm_strdup(out);
 		hud_config_color_save(out);		
@@ -1275,10 +1264,10 @@ void hud_config_button_do(int n)
 			HC_current_file--;
 		}
 		// load em up
-		hud_config_color_load(HC_filenames[HC_current_file]);
+		hud_config_color_load(HC_filenames[HC_current_file].c_str());
 		hud_config_synch_ui();
 
-		HC_fname_input.set_text(HC_filenames[HC_current_file]);
+		HC_fname_input.set_text(HC_filenames[HC_current_file].c_str());
 		break;
 
 	case HCB_NEXT_HCF:
@@ -1293,10 +1282,10 @@ void hud_config_button_do(int n)
 		}
 
 		// load em up		
-		hud_config_color_load(HC_filenames[HC_current_file]);
+		hud_config_color_load(HC_filenames[HC_current_file].c_str());
 		hud_config_synch_ui();
 
-		HC_fname_input.set_text(HC_filenames[HC_current_file]);
+		HC_fname_input.set_text(HC_filenames[HC_current_file].c_str());
 		break;
 
 	case HCB_SELECT_ALL:				
@@ -1616,7 +1605,7 @@ void hud_config_as_player()
 void hud_config_color_save(char *name)
 {
 	int idx;
-	CFILE *out = cfopen(name, "wt", CFILE_NORMAL, CF_TYPE_PLAYERS);
+	cfile::FileHandle *out = cfile::open(name, cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_PLAYERS);
 	char vals[255] = "";
 
 	// bad
@@ -1627,25 +1616,25 @@ void hud_config_color_save(char *name)
 
 	// write out all gauges
 	for(idx=0; idx<NUM_HUD_GAUGES; idx++){
-		cfputs("+Gauge: ", out);
-		cfputs(HC_gauge_descriptions(idx), out);		
-		cfputs("\n", out);
-		cfputs("+RGBA: ", out);
+		cfile::write<const char*>("+Gauge: ", out);
+		cfile::write<const char*>(HC_gauge_descriptions(idx), out);
+		cfile::write<const char*>("\n", out);
+		cfile::write<const char*>("+RGBA: ", out);
 		sprintf(vals, "%d %d %d %d\n\n", HUD_config.clr[idx].red, HUD_config.clr[idx].green, HUD_config.clr[idx].blue, HUD_config.clr[idx].alpha);
-		cfputs(vals, out);
+		cfile::write<const char*>(vals, out);
 	}
 	
 	// close the file
-	cfclose(out);	
+	cfile::close(out);	
 }
 
-void hud_config_color_load(char *name)
+void hud_config_color_load(const char *name)
 {
 	int idx, rval;
 	char str[1024];
 	char *fname;
 
-	fname = cf_add_ext(name, ".hcf");
+	fname = cfile::legacy::add_ext(name, ".hcf");
 
 	if ((rval = setjmp(parse_abort)) != 0) {
 		mprintf(("HUDCONFIG: Unable to parse '%s'!  Error code = %i.\n", fname, rval));
@@ -1804,21 +1793,12 @@ void hud_config_color_init()
 	HC_current_file = -1;
 
 	// get a list of all hcf files
-	memset(HC_filenames, 0, sizeof(char*) * MAX_HCF_FILES);
-	HC_num_files = cf_get_file_list(MAX_HCF_FILES, HC_filenames, CF_TYPE_PLAYERS, "*.hcf", CF_SORT_NAME);
+	cfile::listFiles(HC_filenames, cfile::TYPE_PLAYERS, "*.hcf", cfile::SORT_NAME);
 }
 
 void hud_config_color_close()
 {
-	int idx;
-
-	// free all 
-	for(idx=0; idx<HC_num_files; idx++){
-		if(HC_filenames[idx] != NULL){
-			vm_free(HC_filenames[idx]);
-			HC_filenames[idx] = NULL;
-		}
-	}
+	HC_filenames.clear();
 }
 
 void hud_config_select_all_toggle(int toggle)

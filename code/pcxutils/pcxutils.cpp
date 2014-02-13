@@ -37,10 +37,10 @@ typedef struct	{
 } PCXHeader;
 
 // reads header information from the PCX file into the bitmap pointer
-int pcx_read_header(const char *real_filename, CFILE *img_cfp, int *w, int *h, int *bpp, ubyte *pal )
+int pcx_read_header(const char *real_filename, cfile::FileHandle *img_cfp, int *w, int *h, int *bpp, ubyte *pal )
 {
 	PCXHeader header;
-	CFILE * PCXfile;
+	cfile::FileHandle * PCXfile;
 	char filename[MAX_FILENAME_LEN];
 	int i, j;
 
@@ -50,7 +50,7 @@ int pcx_read_header(const char *real_filename, CFILE *img_cfp, int *w, int *h, i
 		if ( p ) *p = 0;
 		strcat_s( filename, ".pcx" );
 
-		PCXfile = cfopen( filename , "rb" );
+		PCXfile = cfile::open(filename);
 		if ( !PCXfile )
 			return PCX_ERROR_OPENING;
 	} else {
@@ -58,9 +58,9 @@ int pcx_read_header(const char *real_filename, CFILE *img_cfp, int *w, int *h, i
 	}
 
 	// read 128 char PCX header
-	if (cfread( &header, sizeof(PCXHeader), 1, PCXfile )!=1)	{
+	if (cfile::read( &header, sizeof(PCXHeader), 1, PCXfile )!=1)	{
 		if (img_cfp == NULL)
-			cfclose( PCXfile );
+			cfile::close( PCXfile );
 		return PCX_ERROR_NO_HEADER;
 	}
 
@@ -86,7 +86,7 @@ int pcx_read_header(const char *real_filename, CFILE *img_cfp, int *w, int *h, i
 	// Is it a 256 color PCX file?
 	if ((header.Manufacturer != 10)||(header.Encoding != 1)||(header.Nplanes != 1)||(header.BitsPerPixel != 8)||(header.Version != 5))	{
 		if (img_cfp == NULL)
-			cfclose( PCXfile );
+			cfile::close( PCXfile );
 		return PCX_ERROR_WRONG_VERSION;
 	}
 
@@ -95,12 +95,12 @@ int pcx_read_header(const char *real_filename, CFILE *img_cfp, int *w, int *h, i
 	if (bpp) *bpp = header.BitsPerPixel;
 	
 	if ( pal ) {
-		cfseek( PCXfile, -768, CF_SEEK_END );
-		cfread( pal, 3, 256, PCXfile );
+		cfile::seek( PCXfile, -768, cfile::SEEK_MODE_END );
+		cfile::read( pal, 3, 256, PCXfile );
 	}
 
 	if (img_cfp == NULL)
-		cfclose(PCXfile);
+		cfile::close(PCXfile);
 
 	return PCX_ERROR_NONE;
 }
@@ -214,10 +214,10 @@ typedef struct { ubyte b, g, r, a; } COLOR32;
 #endif
 
 //int pcx_read_bitmap_16bpp( char * real_filename, ubyte *org_data, ubyte bpp, int aabitmap, int nondark )
-int pcx_read_bitmap( const char * real_filename, ubyte *org_data, ubyte *pal, int byte_size, int aabitmap, int nondark, int cf_type )
+int pcx_read_bitmap( const char * real_filename, ubyte *org_data, ubyte *pal, int byte_size, int aabitmap, int nondark, cfile::DirType cf_type )
 {
 	PCXHeader header;
-	CFILE * PCXfile;
+	cfile::FileHandle * PCXfile;
 	int row, col, count, xsize, ysize;
 	ubyte data=0;
 	int buffer_size, buffer_pos;
@@ -235,15 +235,15 @@ int pcx_read_bitmap( const char * real_filename, ubyte *org_data, ubyte *pal, in
 	strcat_s( filename, ".pcx" );
 
 	
-	PCXfile = cfopen( filename , "rb", CFILE_NORMAL, cf_type );
+	PCXfile = cfile::open( filename , cfile::MODE_READ, cfile::OPEN_NORMAL, cf_type );
 	if ( !PCXfile ){
 	
 		return PCX_ERROR_OPENING;
 	}
 
 	// read 128 char PCX header
-	if (cfread( &header, sizeof(PCXHeader), 1, PCXfile )!=1)	{
-		cfclose( PCXfile );
+	if (cfile::read( &header, sizeof(PCXHeader), 1, PCXfile )!=1)	{
+		cfile::close( PCXfile );
 	
 		return PCX_ERROR_NO_HEADER;
 	}
@@ -258,7 +258,7 @@ int pcx_read_bitmap( const char * real_filename, ubyte *org_data, ubyte *pal, in
 
 	// Is it a 256 color PCX file?
 	if ((header.Manufacturer != 10)||(header.Encoding != 1)||(header.Nplanes != 1)||(header.BitsPerPixel != 8)||(header.Version != 5))	{
-		cfclose( PCXfile );
+		cfile::close( PCXfile );
 	
 		return PCX_ERROR_WRONG_VERSION;
 	}
@@ -271,16 +271,16 @@ int pcx_read_bitmap( const char * real_filename, ubyte *org_data, ubyte *pal, in
 	// Read the extended palette at the end of PCX file
 	// Read in a character which should be 12 to be extended palette file
 
-	cfseek( PCXfile, -768, CF_SEEK_END );
-	cfread( palette, 1, (3 * 256), PCXfile );
-	cfseek( PCXfile, sizeof(PCXHeader), CF_SEEK_SET );
+	cfile::seek( PCXfile, -768, cfile::SEEK_MODE_END );
+	cfile::read( palette, 1, (3 * 256), PCXfile );
+	cfile::seek( PCXfile, sizeof(PCXHeader), cfile::SEEK_MODE_SET );
 	
 	buffer_size = 1024;
 	buffer_pos = 0;
 	
 //	Assert( buffer_size == 1024 );	// AL: removed to avoid optimized warning 'unreachable code'
 	
-	buffer_size = cfread( buffer, 1, buffer_size, PCXfile );
+	buffer_size = cfile::read( buffer, 1, buffer_size, PCXfile );
 
 	count = 0;
 
@@ -291,7 +291,7 @@ int pcx_read_bitmap( const char * real_filename, ubyte *org_data, ubyte *pal, in
 			if ( count == 0 )	{
 				data = buffer[buffer_pos++];
 				if ( buffer_pos == buffer_size )	{
-					buffer_size = cfread( buffer, 1, buffer_size, PCXfile );
+					buffer_size = cfile::read( buffer, 1, buffer_size, PCXfile );
 					Assert( buffer_size > 0 );
 					buffer_pos = 0;
 				}
@@ -299,7 +299,7 @@ int pcx_read_bitmap( const char * real_filename, ubyte *org_data, ubyte *pal, in
 					count = data & 0x3F;
 					data = buffer[buffer_pos++];
 					if ( buffer_pos == buffer_size )	{
-						buffer_size = cfread( buffer, 1, buffer_size, PCXfile );
+						buffer_size = cfile::read( buffer, 1, buffer_size, PCXfile );
 						Assert( buffer_size > 0 );
 						buffer_pos = 0;
 					}
@@ -379,7 +379,7 @@ int pcx_read_bitmap( const char * real_filename, ubyte *org_data, ubyte *pal, in
 		org_data += (xsize * byte_size);
 	}
 	
-	cfclose(PCXfile);
+	cfile::close(PCXfile);
 	
 	return PCX_ERROR_NONE;
 }

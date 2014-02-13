@@ -254,7 +254,7 @@ void parse_medal_tbl()
 		return;
 	}
 
-	read_file_text("medals.tbl", CF_TYPE_TABLES);
+	read_file_text("medals.tbl", cfile::TYPE_TABLES);
 	reset_parse();
 
 	required_string("#Medals");

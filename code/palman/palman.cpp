@@ -70,7 +70,7 @@ void palman_load_pixels()
 	}
 
 	// open pixels.tbl
-	read_file_text("pixels.tbl", CF_TYPE_TABLES);
+	read_file_text("pixels.tbl", cfile::TYPE_TABLES);
 	reset_parse();
 
 	// parse pixels	
@@ -141,16 +141,16 @@ void palette_load_table( const char * filename )
 	pcx_error = pcx_read_header(palette_base_filename, NULL, &w, &h, NULL, palette_org );
 	if ( pcx_error != PCX_ERROR_NONE )	{
 		// Read the old .256 file
-		CFILE *fp;
+		cfile::FileHandle *fp;
 		int fsize;
-		fp = cfopen( palette_base_filename, "rb" );
+		fp = cfile::open(palette_base_filename);
 		if ( fp==NULL)
 			Error( LOCATION, "Can't open palette file <%s>",palette_base_filename);
 
-		fsize	= cfilelength( fp );
+		fsize	= cfile::fileLength( fp );
 		Assert( fsize == 9472 );
-		cfread( palette_org, 256*3, 1, fp );
-		cfclose(fp);
+		cfile::read( palette_org, 256*3, 1, fp );
+		cfile::close(fp);
 
 		for (i=0; i<768; i++ )	{	
 			palette_org[i] = ubyte((palette_org[i]*255)/63);
@@ -275,51 +275,11 @@ uint palette_find( int r, int g, int b )
 #define PAL_VERSION  20
 #define PAL_LAST_COMPATIBLE_VERSION 20
 
-void palette_write_cached1( char *name )
-{
-	CFILE *fp;
-	char new_name[128];
-
-	strcpy_s( new_name, name );
-	strcat_s( new_name, ".clr" );
-	
-//	mprintf(( "Writing palette cache file '%s'\n", new_name ));
-
-	fp = cfopen( new_name, "wb", CFILE_NORMAL, CF_TYPE_CACHE );
-	if ( !fp ) return;
-	
-	cfwrite_uint( PAL_ID, fp );
-	cfwrite_int(PAL_VERSION, fp );
-	cfwrite( &gr_palette_checksum, 4, 1, fp );
-
-	cfwrite_compressed( &gr_palette, 256*3, 1, fp );						// < 1 KB
-
-	cfwrite_compressed( &palette_lookup, LOOKUP_SIZE, 1, fp );			// 256KB
-	
-	if ( palette_fade_table_calculated )	{
-		cfwrite_int(1,fp);
-		cfwrite_int(Gr_gamma_int,fp);
-		cfwrite_compressed( &gr_fade_table,   256*34*2, 1, fp );		// 17KB
-	} else {
-		cfwrite_int(0,fp);
-	}
-	
-	if ( palette_blend_table_calculated )	{
-		cfwrite_int(NUM_BLEND_TABLES,fp);
-		cfwrite_compressed( &palette_blend_table,  256*256, NUM_BLEND_TABLES, fp );	//64KB*
-	} else {
-		cfwrite_int(0,fp);
-	}
-
-	cfclose(fp);
-//	mprintf(( "Done.\n" ));
-}
-
 // Returns TRUE if successful, else 0
 
 int palette_read_cached( char *name )
 {
-	CFILE *fp;
+	cfile::FileHandle *fp;
 	char new_name[128];
 	int version;
 	uint id, new_checksum;
@@ -330,7 +290,7 @@ int palette_read_cached( char *name )
 
 //	mprintf(( "Reading palette '%s'\n", name ));
 	
-	fp = cfopen( new_name, "rb", CFILE_NORMAL, CF_TYPE_CACHE );
+	fp = cfile::open(new_name, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_CACHE);
 
 	// Couldn't find file
 	if ( !fp ) {
@@ -338,41 +298,41 @@ int palette_read_cached( char *name )
 		return 0;
 	}
 
-	id  = cfread_uint( fp );
+	id  = cfile::read<uint>( fp );
 	if ( id != PAL_ID )	{
 		mprintf(( "Cached palette file has incorrect ID\n" ));
-		cfclose(fp);
+		cfile::close(fp);
 		return 0;
 	}
-	version = cfread_int( fp );
+	version = cfile::read<int>( fp );
 	if ( version < PAL_LAST_COMPATIBLE_VERSION ) {
 		mprintf(( "Cached palette file is an older incompatible version\n" ));
-		cfclose(fp);
+		cfile::close(fp);
 		return 0;
 	}
 	
-	cfread( &new_checksum, 4, 1, fp );
+	cfile::read( &new_checksum, 4, 1, fp );
 	if ( gr_palette_checksum != new_checksum )	{
 		mprintf(( "Cached palette file is out of date (Checksum)\n" ));
-		cfclose(fp);
+		cfile::close(fp);
 		return 0;
 	}
 
-	cfread_compressed( &new_palette, 256*3, 1, fp );
+	cfile::legacy::read_compressed( &new_palette, 256*3, 1, fp );
 	if ( memcmp( new_palette, gr_palette, 768 ) )	{
 		mprintf(( "Cached palette file is out of date (Contents)\n" ));
-		cfclose(fp);
+		cfile::close(fp);
 		return 0;
 	}
 
-	cfread_compressed( &palette_lookup, LOOKUP_SIZE, 1, fp );			// 256KB
+	cfile::legacy::read_compressed(&palette_lookup, LOOKUP_SIZE, 1, fp);			// 256KB
 
-	int fade_table_saved = cfread_int(fp);
+	int fade_table_saved = cfile::read<int>(fp);
 	
 	if ( fade_table_saved )	{
 		int new_gamma;
-		cfread( &new_gamma, 4, 1, fp );
-		cfread_compressed( &gr_fade_table,   256*34*2, 1, fp );		// 17KB
+		cfile::read( &new_gamma, 4, 1, fp );
+		cfile::legacy::read_compressed(&gr_fade_table, 256 * 34 * 2, 1, fp);		// 17KB
 		if ( new_gamma == Gr_gamma_int )	{
 			palette_fade_table_calculated = 1;
 		} else {
@@ -382,15 +342,15 @@ int palette_read_cached( char *name )
 		palette_fade_table_calculated = 0;
 	}
 	
-	int num_blend_tables_saved = cfread_int(fp);
+	int num_blend_tables_saved = cfile::read<int>(fp);
 	if ( (num_blend_tables_saved == NUM_BLEND_TABLES) && (num_blend_tables_saved>0))	{
 		palette_blend_table_calculated = 1;
-		cfread_compressed( &palette_blend_table,  256*256, NUM_BLEND_TABLES, fp );	//64KB*
+		cfile::legacy::read_compressed(&palette_blend_table, 256 * 256, NUM_BLEND_TABLES, fp);	//64KB*
 	} else {
 		palette_blend_table_calculated = 0;
 	}
 
-	cfclose(fp);
+	cfile::close(fp);
 
 //	mprintf(( "Done.\n" ));
 

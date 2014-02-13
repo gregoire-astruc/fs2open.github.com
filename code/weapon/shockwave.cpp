@@ -523,7 +523,7 @@ void shockwave_level_init()
 		// chief1983 - Spicious added this check for the command line option.  I've modified the hardcoded "shockwave.pof" that existed in the check 
 		// 	to use the static name instead, and added a check to override the command line if a 2d default filename is not found
 		//  Note - The 3d shockwave flag is forced on by TBP's flag as of rev 4983
-		if ( Cmdline_enable_3d_shockwave && cf_exists_full(Default_shockwave_3D_filename, CF_TYPE_MODELS) ) {
+		if ( Cmdline_enable_3d_shockwave && cfile::exists(Default_shockwave_3D_filename, cfile::TYPE_MODELS) ) {
 			mprintf(("SHOCKWAVE =>  Loading default shockwave model... \n"));
 
 			i = shockwave_load( Default_shockwave_3D_filename, true );
@@ -550,7 +550,7 @@ void shockwave_level_init()
 		// chief1983 - The first patch broke mods that don't provide a 2d shockwave or define a specific shockwave for each model/weapon (shame on them)
 		// The next patch involved a direct copy of the attempt above, with an i < 0 check in place of the command line check.  I've taken that and modified it to 
 		// spit out a more meaningful message.  Might as well not bother trying again if the command line option was checked as it should have tried the first time through
-		if ( i < 0 && !Cmdline_enable_3d_shockwave && cf_exists_full(Default_shockwave_3D_filename, CF_TYPE_MODELS) ) {
+		if (i < 0 && !Cmdline_enable_3d_shockwave && cfile::exists(Default_shockwave_3D_filename, cfile::TYPE_MODELS)) {
 			mprintf(("SHOCKWAVE =>  Loading default shockwave model as last resort... \n"));
 
 			i = shockwave_load( Default_shockwave_3D_filename, true );

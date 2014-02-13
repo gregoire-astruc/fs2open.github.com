@@ -55,12 +55,11 @@ set (file_root_camera
 # CFile files
 set (file_root_cfile
 	cfile/cfile.cpp
+	cfile/VPFileSystem.cpp
+	cfile/VPFileSystemEntry.cpp
 	cfile/cfile.h
-	cfile/cfilearchive.cpp
-	cfile/cfilearchive.h
-	cfile/cfilelist.cpp
-	cfile/cfilesystem.cpp
-	cfile/cfilesystem.h
+	cfile/VPFileSystem.h
+	cfile/VPFileSystemEntry.h
 )
 
 # Cmdline files

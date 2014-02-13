@@ -783,7 +783,7 @@ void parse_aitbl()
 	// open localization
 	lcl_ext_open();
 
-	read_file_text("ai.tbl", CF_TYPE_TABLES);
+	read_file_text("ai.tbl", cfile::TYPE_TABLES);
 	reset_parse();
 
 	//Just in case parse_aitbl is called twice

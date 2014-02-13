@@ -88,7 +88,7 @@ void parse_ai_profiles_tbl(const char *filename)
 	if (filename == NULL)
 		read_file_text_from_array(defaults_get_file("ai_profiles.tbl"));
 	else
-		read_file_text(filename, CF_TYPE_TABLES);
+		read_file_text(filename, cfile::TYPE_TABLES);
 
 	reset_parse();		
 
@@ -534,7 +534,7 @@ void ai_profiles_init()
 	parse_ai_profiles_tbl(NULL);
 
 	// now parse the supplied table (if any)
-	if (cf_exists_full("ai_profiles.tbl", CF_TYPE_TABLES))
+	if (cfile::exists("ai_profiles.tbl", cfile::TYPE_TABLES))
 		parse_ai_profiles_tbl("ai_profiles.tbl");
 
 	// parse any modular tables

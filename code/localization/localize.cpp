@@ -79,7 +79,7 @@ int Xstr_inited = 0;
 #define TABLE_STRING_FILENAME						"tstrings.tbl"
 // filename of the file to use when localizing table strings
 char *Lcl_ext_filename = NULL;
-CFILE *Lcl_ext_file = NULL;
+cfile::FileHandle *Lcl_ext_file = NULL;
 
 // for scanning/parsing tstrings.tbl (from ExStr)
 #define PARSE_TEXT_BUF_SIZE			PARSE_BUF_SIZE
@@ -247,7 +247,7 @@ void parse_stringstbl_quick(const char *filename)
 	// make sure localization is NOT running
 	lcl_ext_close();
 
-	read_file_text(filename, CF_TYPE_TABLES);
+	read_file_text(filename, cfile::TYPE_TABLES);
 	reset_parse();
 
 	if (optional_string("#Supported Languages")) {
@@ -299,7 +299,7 @@ void parse_stringstbl(const char *filename)
 	// make sure localization is NOT running
 	lcl_ext_close();
 
-	read_file_text(filename, CF_TYPE_TABLES);
+	read_file_text(filename, cfile::TYPE_TABLES);
 	reset_parse();
 
 	// move down to the proper section		
@@ -570,7 +570,7 @@ void lcl_ext_open()
 	}
 
 	// otherwise open the file
-	Lcl_ext_file = cfopen(Lcl_ext_filename, "rt");
+	Lcl_ext_file = cfile::open(Lcl_ext_filename);
 	if(Lcl_ext_file == NULL){
 		return;
 	}		
@@ -590,7 +590,7 @@ void lcl_ext_close()
 	}
 		
 	// otherwise close it
-	cfclose(Lcl_ext_file);
+	cfile::close(Lcl_ext_file);
 	Lcl_ext_file = NULL;
 }
 
@@ -1164,7 +1164,7 @@ int lcl_ext_lookup(char *out, int id)
 
 	// seek to the closest pointer <= the id# we're looking for
 	pointer = id / LCL_GRANULARITY;
-	cfseek(Lcl_ext_file, Lcl_pointers[pointer], CF_SEEK_SET);
+	cfile::seek(Lcl_ext_file, Lcl_pointers[pointer], cfile::SEEK_MODE_SET);
 
 	// reset parsing vars and go to town
 	Ts_current_state = TS_SCANNING;
@@ -1172,7 +1172,7 @@ int lcl_ext_lookup(char *out, int id)
 //	Ts_text_size;
 	memset(Ts_text, 0, PARSE_TEXT_BUF_SIZE);
 	memset(Ts_id_text, 0, PARSE_ID_BUF_SIZE);
-	while((cftell(Lcl_ext_file) < Lcl_pointers[Lcl_pointer_count - 1]) && cfgets(text, 1024, Lcl_ext_file)){
+	while ((cfile::tell(Lcl_ext_file) < Lcl_pointers[Lcl_pointer_count - 1]) && cfile::readLine(text, 1024, Lcl_ext_file)){
 		ret = lcl_ext_lookup_sub(text, out, id);
 			
 		// run the line parse function		
@@ -1371,7 +1371,7 @@ void lcl_ext_setup_pointers()
 
 	// reset seek variables and begin		
 	Lcl_pointer_count = 0;
-	while(cfgets(line, 1024, Lcl_ext_file)){
+	while (cfile::readLine(line, 1024, Lcl_ext_file)){
 		tok = strtok(line, " \n");
 		if(tok == NULL){
 			continue;			
@@ -1392,7 +1392,7 @@ void lcl_ext_setup_pointers()
 	}
 
 	string_count = 0;	
-	while(cfgets(line, 1024, Lcl_ext_file)){
+	while (cfile::readLine(line, 1024, Lcl_ext_file)){
 		ret = lcl_ext_lookup_sub(line, NULL, -1);
 
 		// do stuff
@@ -1405,7 +1405,7 @@ void lcl_ext_setup_pointers()
 		// end of language found
 		case 3 :
 			// mark one final pointer
-			Lcl_pointers[Lcl_pointer_count++] = cftell(Lcl_ext_file) - strlen(line) - 1;
+			Lcl_pointers[Lcl_pointer_count++] = cfile::tell(Lcl_ext_file) - strlen(line) - 1;
 			lcl_ext_close();
 			return;
 		}
@@ -1414,7 +1414,7 @@ void lcl_ext_setup_pointers()
 		if(ret & (1<<31)){		
 			if((string_count % LCL_GRANULARITY) == 0){
 				// mark the pointer down
-				Lcl_pointers[Lcl_pointer_count++] = cftell(Lcl_ext_file) - strlen(line) - 1;
+				Lcl_pointers[Lcl_pointer_count++] = cfile::tell(Lcl_ext_file) - strlen(line) - 1;
 
 				// if we're out of pointer slots
 				if(Lcl_pointer_count >= LCL_MAX_POINTERS){

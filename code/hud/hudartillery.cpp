@@ -71,7 +71,7 @@ void ssm_init()
 		return;
 	}
 
-	read_file_text("ssm.tbl", CF_TYPE_TABLES);
+	read_file_text("ssm.tbl", cfile::TYPE_TABLES);
 	reset_parse();
 
 	// parse the table

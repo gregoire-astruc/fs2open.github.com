@@ -35,7 +35,6 @@
 #include "graphics/generic.h"
 #include "io/timer.h"
 #include "inetfile/inetgetfile.h"
-#include "cfile/cfilesystem.h"
 #include "osapi/osregistry.h"
 #include "parse/parselo.h"
 #include "stats/scoring.h"
@@ -3687,14 +3686,14 @@ void multi_pxo_set_end_of_motd()
 	uint new_chksum;
 
 	// checksum the current motd		
-	new_chksum = cf_add_chksum_long(0, (ubyte*)Pxo_motd, strlen(Pxo_motd));		
+	new_chksum = cfile::checksum::crc::addLong(0, (ubyte*)Pxo_motd, strlen(Pxo_motd));
 
 	// checksum the old motd if its lying around
-	CFILE *in = cfopen("oldmotd.txt", "rb");
+	cfile::FileHandle *in = cfile::open("oldmotd.txt");
 	if(in != NULL){
 		// read the old checksum
-		cfread(&old_chksum, sizeof(old_chksum), 1, in);
-		cfclose(in);
+		cfile::read(&old_chksum, sizeof(old_chksum), 1, in);
+		cfile::close(in);
 		
 		// same checksum? no blink
 		if(new_chksum == old_chksum){
@@ -3704,13 +3703,13 @@ void multi_pxo_set_end_of_motd()
 	
 	// write out the motd for next time
 	if(strlen(Pxo_motd)){
-		CFILE *out = cfopen("oldmotd.txt", "wb", CFILE_NORMAL, CF_TYPE_DATA);
+		cfile::FileHandle *out = cfile::open("oldmotd.txt", cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_DATA);
 		if(out != NULL){
 			// write all the text
-			cfwrite(&new_chksum, sizeof(new_chksum), 1, out);
+			cfile::write(&new_chksum, sizeof(new_chksum), 1, out);
 			
 			// close the outfile
-			cfclose(out);
+			cfile::close(out);
 		}
 	}
 	
@@ -4911,12 +4910,12 @@ void multi_pxo_help_close()
  */
 void multi_pxo_help_load()
 {
-	CFILE *in;	
+	cfile::FileHandle *in;	
 	help_page *cp;	
 
 	// read in the text file
 	in = NULL;
-	in = cfopen(MULTI_PXO_HELP_FILE,"rt",CFILE_NORMAL,CF_TYPE_DATA);			
+	in = cfile::open(MULTI_PXO_HELP_FILE, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_DATA);			
 	Assert(in != NULL);
 	if(in == NULL){
 		return;
@@ -4929,7 +4928,7 @@ void multi_pxo_help_load()
 	Multi_pxo_help_num_pages = 0;
 	cp = &Multi_pxo_help_pages[0];
 
-	while(!cfeof(in)){
+	while(!cfile::eof(in)){
 		// malloc the line
 		cp->text[cp->num_lines] = (char*)vm_malloc(Multi_pxo_chars_per_line[gr_screen.res]);
 		if(cp->text[cp->num_lines] == NULL){
@@ -4937,7 +4936,7 @@ void multi_pxo_help_load()
 		}
 		
 		// read in the next line		
-		cfgets(cp->text[cp->num_lines++], Multi_pxo_chars_per_line[gr_screen.res], in);
+		cfile::readLine(cp->text[cp->num_lines++], Multi_pxo_chars_per_line[gr_screen.res], in);
 
 		// skip to the next page if necessary
 		if(cp->num_lines == Multi_pxo_lines_pp[gr_screen.res]){			
@@ -4952,7 +4951,7 @@ void multi_pxo_help_load()
 	}
 
 	// close the file
-	cfclose(in);
+	cfile::close(in);
 }
 
 /**
@@ -5074,7 +5073,6 @@ void multi_pxo_ban_init()
 void multi_pxo_ban_process()
 {
 	char url_string[512] = "";
-	char local_file[512] = "";
 
 	// process stuff
 	switch(Multi_pxo_ban_mode){
@@ -5082,9 +5080,6 @@ void multi_pxo_ban_process()
 	case PXO_BAN_MODE_LIST_STARTUP:		
 		// remote file
 		sprintf(url_string, "http://www.pxo.net/files/%s", PXO_BANNERS_CONFIG_FILE);
-
-		// local file
-		cf_create_default_path_string(local_file, sizeof(local_file) - 1, CF_TYPE_MULTI_CACHE, PXO_BANNERS_CONFIG_FILE);
 
 		// try creating the file get object
 		Multi_pxo_ban_get = NULL;
@@ -5133,13 +5128,10 @@ void multi_pxo_ban_process()
 		}
 
 		// if the file already exists, we're done
-		if ( cf_exists(Multi_pxo_banner.ban_file, CF_TYPE_MULTI_CACHE) ) {
+		if ( cfile::exists(Multi_pxo_banner.ban_file, cfile::TYPE_MULTI_CACHE) ) {
 			Multi_pxo_ban_mode = PXO_BAN_MODE_IMAGES_DONE;
 			break;
 		}
-
-		// otherwise try and download it				
-		cf_create_default_path_string(local_file, sizeof(local_file) - 1, CF_TYPE_MULTI_CACHE, Multi_pxo_banner.ban_file);
 
 		// try creating the file get object
 		Multi_pxo_ban_get = NULL;
@@ -5232,7 +5224,7 @@ void multi_pxo_ban_parse_banner_file(int choose_existing)
 	int exists[10];
 	int exist_count;
 	int num_banners, idx;
-	CFILE *in = cfopen(PXO_BANNERS_CONFIG_FILE, "rt", CFILE_NORMAL, CF_TYPE_MULTI_CACHE);
+	cfile::FileHandle *in = cfile::open(PXO_BANNERS_CONFIG_FILE, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_MULTI_CACHE);
 
 	Multi_pxo_banner.ban_bitmap = -1;
 	strcpy_s(Multi_pxo_banner.ban_file, "");
@@ -5251,9 +5243,9 @@ void multi_pxo_ban_parse_banner_file(int choose_existing)
 	}
 
 	// get the global banner url
-	if(cfgets(file_url, 254, in) == NULL){
-		cfclose(in);
-		cf_delete(PXO_BANNERS_CONFIG_FILE, CF_TYPE_MULTI_CACHE);
+	if(cfile::readLine(file_url, 254, in) == NULL){
+		cfile::close(in);
+		cfile::deleteFile(PXO_BANNERS_CONFIG_FILE, cfile::TYPE_MULTI_CACHE);
 		return;
 	}
 	drop_leading_white_space(file_url);
@@ -5263,11 +5255,11 @@ void multi_pxo_ban_parse_banner_file(int choose_existing)
 	num_banners = 0;
 	while(num_banners < 10){
 		// try and get the pcx
-		if(cfgets(banners[num_banners], 254, in) == NULL){
+		if(cfile::readLine(banners[num_banners], 254, in) == NULL){
 			break;
 		}
 		// try and get the url
-		if(cfgets(urls[num_banners], 254, in) == NULL){
+		if (cfile::readLine(urls[num_banners], 254, in) == NULL){
 			break;
 		}
 
@@ -5282,7 +5274,7 @@ void multi_pxo_ban_parse_banner_file(int choose_existing)
 	}
 
 	// close the file
-	cfclose(in);
+	cfile::close(in);
 
 	// no banners
 	if(num_banners <= 0){		
@@ -5299,7 +5291,7 @@ void multi_pxo_ban_parse_banner_file(int choose_existing)
 		// build a list of existing files
 		exist_count = 0;
 		for (idx = 0; idx < num_banners; idx++) {
-			if ( cf_exists(banners[idx], CF_TYPE_MULTI_CACHE) ) {
+			if (cfile::exists(banners[idx], cfile::TYPE_MULTI_CACHE)) {
 				exists[idx] = 1;
 				exist_count++;
 			}

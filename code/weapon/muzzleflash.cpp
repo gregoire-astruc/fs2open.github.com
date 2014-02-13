@@ -95,7 +95,7 @@ void parse_mflash_tbl(const char *filename)
 		return;
 	}
 
-	read_file_text(filename, CF_TYPE_TABLES);
+	read_file_text(filename, cfile::TYPE_TABLES);
 	reset_parse();		
 
 	// header

@@ -171,7 +171,7 @@ void nebl_init()
 	}
 
 	// parse the lightning table
-	read_file_text("lightning.tbl", CF_TYPE_TABLES);
+	read_file_text("lightning.tbl", cfile::TYPE_TABLES);
 	reset_parse();
 
 	// parse the individual lightning bolt types

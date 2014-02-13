@@ -63,7 +63,7 @@ static int model_initted = 0;
 extern int Cmdline_nohtl;
 
 #ifndef NDEBUG
-CFILE *ss_fp = NULL;			// file pointer used to dump subsystem information
+cfile::FileHandle *ss_fp = NULL;			// file pointer used to dump subsystem information
 char  model_filename[_MAX_PATH];		// temp used to store filename
 char	debug_name[_MAX_PATH];
 int ss_warning_shown = 0;		// have we shown the warning dialog concerning the subsystems?
@@ -657,7 +657,7 @@ void do_new_subsystem( int n_subsystems, model_subsystem *slist, int subobj_num,
 		mprintf(("A subsystem was found in model %s that does not have a record in ships.tbl.\nA list of subsystems for this ship will be dumped to:\n\ndata%stables%s%s.subsystems for inclusion\ninto ships.tbl.\n", model_filename, DIR_SEPARATOR_STR, DIR_SEPARATOR_STR, bname));
 		char tmp_buffer[128];
 		sprintf(tmp_buffer, "$Subsystem:\t\t\t%s,1,0.0\n", subobj_name);
-		cfputs(tmp_buffer, ss_fp);
+		cfile::write<const char*>(tmp_buffer, ss_fp);
 	}
 #endif
 
@@ -748,11 +748,11 @@ void create_vertex_buffer(polymodel *pm)
 		if ( pb ) *pb = 0;
 		strcat_s( ibuffer_info.name, NOX(".bx") );
 
-		ibuffer_info.read = cfopen( ibuffer_info.name, "rb", CFILE_NORMAL, CF_TYPE_CACHE );
+		ibuffer_info.read = cfile::open( ibuffer_info.name, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_CACHE );
 
 		// check if it's a zero size file and if so bail out to create a new one
-		if ( (ibuffer_info.read != NULL) && !cfilelength(ibuffer_info.read) ) {
-			cfclose( ibuffer_info.read );
+		if ( (ibuffer_info.read != NULL) && !cfile::fileLength(ibuffer_info.read) ) {
+			cfile::close( ibuffer_info.read );
 			ibuffer_info.read = NULL;
 		}
 
@@ -761,16 +761,16 @@ void create_vertex_buffer(polymodel *pm)
 
 			// grab a checksum of the IBX, for debugging purposes
 			uint ibx_checksum = 0;
-			cfseek(ibuffer_info.read, 0, SEEK_SET);
-			cf_chksum_long(ibuffer_info.read, &ibx_checksum);
-			cfseek(ibuffer_info.read, 0, SEEK_SET);
+			cfile::seek(ibuffer_info.read, 0, cfile::SEEK_MODE_SET);
+			cfile::checksum::crc::doLong(ibuffer_info.read, &ibx_checksum);
+			cfile::seek(ibuffer_info.read, 0, cfile::SEEK_MODE_SET);
 
 			// get the file size that we use to safety check with.
 			// be sure to subtract from this when we read something out
-			ibuffer_info.size = cfilelength( ibuffer_info.read );
+			ibuffer_info.size = cfile::fileLength( ibuffer_info.read );
 
 			// file id
-			int ibx = cfread_int( ibuffer_info.read );
+			int ibx = cfile::read<int>( ibuffer_info.read );
 			ibuffer_info.size -= sizeof(int); // subtract
 
 			// make sure the file is valid
@@ -783,7 +783,7 @@ void create_vertex_buffer(polymodel *pm)
 
 			if (ibx_valid) {
 				// file is valid so grab the checksum out of the .bx and verify it matches the POF
-				uint ibx_sum = cfread_uint( ibuffer_info.read );
+				uint ibx_sum = cfile::read<uint>( ibuffer_info.read );
 				ibuffer_info.size -= sizeof(uint); // subtract
 
 				if (ibx_sum != Global_checksum) {
@@ -796,7 +796,7 @@ void create_vertex_buffer(polymodel *pm)
 
 
 			if ( !ibx_valid ) {
-				cfclose( ibuffer_info.read );
+				cfile::close( ibuffer_info.read );
 				ibuffer_info.read = NULL;
 				ibuffer_info.size = 0;
 			} else {
@@ -807,16 +807,16 @@ void create_vertex_buffer(polymodel *pm)
 
 		// if the read file is absent or invalid then write out the new info
 		if (ibuffer_info.read == NULL) {
-			ibuffer_info.write = cfopen( ibuffer_info.name, "wb", CFILE_NORMAL, CF_TYPE_CACHE );
+			ibuffer_info.write = cfile::open( ibuffer_info.name, cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_CACHE );
 
 			if (ibuffer_info.write != NULL) {
 				mprintf(("IBX: Starting a new IBX for '%s'.\n", pm->filename));
 
 				// file id, default to version 1
-				cfwrite_int( 0x58422020, ibuffer_info.write ); // "XB  " - ("  BX" in file)
+				cfile::write<int>( 0x58422020, ibuffer_info.write ); // "XB  " - ("  BX" in file)
 
 				// POF checksum
-				cfwrite_uint( Global_checksum, ibuffer_info.write );
+				cfile::write<uint>( Global_checksum, ibuffer_info.write );
 			}
 		}
 	} // End IBX code
@@ -828,11 +828,11 @@ void create_vertex_buffer(polymodel *pm)
 
 	// these must be reset to NULL for the tests to work correctly later
 	if (ibuffer_info.read != NULL) {
-		cfclose( ibuffer_info.read );
+		cfile::close( ibuffer_info.read );
 	}
 
 	if (ibuffer_info.write != NULL) {
-		cfclose( ibuffer_info.write );
+		cfile::close( ibuffer_info.write );
 	}
 
 	memset( &ibuffer_info, 0, sizeof(IBX) );
@@ -945,9 +945,9 @@ void parse_triggers(int &n_trig, queued_animation **triggers, char *props);
 
 
 //reads a binary file containing a 3d model
-int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subsystem *subsystems, int ferror)
+int read_model_file(polymodel * pm, const char *filename, int n_subsystems, model_subsystem *subsystems, int ferror)
 {
-	CFILE *fp;
+	cfile::FileHandle *fp;
 	int version;
 	int id, len, next_chunk;
 	int i,j;
@@ -961,7 +961,7 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 	//char pwd[128];
 	//getcwd(pwd, 128);
 
-	fp = cfopen(filename,"rb");
+	fp = cfile::open(filename);
 
 	if (!fp) {
 		if (ferror == 1) {
@@ -974,31 +974,11 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 	}		
 
 	// generate checksum for the POF
-	cfseek(fp, 0, SEEK_SET);	
-	cf_chksum_long(fp, &Global_checksum);
-	cfseek(fp, 0, SEEK_SET);
+	cfile::seek(fp, 0, cfile::SEEK_MODE_SET);
+	cfile::checksum::crc::doLong(fp, &Global_checksum);
+	cfile::seek(fp, 0, cfile::SEEK_MODE_SET);
 
-
-	// code to get a filename to write out subsystem information for each model that
-	// is read.  This info is essentially debug stuff that is used to help get models
-	// into the game quicker
-#if 0
-	{
-		char bname[_MAX_FNAME];
-
-		_splitpath(filename, NULL, NULL, bname, NULL);
-		sprintf(debug_name, "%s.subsystems", bname);
-		ss_fp = cfopen(debug_name, "wb", CFILE_NORMAL, CF_TYPE_TABLES );
-		if ( !ss_fp )	{
-			mprintf(( "Can't open debug file for writing subsystems for %s\n", filename));
-		} else {
-			strcpy_s(model_filename, filename);
-			ss_warning_shown = 0;
-		}
-	}
-#endif
-
-	id = cfread_int(fp);
+	id = cfile::read<int>(fp);
 
 	if (id != POF_HEADER_ID)
 		Error( LOCATION, "Bad ID in model file <%s>",filename);
@@ -1006,7 +986,7 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 	// Version is major*100+minor
 	// So, major = version / 100;
 	//     minor = version % 100;
-	version = cfread_int(fp);
+	version = cfile::read<int>(fp);
 
 	//Warning( LOCATION, "POF Version = %d", version );
 	
@@ -1031,11 +1011,11 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 	pm->shield_collision_tree = NULL;
 	pm->sldc_size = 0;
 
-	id = cfread_int(fp);
-	len = cfread_int(fp);
-	next_chunk = cftell(fp) + len;
+	id = cfile::read<int>(fp);
+	len = cfile::read<int>(fp);
+	next_chunk = cfile::tell(fp) + len;
 
-	while (!cfeof(fp)) {
+	while (!cfile::eof(fp)) {
 
 //		mprintf(("Processing chunk <%c%c%c%c>, len = %d\n",id,id>>8,id>>16,id>>24,len));
 //		key_getch();
@@ -1053,9 +1033,9 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 				pm->rad = cfread_float(fp);
 				pm->flags = cfread_int(fp);	// 1=Allow tiling
 #elif defined( FREESPACE2_FORMAT )
-				pm->rad = cfread_float(fp);
-				pm->flags = cfread_int(fp);	// 1=Allow tiling
-				pm->n_models = cfread_int(fp);
+				pm->rad = cfile::read<float>(fp);
+				pm->flags = cfile::read<int>(fp);	// 1=Allow tiling
+				pm->n_models = cfile::read<int>(fp);
 //				mprintf(( "Num models = %d\n", pm->n_models ));
 #endif
 
@@ -1069,8 +1049,8 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 
 				//Assert(pm->n_models <= MAX_SUBMODELS);
 
-				cfread_vector(&pm->mins,fp);
-				cfread_vector(&pm->maxs,fp);
+				pm->mins = cfile::read<vec3d>(fp);
+				pm->maxs = cfile::read<vec3d>(fp);
 
 				// sanity first!
 				if (maybe_swap_mins_maxs(&pm->mins, &pm->maxs)) {
@@ -1078,19 +1058,19 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 				}
 				model_calc_bound_box(pm->bounding_box, &pm->mins, &pm->maxs);
 				
-				pm->n_detail_levels = cfread_int(fp);
+				pm->n_detail_levels = cfile::read<int>(fp);
 			//	mprintf(( "There are %d detail levels\n", pm->n_detail_levels ));
 				for (i=0; i<pm->n_detail_levels;i++ )	{
-					pm->detail[i] = cfread_int(fp);
+					pm->detail[i] = cfile::read<int>(fp);
 					pm->detail_depth[i] = 0.0f;
 			///		mprintf(( "Detail level %d is model %d.\n", i, pm->detail[i] ));
 				}
 
-				pm->num_debris_objects = cfread_int(fp);
+				pm->num_debris_objects = cfile::read<int>(fp);
 				Assert( pm->num_debris_objects <= MAX_DEBRIS_OBJECTS );
 				// mprintf(( "There are %d debris objects\n", pm->num_debris_objects ));
 				for (i=0; i<pm->num_debris_objects;i++ )	{
-					pm->debris_objects[i] = cfread_int(fp);
+					pm->debris_objects[i] = cfile::read<int>(fp);
 					// mprintf(( "Debris object %d is model %d.\n", i, pm->debris_objects[i] ));
 				}
 
@@ -1098,11 +1078,11 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 	
 					if ( pm->version >= 2009 )	{
 																	
-						pm->mass = cfread_float(fp);
-						cfread_vector( &pm->center_of_mass, fp );
-						cfread_vector( &pm->moment_of_inertia.vec.rvec, fp );
-						cfread_vector( &pm->moment_of_inertia.vec.uvec, fp );
-						cfread_vector( &pm->moment_of_inertia.vec.fvec, fp );
+						pm->mass = cfile::read<float>(fp);
+						pm->center_of_mass = cfile::read<vec3d>(fp);
+						pm->moment_of_inertia.vec.rvec = cfile::read<vec3d>(fp);
+						pm->moment_of_inertia.vec.uvec = cfile::read<vec3d>(fp);
+						pm->moment_of_inertia.vec.fvec = cfile::read<vec3d>(fp);
 
 						if(!is_valid_vec(&pm->moment_of_inertia.vec.rvec) || !is_valid_vec(&pm->moment_of_inertia.vec.uvec) || !is_valid_vec(&pm->moment_of_inertia.vec.fvec)) {
 							Warning(LOCATION, "Moment of inertia values for model %s are invalid. This has to be fixed.\n", pm->filename);
@@ -1111,18 +1091,18 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 					} else {
 						// old code where mass wasn't based on area, so do the calculation manually
 
-						float vol_mass = cfread_float(fp);
+						float vol_mass = cfile::read<float>(fp);
 						//	Attn: John Slagel:  The following is better done in bspgen.
 						// Convert volume (cubic) to surface area (quadratic) and scale so 100 -> 100
 						float area_mass = (float) pow(vol_mass, 0.6667f) * 4.65f;
 
 						pm->mass = area_mass;
 						float mass_ratio = vol_mass / area_mass; 
-							
-						cfread_vector( &pm->center_of_mass, fp );
-						cfread_vector( &pm->moment_of_inertia.vec.rvec, fp );
-						cfread_vector( &pm->moment_of_inertia.vec.uvec, fp );
-						cfread_vector( &pm->moment_of_inertia.vec.fvec, fp );
+
+						pm->center_of_mass = cfile::read<vec3d>(fp);
+						pm->moment_of_inertia.vec.rvec = cfile::read<vec3d>(fp);
+						pm->moment_of_inertia.vec.uvec = cfile::read<vec3d>(fp);
+						pm->moment_of_inertia.vec.fvec = cfile::read<vec3d>(fp);
 
 						if(!is_valid_vec(&pm->moment_of_inertia.vec.rvec) || !is_valid_vec(&pm->moment_of_inertia.vec.uvec) || !is_valid_vec(&pm->moment_of_inertia.vec.fvec)) {
 							Warning(LOCATION, "Moment of inertia values for model %s are invalid. This has to be fixed.\n", pm->filename);
@@ -1155,12 +1135,12 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 				// read in cross section info
 				pm->xc = NULL;
 				if ( pm->version >= 2014 ) {
-					pm->num_xc = cfread_int(fp);
+					pm->num_xc = cfile::read<int>(fp);
 					if (pm->num_xc > 0) {
 						pm->xc = (cross_section*) vm_malloc(pm->num_xc*sizeof(cross_section));
 						for (i=0; i<pm->num_xc; i++) {
-							pm->xc[i].z = cfread_float(fp);
-							pm->xc[i].radius = cfread_float(fp);
+							pm->xc[i].z = cfile::read<float>(fp);
+							pm->xc[i].radius = cfile::read<float>(fp);
 						}
 					}
 				} else {
@@ -1168,14 +1148,14 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 				}
 
 				if ( pm->version >= 2007 )	{
-					pm->num_lights = cfread_int(fp);
+					pm->num_lights = cfile::read<int>(fp);
 					//mprintf(( "Found %d lights!\n", pm->num_lights ));
 
 					if (pm->num_lights > 0) {
 						pm->lights = (bsp_light *)vm_malloc( sizeof(bsp_light)*pm->num_lights );
 						for (i=0; i<pm->num_lights; i++ )	{			
-							cfread_vector(&pm->lights[i].pos,fp);
-							pm->lights[i].type = cfread_int(fp);
+							pm->lights[i].pos = cfile::read<vec3d>(fp);
+							pm->lights[i].type = cfile::read<int>(fp);
 							pm->lights[i].value = 0.0f;
 						}
 					}
@@ -1194,21 +1174,21 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 
 				//mprintf(0,"Got chunk SOBJ, len=%d\n",len);
 
-				n = cfread_int(fp);
+				n = cfile::read<int>(fp);
 				//mprintf(("SOBJ IDed itself as %d", n));
 
 				Assert(n < pm->n_models );
 
 #if defined( FREESPACE2_FORMAT )	
-				pm->submodel[n].rad = cfread_float(fp);		//radius
+				pm->submodel[n].rad = cfile::read<float>(fp);		//radius
 #endif
 
-				pm->submodel[n].parent = cfread_int(fp);
+				pm->submodel[n].parent = cfile::read<int>(fp);
 
 //				cfread_vector(&pm->submodel[n].norm,fp);
 //				d = cfread_float(fp);				
 //				cfread_vector(&pm->submodel[n].pnt,fp);
-				cfread_vector(&pm->submodel[n].offset,fp);
+				pm->submodel[n].offset = cfile::read<vec3d>(fp);
 
 //			mprintf(( "Subobj %d, offs = %.1f, %.1f, %.1f\n", n, pm->submodel[n].offset.xyz.x, pm->submodel[n].offset.xyz.y, pm->submodel[n].offset.xyz.z ));
 	
@@ -1219,15 +1199,15 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 //				pm->submodel[n].tree_offset = cfread_int(fp);	//offset
 //				pm->submodel[n].data_offset = cfread_int(fp);	//offset
 
-				cfread_vector(&pm->submodel[n].geometric_center,fp);
+				pm->submodel[n].geometric_center = cfile::read<vec3d>(fp);
 
-				cfread_vector(&pm->submodel[n].min,fp);
-				cfread_vector(&pm->submodel[n].max,fp);
+				pm->submodel[n].min = cfile::read<vec3d>(fp);
+				pm->submodel[n].max = cfile::read<vec3d>(fp);
 
 				pm->submodel[n].name[0] = '\0';
 
-				cfread_string_len(pm->submodel[n].name, MAX_NAME_LEN, fp);		// get the name
-				cfread_string_len(props, MAX_PROP_LEN, fp);			// and the user properties
+				cfile::readStringLen(pm->submodel[n].name, MAX_NAME_LEN, fp);		// get the name
+				cfile::readStringLen(props, MAX_PROP_LEN, fp);			// and the user properties
 
 				// Check for unrealistic radii
 				if ( pm->submodel[n].rad <= 0.1f )
@@ -1241,8 +1221,8 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 				}
 				model_calc_bound_box(pm->submodel[n].bounding_box, &pm->submodel[n].min, &pm->submodel[n].max);
 
-				pm->submodel[n].movement_type = cfread_int(fp);
-				pm->submodel[n].movement_axis = cfread_int(fp);
+				pm->submodel[n].movement_type = cfile::read<int>(fp);
+				pm->submodel[n].movement_axis = cfile::read<int>(fp);
 
 				// change turret movement type to MOVEMENT_TYPE_ROT_SPECIAL
 				if ( strstr(pm->submodel[n].name, "turret") || strstr(pm->submodel[n].name, "gun") || strstr(pm->submodel[n].name, "cannon")) {
@@ -1547,15 +1527,15 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 				pm->submodel[n].angs.h = 0.0f;
 
 				{
-					int nchunks = cfread_int( fp );		// Throw away nchunks
+					int nchunks = cfile::read<int>( fp );		// Throw away nchunks
 					if ( nchunks > 0 )	{
 						Error( LOCATION, "Model '%s' is chunked.  See John or Adam!\n", pm->filename );
 					}
 				}
-				pm->submodel[n].bsp_data_size = cfread_int(fp);
+				pm->submodel[n].bsp_data_size = cfile::read<int>(fp);
 				if ( pm->submodel[n].bsp_data_size > 0 )	{
 					pm->submodel[n].bsp_data = (ubyte *)vm_malloc(pm->submodel[n].bsp_data_size);
-					cfread(pm->submodel[n].bsp_data,1,pm->submodel[n].bsp_data_size,fp);
+					cfile::read(pm->submodel[n].bsp_data,1,pm->submodel[n].bsp_data_size,fp);
 					swap_bsp_data( pm, pm->submodel[n].bsp_data );
 				} else {
 					pm->submodel[n].bsp_data = NULL;
@@ -1591,9 +1571,9 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 
 			case ID_SLDC: // kazan - Shield Collision tree
 				{
-					pm->sldc_size = cfread_int(fp);
+					pm->sldc_size = cfile::read<int>(fp);
 					pm->shield_collision_tree = (ubyte *)vm_malloc(pm->sldc_size);
-					cfread(pm->shield_collision_tree,1,pm->sldc_size,fp);
+					cfile::read(pm->shield_collision_tree,1,pm->sldc_size,fp);
 					swap_sldc_data(pm->shield_collision_tree);
 					//mprintf(( "Shield Collision Tree, %d bytes in size\n", pm->sldc_size));
 				}
@@ -1601,27 +1581,27 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 
 			case ID_SHLD:
 				{
-					pm->shield.nverts = cfread_int( fp );		// get the number of vertices in the list
+					pm->shield.nverts = cfile::read<int>( fp );		// get the number of vertices in the list
 
 					if (pm->shield.nverts > 0) {
 						pm->shield.verts = (shield_vertex *)vm_malloc(pm->shield.nverts * sizeof(shield_vertex) );
 						Assert( pm->shield.verts );
 						for ( i = 0; i < pm->shield.nverts; i++ ) {						// read in the vertex list
-							cfread_vector( &(pm->shield.verts[i].pos), fp );
+							pm->shield.verts[i].pos = cfile::read<vec3d>(fp);
 						}
 					}
 
-					pm->shield.ntris = cfread_int( fp );		// get the number of triangles that compose the shield
+					pm->shield.ntris = cfile::read<int>( fp );		// get the number of triangles that compose the shield
 
 					if (pm->shield.ntris > 0) {
 						pm->shield.tris = (shield_tri *)vm_malloc(pm->shield.ntris * sizeof(shield_tri) );
 						Assert( pm->shield.tris );
 						for ( i = 0; i < pm->shield.ntris; i++ ) {
-							cfread_vector( &temp_vec, fp );
+							temp_vec = cfile::read<vec3d>(fp);
 							vm_vec_normalize_safe(&temp_vec);
 							pm->shield.tris[i].norm = temp_vec;
 							for ( j = 0; j < 3; j++ ) {
-								pm->shield.tris[i].verts[j] = cfread_int( fp );		// read in the indices into the shield_vertex list
+								pm->shield.tris[i].verts[j] = cfile::read<int>( fp );		// read in the indices into the shield_vertex list
 #ifndef NDEBUG
 								if (pm->shield.tris[i].verts[j] >= pm->shield.nverts) {
 									Error(LOCATION, "Ship %s has a bogus shield mesh.\nOnly %i vertices, index %i found.\n", filename, pm->shield.nverts, pm->shield.tris[i].verts[j]);
@@ -1630,7 +1610,7 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 							}
 							
 							for ( j = 0; j < 3; j++ ) {
-								pm->shield.tris[i].neighbors[j] = cfread_int( fp );	// read in the neighbor indices -- indexes into tri list
+								pm->shield.tris[i].neighbors[j] = cfile::read<int>( fp );	// read in the neighbor indices -- indexes into tri list
 #ifndef NDEBUG
 								if (pm->shield.tris[i].neighbors[j] >= pm->shield.ntris) {
 									Error(LOCATION, "Ship %s has a bogus shield mesh.\nOnly %i triangles, index %i found.\n", filename, pm->shield.ntris, pm->shield.tris[i].neighbors[j]);
@@ -1643,7 +1623,7 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 				break;
 
 			case ID_GPNT:
-				pm->n_guns = cfread_int(fp);
+				pm->n_guns = cfile::read<int>(fp);
 
 				if (pm->n_guns > 0) {
 					pm->gun_banks = (w_bank *)vm_malloc(sizeof(w_bank) * pm->n_guns);
@@ -1652,11 +1632,11 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 					for (i = 0; i < pm->n_guns; i++ ) {
 						w_bank *bank = &pm->gun_banks[i];
 
-						bank->num_slots = cfread_int(fp);
+						bank->num_slots = cfile::read<int>(fp);
 						Assert ( bank->num_slots < MAX_SLOTS );
 						for (j = 0; j < bank->num_slots; j++) {
-							cfread_vector( &(bank->pnt[j]), fp );
-							cfread_vector( &temp_vec, fp );
+							bank->pnt[j] = cfile::read<vec3d>(fp);
+							temp_vec = cfile::read<vec3d>(fp);
 							vm_vec_normalize_safe(&temp_vec);
 							bank->norm[j] = temp_vec;
 						}
@@ -1665,7 +1645,7 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 				break;
 			
 			case ID_MPNT:
-				pm->n_missiles = cfread_int(fp);
+				pm->n_missiles = cfile::read<int>(fp);
 
 				if (pm->n_missiles > 0) {
 					pm->missile_banks = (w_bank *)vm_malloc(sizeof(w_bank) * pm->n_missiles);
@@ -1674,11 +1654,11 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 					for (i = 0; i < pm->n_missiles; i++ ) {
 						w_bank *bank = &pm->missile_banks[i];
 
-						bank->num_slots = cfread_int(fp);
+						bank->num_slots = cfile::read<int>(fp);
 						Assert ( bank->num_slots < MAX_SLOTS );
 						for (j = 0; j < bank->num_slots; j++) {
-							cfread_vector( &(bank->pnt[j]), fp );
-							cfread_vector( &temp_vec, fp );
+							bank->pnt[j] = cfile::read<vec3d>(fp);
+							temp_vec = cfile::read<vec3d>(fp);
 							vm_vec_normalize_safe(&temp_vec);
 							bank->norm[j] = temp_vec;
 						}
@@ -1689,7 +1669,7 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 			case ID_DOCK: {
 				char props[MAX_PROP_LEN];
 
-				pm->n_docks = cfread_int(fp);
+				pm->n_docks = cfile::read<int>(fp);
 
 				if (pm->n_docks > 0) {
 					pm->docking_bays = (dock_bay *)vm_malloc(sizeof(dock_bay) * pm->n_docks);
@@ -1699,7 +1679,7 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 						char *p;
 						dock_bay *bay = &pm->docking_bays[i];
 
-						cfread_string_len( props, MAX_PROP_LEN, fp );
+						cfile::readStringLen( props, MAX_PROP_LEN, fp );
 						if ( (p = strstr(props, "$name"))!= NULL ) {
 							get_user_prop_value(p+5, bay->name);
 
@@ -1716,11 +1696,11 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 							sprintf(bay->name, "<unnamed bay %c>", 'A' + i);
 						}
 
-						bay->num_spline_paths = cfread_int( fp );
+						bay->num_spline_paths = cfile::read<int>( fp );
 						if ( bay->num_spline_paths > 0 ) {
 							bay->splines = (int *)vm_malloc(sizeof(int) * bay->num_spline_paths);
 							for ( j = 0; j < bay->num_spline_paths; j++ )
-								bay->splines[j] = cfread_int(fp);
+								bay->splines[j] = cfile::read<int>(fp);
 						} else {
 							bay->splines = NULL;
 						}
@@ -1731,15 +1711,15 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 						else
 							bay->type_flags = (DOCK_TYPE_REARM | DOCK_TYPE_GENERIC);
 
-						bay->num_slots = cfread_int(fp);
+						bay->num_slots = cfile::read<int>(fp);
 
 						if(bay->num_slots != 2) {
 							Warning(LOCATION, "Model '%s' has %d slots in dock point '%s'; models must have exactly %d slots per dock point.", filename, bay->num_slots, bay->name, 2);
 						}
 
 						for (j = 0; j < bay->num_slots; j++) {
-							cfread_vector( &(bay->pnt[j]), fp );
-							cfread_vector( &(bay->norm[j]), fp );
+							bay->pnt[j] = cfile::read<vec3d>(fp);
+							bay->norm[j] = cfile::read<vec3d>(fp);
 							if(vm_vec_mag(&(bay->norm[j])) <= 0.0f) {
 								Warning(LOCATION, "Model '%s' dock point '%s' has a null normal. ", filename, bay->name);
 							}
@@ -1776,7 +1756,7 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 			{
 				char props[MAX_PROP_LEN];
 
-				int gpb_num = cfread_int(fp);
+				int gpb_num = cfile::read<int>(fp);
 
 				pm->n_glow_point_banks = gpb_num;
 				pm->glow_point_banks = NULL;
@@ -1793,13 +1773,13 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 
 					bank->is_on = 1;
 					bank->glow_timestamp = 0;
-					bank->disp_time = cfread_int(fp);
-					bank->on_time = cfread_int(fp);
-					bank->off_time = cfread_int(fp);
-					bank->submodel_parent = cfread_int(fp);
-					bank->LOD = cfread_int(fp);
-					bank->type = cfread_int(fp);
-					bank->num_points = cfread_int(fp);
+					bank->disp_time = cfile::read<int>(fp);
+					bank->on_time = cfile::read<int>(fp);
+					bank->off_time = cfile::read<int>(fp);
+					bank->submodel_parent = cfile::read<int>(fp);
+					bank->LOD = cfile::read<int>(fp);
+					bank->type = cfile::read<int>(fp);
+					bank->num_points = cfile::read<int>(fp);
 					bank->points = NULL;
 
 					if (bank->num_points > 0)
@@ -1808,7 +1788,7 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 					if((bank->off_time > 0) && (bank->disp_time > 0))
 						bank->is_on = 0;
 	
-					cfread_string_len(props, MAX_PROP_LEN, fp);
+					cfile::readStringLen(props, MAX_PROP_LEN, fp);
 					// look for $glow_texture=xxx
 					int length = strlen(props);
 
@@ -1859,14 +1839,14 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 					{
 						glow_point *p = &bank->points[j];
 
-						cfread_vector(&(p->pnt), fp);
-						cfread_vector( &temp_vec, fp );
+						p->pnt = cfile::read<vec3d>(fp);
+						temp_vec = cfile::read<vec3d>(fp);
 						if (!IS_VEC_NULL_SQ_SAFE(&temp_vec))
 							vm_vec_normalize(&temp_vec);
 						else
 							vm_vec_zero(&temp_vec);
 						p->norm = temp_vec;
-						p->radius = cfread_float( fp);
+						p->radius = cfile::read<float>( fp);
 					}
 				}
 				break;					
@@ -1874,7 +1854,7 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 
 			case ID_FUEL:
 				char props[MAX_PROP_LEN];
-				pm->n_thrusters = cfread_int(fp);
+				pm->n_thrusters = cfile::read<int>(fp);
 
 				if (pm->n_thrusters > 0) {
 					pm->thrusters = (thruster_bank *)vm_malloc(sizeof(thruster_bank) * pm->n_thrusters);
@@ -1883,7 +1863,7 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 					for (i = 0; i < pm->n_thrusters; i++ ) {
 						thruster_bank *bank = &pm->thrusters[i];
 
-						bank->num_points = cfread_int(fp);
+						bank->num_points = cfile::read<int>(fp);
 						bank->points = NULL;
 
 						if (bank->num_points > 0)
@@ -1895,7 +1875,7 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 						if (pm->version < 2117) {
 							bank->wash_info_pointer = NULL;
 						} else {
-							cfread_string_len( props, MAX_PROP_LEN, fp );
+							cfile::readStringLen( props, MAX_PROP_LEN, fp );
 							// look for $engine_subsystem=xxx
 							int length = strlen(props);
 							if (length > 0) {
@@ -1944,13 +1924,13 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 						for (j = 0; j < bank->num_points; j++) {
 							glow_point *p = &bank->points[j];
 
-							cfread_vector( &(p->pnt), fp );
-							cfread_vector( &temp_vec, fp );
+							p->pnt = cfile::read<vec3d>(fp);
+							temp_vec = cfile::read<vec3d>(fp);
 							vm_vec_normalize_safe(&temp_vec);
 							p->norm = temp_vec;
 
 							if ( pm->version > 2004 )	{
-								p->radius = cfread_float( fp );
+								p->radius = cfile::read<float>( fp );
 								//mprintf(( "Rad = %.2f\n", rad ));
 							} else {
 								p->radius = 1.0f;
@@ -1967,24 +1947,24 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 				model_subsystem *subsystemp;
 				int snum=-1;
 	
-				n_banks = cfread_int(fp);				// number of turret points
+				n_banks = cfile::read<int>(fp);				// number of turret points
 				for ( i = 0; i < n_banks; i++ ) {
 					int physical_parent;			// who are we attached to?
-					parent = cfread_int( fp );			// get the turret parent of the object
+					parent = cfile::read<int>( fp );			// get the turret parent of the object
 
-					physical_parent = cfread_int(fp);	// The parent subobj that this is physically attached to
+					physical_parent = cfile::read<int>(fp);	// The parent subobj that this is physically attached to
 
 					if ( subsystems ) {
 						for ( snum = 0; snum < n_subsystems; snum++ ) {
 							subsystemp = &subsystems[snum];
 
 							if ( parent == subsystemp->subobj_num ) {
-								cfread_vector( &temp_vec, fp );
+								temp_vec = cfile::read<vec3d>(fp);
 								vm_vec_normalize_safe(&temp_vec);
 								subsystemp->turret_norm = temp_vec;
 								vm_vector_2_matrix(&subsystemp->turret_matrix,&subsystemp->turret_norm,NULL,NULL);
 
-								n_slots = cfread_int( fp );
+								n_slots = cfile::read<int>( fp );
 								subsystemp->turret_gun_sobj = physical_parent;
 								if(n_slots > MAX_TFP) {
 									Warning(LOCATION, "Model %s has too many turret firing points on subsystem %s", subsystemp->name);
@@ -1992,11 +1972,11 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 
 								for (j = 0; j < n_slots; j++ )	{
 									if(j < MAX_TFP)
-										cfread_vector( &subsystemp->turret_firing_point[j], fp );
+										subsystemp->turret_firing_point[j] = cfile::read<vec3d>(fp);
 									else
 									{
-										vec3d bogus;
-										cfread_vector(&bogus, fp);
+										// Just read and throw away
+										cfile::read<vec3d>(fp);
 									}
 								}
 								Assertion( n_slots > 0, "Turret %s has no firing points.\n", subsystemp->name );
@@ -2011,13 +1991,11 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 //turret_gun_sobj
 
 					if ( (n_subsystems == 0) || (snum == n_subsystems) ) {
-						vec3d bogus;
-
 						nprintf(("Warning", "Turret object not found for turret firing point in model %s\n", model_filename));
-						cfread_vector( &bogus, fp );
-						n_slots = cfread_int( fp );
+						cfile::read<vec3d>(fp);
+						n_slots = cfile::read<int>( fp );
 						for (j = 0; j < n_slots; j++ )
-							cfread_vector( &bogus, fp );
+							cfile::read<vec3d>(fp);
 					}
 				}
 				break;
@@ -2029,16 +2007,16 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 				float radius;
 				vec3d pnt;
 
-				n_specials = cfread_int(fp);		// get the number of special subobjects we have
+				n_specials = cfile::read<int>(fp);		// get the number of special subobjects we have
 				for (i = 0; i < n_specials; i++) {
 
 					// get the next free object of the subobject list.  Flag error if no more room
 
-					cfread_string_len(name, MAX_NAME_LEN, fp);			// get the name of this special polygon
+					cfile::readStringLen(name, MAX_NAME_LEN, fp);			// get the name of this special polygon
 
-					cfread_string_len(props_spcl, MAX_PROP_LEN, fp);		// will definately have properties as well!
-					cfread_vector( &pnt, fp );
-					radius = cfread_float( fp );
+					cfile::readStringLen(props_spcl, MAX_PROP_LEN, fp);		// will definately have properties as well!
+					pnt = cfile::read<vec3d>(fp);
+					radius = cfile::read<float>( fp );
 
 					// check if $Split
 					p = strstr(name, "$split");
@@ -2071,7 +2049,7 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 				//mprintf(0,"Got chunk TXTR, len=%d\n",len);
 
 
-				n = cfread_int(fp);
+				n = cfile::read<int>(fp);
 				pm->n_textures = n;
 				// Don't overwrite memory!!
 				Verify(pm->n_textures <= MAX_MODEL_TEXTURES);
@@ -2079,7 +2057,7 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 				for (i=0; i<n; i++ )
 				{
 					char tmp_name[256];
-					cfread_string_len(tmp_name,127,fp);
+					cfile::readStringLen(tmp_name,127,fp);
 					model_load_texture(pm, i, tmp_name);
 					//mprintf(0,"<%s>\n",name_buf);
 				}
@@ -2107,7 +2085,7 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 					pm->debug_info = (char *)vm_malloc(pm->debug_info_size+1);
 					Assert(pm->debug_info!=NULL);
 					memset(pm->debug_info,0,len+1);
-					cfread( pm->debug_info, 1, len, fp );
+					cfile::read( pm->debug_info, 1, len, fp );
 				#endif
 				break;
 
@@ -2115,7 +2093,7 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 				break;
 
 			case ID_PATH:
-				pm->n_paths = cfread_int( fp );
+				pm->n_paths = cfile::read<int>( fp );
 
 				if (pm->n_paths <= 0) {
 					break;
@@ -2127,10 +2105,10 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 				memset( pm->paths, 0, sizeof(model_path) * pm->n_paths );
 					
 				for (i=0; i<pm->n_paths; i++ )	{
-					cfread_string_len(pm->paths[i].name , MAX_NAME_LEN-1, fp);
+					cfile::readStringLen(pm->paths[i].name , MAX_NAME_LEN-1, fp);
 					if ( pm->version >= 2002 ) {
 						// store the sub_model name number of the parent
-						cfread_string_len(pm->paths[i].parent_name , MAX_NAME_LEN-1, fp);
+						cfile::readStringLen(pm->paths[i].parent_name , MAX_NAME_LEN-1, fp);
 						// get rid of leading '$' char in name
 						if ( pm->paths[i].parent_name[0] == '$' ) {
 							char tmpbuf[MAX_NAME_LEN];
@@ -2149,7 +2127,7 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 						pm->paths[i].parent_submodel = -1;
 					}
 
-					pm->paths[i].nverts = cfread_int( fp );
+					pm->paths[i].nverts = cfile::read<int>( fp );
 					pm->paths[i].verts = (mp_vert *)vm_malloc( sizeof(mp_vert) * pm->paths[i].nverts );
 					pm->paths[i].goal = pm->paths[i].nverts - 1;
 					pm->paths[i].type = MP_TYPE_UNUSED;
@@ -2158,19 +2136,19 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 					memset( pm->paths[i].verts, 0, sizeof(mp_vert) * pm->paths[i].nverts );
 
 					for (j=0; j<pm->paths[i].nverts; j++ )	{
-						cfread_vector(&pm->paths[i].verts[j].pos,fp );
-						pm->paths[i].verts[j].radius = cfread_float( fp );
+						pm->paths[i].verts[j].pos = cfile::read<vec3d>(fp);
+						pm->paths[i].verts[j].radius = cfile::read<float>(fp);
 						
 						{					// version 1802 added turret stuff
 							int nturrets, k;
 
-							nturrets = cfread_int( fp );
+							nturrets = cfile::read<int>( fp );
 							pm->paths[i].verts[j].nturrets = nturrets;
 
 							if (nturrets > 0) {
 								pm->paths[i].verts[j].turret_ids = (int *)vm_malloc( sizeof(int) * nturrets );
 								for ( k = 0; k < nturrets; k++ )
-									pm->paths[i].verts[j].turret_ids[k] = cfread_int( fp );
+									pm->paths[i].verts[j].turret_ids[k] = cfile::read<int>( fp );
 							}
 						} 
 						
@@ -2185,13 +2163,13 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 					// all eyes points are stored simply as vectors and their normals.
 					// 0th element is used as usual player view position.
 
-					num_eyes = cfread_int( fp );
+					num_eyes = cfile::read<int>( fp );
 					pm->n_view_positions = num_eyes;
 					Assert ( num_eyes < MAX_EYES );
 					for (i = 0; i < num_eyes; i++ ) {
-						pm->view_positions[i].parent = cfread_int( fp );
-						cfread_vector( &pm->view_positions[i].pnt, fp );
-						cfread_vector( &pm->view_positions[i].norm, fp );
+						pm->view_positions[i].parent = cfile::read<int>( fp );
+						pm->view_positions[i].pnt = cfile::read<vec3d>(fp);
+						pm->view_positions[i].norm = cfile::read<vec3d>(fp);
 					}
 				}
 				break;			
@@ -2200,41 +2178,41 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 				int num_ins, num_verts, num_faces, idx, idx2, idx3;			
 				
 				// get the # of insignias
-				num_ins = cfread_int(fp);
+				num_ins = cfile::read<int>(fp);
 				pm->num_ins = num_ins;
 				
 				// read in the insignias
 				for(idx=0; idx<num_ins; idx++){
 					// get the detail level
-					pm->ins[idx].detail_level = cfread_int(fp);
+					pm->ins[idx].detail_level = cfile::read<int>(fp);
 					if (pm->ins[idx].detail_level < 0) {
 						Warning(LOCATION, "Model '%s': insignia uses an invalid LOD (%i)\n", pm->filename, pm->ins[idx].detail_level);
 					}
 
 					// # of faces
-					num_faces = cfread_int(fp);
+					num_faces = cfile::read<int>(fp);
 					pm->ins[idx].num_faces = num_faces;
 					Assert(num_faces <= MAX_INS_FACES);
 
 					// # of vertices
-					num_verts = cfread_int(fp);
+					num_verts = cfile::read<int>(fp);
 					Assert(num_verts <= MAX_INS_VECS);
 
 					// read in all the vertices
 					for(idx2=0; idx2<num_verts; idx2++){
-						cfread_vector(&pm->ins[idx].vecs[idx2], fp);
+						pm->ins[idx].vecs[idx2] = cfile::read<vec3d>(fp);
 					}
 
 					// read in world offset
-					cfread_vector(&pm->ins[idx].offset, fp);
+					pm->ins[idx].offset = cfile::read<vec3d>(fp);
 
 					// read in all the faces
 					for(idx2=0; idx2<pm->ins[idx].num_faces; idx2++){						
 						// read in 3 vertices
 						for(idx3=0; idx3<3; idx3++){
-							pm->ins[idx].faces[idx2][idx3] = cfread_int(fp);
-							pm->ins[idx].u[idx2][idx3] = cfread_float(fp);
-							pm->ins[idx].v[idx2][idx3] = cfread_float(fp);
+							pm->ins[idx].faces[idx2][idx3] = cfile::read<int>(fp);
+							pm->ins[idx].u[idx2][idx3] = cfile::read<float>(fp);
+							pm->ins[idx].v[idx2][idx3] = cfile::read<float>(fp);
 						}
 						vec3d tempv;
 
@@ -2256,21 +2234,21 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 
 			// autocentering info
 			case ID_ACEN:
-				cfread_vector(&pm->autocenter, fp);
+				pm->autocenter = cfile::read<vec3d>(fp);
 				pm->flags |= PM_FLAG_AUTOCEN;
 				break;
 
 			default:
 				mprintf(("Unknown chunk <%c%c%c%c>, len = %d\n",id,id>>8,id>>16,id>>24,len));
-				cfseek(fp,len,SEEK_CUR);
+				cfile::seek(fp, len, cfile::SEEK_MODE_CUR);
 				break;
 
 		}
-		cfseek(fp,next_chunk,SEEK_SET);
+		cfile::seek(fp, next_chunk, cfile::SEEK_MODE_CUR);
 
-		id = cfread_int(fp);
-		len = cfread_int(fp);
-		next_chunk = cftell(fp) + len;
+		id = cfile::read<int>(fp);
+		len = cfile::read<int>(fp);
+		next_chunk = cfile::tell(fp) + len;
 
 	}
 
@@ -2278,11 +2256,11 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 	if ( ss_fp) {
 		int size;
 		
-		cfclose(ss_fp);
-		ss_fp = cfopen(debug_name, "rb");
+		cfile::close(ss_fp);
+		ss_fp = cfile::open(debug_name);
 		if ( ss_fp )	{
-			size = cfilelength(ss_fp);
-			cfclose(ss_fp);
+			size = cfile::fileLength(ss_fp);
+			cfile::close(ss_fp);
 			if ( size <= 0 )	{
 				_unlink(debug_name);
 			}
@@ -2290,7 +2268,7 @@ int read_model_file(polymodel * pm, char *filename, int n_subsystems, model_subs
 	}
 #endif
 
-	cfclose(fp);
+	cfile::close(fp);
 
 	// mprintf(("Done processing chunks\n"));
 	return 1;
@@ -2430,7 +2408,7 @@ void model_load_texture(polymodel *pm, int i, char *file)
 }
 
 //returns the number of this model
-int model_load(char *filename, int n_subsystems, model_subsystem *subsystems, int ferror, int duplicate)
+int model_load(const char *filename, int n_subsystems, model_subsystem *subsystems, int ferror, int duplicate)
 {
 	int i, num, arc_idx;
 	polymodel *pm = NULL;

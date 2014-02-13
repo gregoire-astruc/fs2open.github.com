@@ -407,7 +407,7 @@ void VoiceActingManager::OnGenerateScript()
 
 	CString dlgPathName = dlg.GetPathName( );
 	string_copy(pathname, dlgPathName, 256);
-	fp = cfopen(pathname, "wt", CFILE_NORMAL);
+	fp = cfile::open(pathname, "wt", CFILE_NORMAL);
 	if (!fp)
 	{
 		MessageBox("Can't open file to save.", "Error!");

@@ -154,7 +154,7 @@ bool game_using_low_mem();
 // misc ---------------------------------------------------------------
 
 // lookup the specified filename. return an fs_builtin_mission* if found, NULL otherwise
-fs_builtin_mission *game_find_builtin_mission(char *filename);
+fs_builtin_mission *game_find_builtin_mission(const char *filename);
 
 
 
@@ -192,7 +192,6 @@ void game_shudder_apply(int time, float intensity);
 
 // make sure a CD is in the drive before continuing (returns 1 to continue, otherwise 0).
 int game_do_cd_check(char *volume_name=NULL);
-int game_do_cd_check_specific(char *volume_name, int cdnum);
 int find_freespace_cd(char *volume_name=NULL);
 int set_cdrom_path(int drive_num);
 

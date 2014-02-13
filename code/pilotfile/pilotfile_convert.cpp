@@ -19,7 +19,7 @@ pilotfile_convert::pilotfile_convert()
 pilotfile_convert::~pilotfile_convert()
 {
 	if (cfp) {
-		cfclose(cfp);
+		cfile::close(cfp);
 	}
 
 	if (plr) {
@@ -37,13 +37,13 @@ void pilotfile_convert::startSection(Section::id section_id)
 
 	const int zero = 0;
 
-	cfwrite_ushort( (ushort)section_id, cfp );
+	cfile::write<short>( (ushort)section_id, cfp );
 
 	// to be updated when endSection() is called
-	cfwrite_int(zero, cfp);
+	cfile::write<int>(zero, cfp);
 
 	// starting offset, for size of section
-	m_size_offset = cftell(cfp);
+	m_size_offset = cfile::tell(cfp);
 }
 
 void pilotfile_convert::endSection()
@@ -51,7 +51,7 @@ void pilotfile_convert::endSection()
 	Assert( cfp );
 	Assert( m_size_offset > 0 );
 
-	size_t cur = cftell(cfp);
+	size_t cur = cfile::tell(cfp);
 
 	Assert( cur >= m_size_offset );
 
@@ -59,11 +59,11 @@ void pilotfile_convert::endSection()
 
 	if (section_size) {
 		// go back to section size in file and write proper value
-		cfseek(cfp, cur - section_size - sizeof(int), CF_SEEK_SET);
-		cfwrite_int((int)section_size, cfp);
+		cfile::seek(cfp, cur - section_size - sizeof(int), cfile::SEEK_MODE_SET);
+		cfile::write<int>((int)section_size, cfp);
 
 		// go back to previous location for next section
-		cfseek(cfp, cur, CF_SEEK_SET);
+		cfile::seek(cfp, cur, cfile::SEEK_MODE_SET);
 	}
 }
 
@@ -77,13 +77,14 @@ void convert_pilot_files()
 	SCP_vector<SCP_string> old_files;
 
 	// get list of pilots which already exist (new or converted already)
-	cf_get_file_list(existing, CF_TYPE_PLAYERS, "*.plr");
+	cfile::listFiles(existing, cfile::TYPE_PLAYERS, "*.plr");
 
 	// get list of old pilots which may need converting, starting with inferno pilots
-	Get_file_list_child = "inferno";
-	cf_get_file_list(old_files, CF_TYPE_SINGLE_PLAYERS, "*.pl2");
+
+	cfile::listFiles(old_files, cfile::TYPE_SINGLE_PLAYERS_INFERNO, "*.pl2");
 	inf_count = old_files.size();
-	cf_get_file_list(old_files, CF_TYPE_SINGLE_PLAYERS, "*.pl2");
+
+	cfile::listFiles(old_files, cfile::TYPE_SINGLE_PLAYERS, "*.pl2");
 
 	if ( old_files.empty() ) {
 		return;
@@ -133,11 +134,14 @@ void convert_pilot_files()
 			SCP_string wildcard(old_files[idx]);
 			wildcard.append("*.cs2");
 
-			if (inferno) {
-				Get_file_list_child = "inferno";
+			if (inferno)
+			{
+				cfile::listFiles(savefiles, cfile::TYPE_SINGLE_PLAYERS_INFERNO, wildcard);
 			}
-
-			cf_get_file_list(savefiles, CF_TYPE_SINGLE_PLAYERS, const_cast<char*>(wildcard.c_str()));
+			else
+			{
+				cfile::listFiles(savefiles, cfile::TYPE_SINGLE_PLAYERS, wildcard);
+			}
 
 			for (j = 0; j < savefiles.size(); j++) {
 				pcon->csg_convert(savefiles[j].c_str(), inferno);
