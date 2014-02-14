@@ -240,16 +240,16 @@ void mission_campaign_free_list()
 	Campaign_names_inited = 0;
 }
 
-bool mission_campaign_maybe_add(const SCP_string& filename)
+bool mission_campaign_maybe_add(const std::string& filename)
 {
 	char name[NAME_LENGTH];
 	char *desc = NULL;
 	int type, max_players;
 
-		// don't add ignored campaigns
-		if (campaign_is_ignored(filename.c_str())) {
-			return false;
-		}
+	// don't add ignored campaigns
+	if (campaign_is_ignored(filename.c_str())) {
+		return false;
+	}
 
 	if ( mission_campaign_get_info( filename.c_str(), name, &type, &max_players, &desc) ) {
 		if ( !MC_multiplayer && (type == CAMPAIGN_TYPE_SINGLE) ) {
@@ -280,7 +280,6 @@ void mission_campaign_build_list(bool desc, bool sort, bool multiplayer, cfile::
 	char wild_card[10];
 	int i, j, incr = 0;
 	char *t = NULL;
-	int rc = 0;
 
 	if (Campaign_names_inited)
 		return;
@@ -304,7 +303,10 @@ void mission_campaign_build_list(bool desc, bool sort, bool multiplayer, cfile::
 	// NOTE: we don't do sorting here, but we assume CF_SORT_NAME, and do it manually below
 
 	SCP_vector<SCP_string> campaignVector;
-	cfile::listFiles(campaignVector, cfile::TYPE_MISSIONS, NULL, cfile::SORT_NONE, filterFunction);
+	cfile::listFiles(campaignVector, cfile::TYPE_MISSIONS, wild_card, cfile::SORT_NONE, filterFunction);
+
+	// Remove file ectensions
+	std::for_each(campaignVector.begin(), campaignVector.end(), cfile::util::removeExtension<SCP_string>);
 
 	Assert(campaignVector.size() <= MAX_CAMPAIGNS);
 
@@ -312,13 +314,13 @@ void mission_campaign_build_list(bool desc, bool sort, bool multiplayer, cfile::
 	i = 0;
 	for (iter = campaignVector.begin(); iter != campaignVector.end(); ++iter, ++i)
 	{
-		Campaign_names[i] = (char*) vm_malloc(iter->size() + 1);
-		memset(Campaign_names[i], 0, iter->size() + 1);
+		Campaign_file_names[i] = (char*)vm_malloc(iter->size() + 1);
+		memset(Campaign_file_names[i], 0, iter->size() + 1);
 
-		strcpy(Campaign_names[i], iter->c_str());
+		strcpy(Campaign_file_names[i], iter->c_str());
 	}
 
-	Assert( rc == Num_campaigns );
+	Assert(campaignVector.size() == (size_t) Num_campaigns);
 
 	// now sort everything, if we are supposed to
 	if (sort) {
@@ -871,12 +873,12 @@ void mission_campaign_delete_all_savefiles( char *pilot_name )
 
 	sprintf(file_spec, NOX("%s.*%s"), pilot_name, ext);
 
-	// HACK HACK HACK HACK!!!!  cf_get_file_list is not reentrant.  Pretty dumb because it should
-	// be.  I have to save any file filters
-
 	SCP_vector<SCP_string> names;
 
 	cfile::listFiles(names, dir_type, file_spec);
+
+	// Remove file ectensions
+	std::for_each(names.begin(), names.end(), cfile::util::removeExtension<SCP_string>);
 
 	SCP_vector<SCP_string>::iterator iter;
 	for (iter = names.begin(); iter != names.end(); ++iter)

@@ -184,6 +184,9 @@ void mission_load_menu_init()
 	SCP_vector<SCP_string> missionNames;
 	cfile::listFiles(missionNames, cfile::TYPE_MISSIONS, wild_card, cfile::SORT_NAME);
 
+	// Remove file ectensions
+	std::for_each(missionNames.begin(), missionNames.end(), cfile::util::removeExtension<SCP_string>);
+
 	mlm_nfiles = (int) missionNames.size();
 
 	for (int i = 0; i < mlm_nfiles; ++i)

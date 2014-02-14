@@ -867,7 +867,7 @@ void barracks_delete_pilot()
 }
 
 // Filter out pilots of wrong type (which shouldn't be in the directory we are checking, but just to be safe..)
-bool barracks_pilot_filter(const SCP_string& filename)
+bool barracks_pilot_filter(const std::string& filename)
 {
 	bool r = false;
 	int rank = 0;
@@ -904,11 +904,23 @@ void barracks_init_player_stuff(int mode)
 
 	cfile::listFiles(fileNames, cfile::TYPE_PLAYERS, "*.plr", cfile::SORT_TIME, barracks_pilot_filter);
 
+	// Remove file ectensions
+	std::for_each(fileNames.begin(), fileNames.end(), cfile::util::removeExtension<SCP_string>);
+
+	Assert(fileNames.size() < MAX_PILOTS);
+
 	Num_pilots = (int)fileNames.size();
 
-	for (int i = 0; i < Num_pilots; ++i)
+	i = 0;
+	SCP_vector<SCP_string>::iterator iter;
+	for (iter = fileNames.begin(); iter != fileNames.end(); ++iter, ++i)
 	{
-		strcpy_s(Pilots_arr[i], fileNames[i].c_str());
+		strcpy_s(Pilots_arr[i], iter->c_str());
+	}
+
+	for (i = 0; i < MAX_PILOTS; ++i)
+	{
+		Pilots[i] = Pilots_arr[i];
 	}
 
 	// single player specific stuff

@@ -1303,6 +1303,9 @@ int fs2netd_get_valid_missions_do()
 
 			cfile::listFiles(missionNames, cfile::TYPE_MISSIONS, wild_card);
 
+			// Remove file ectensions
+			std::for_each(missionNames.begin(), missionNames.end(), cfile::util::removeExtension<SCP_string>);
+
 			idx = count = (int)missionNames.size();
 
 			file_names = (char**)vm_malloc_q(sizeof(char*)* count);

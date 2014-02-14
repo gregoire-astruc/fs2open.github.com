@@ -54,6 +54,8 @@ namespace cfile
 			vpStream->seekg(currentPos, std::ios_base::beg);
 			vpStream->read(s, n);
 
+			offset += n;
+
 			return vpStream->gcount();
 		}
 
@@ -71,13 +73,13 @@ namespace cfile
 			switch (way)
 			{
 			case std::ios::beg:
-				offset = way;
+				offset = off;
 				break;
 			case std::ios::cur:
-				offset += way;
+				offset += off;
 				break;
 			case std::ios::end:
-				offset = size + way;
+				offset = size + off;
 				break;
 			default:
 				Int3();
@@ -104,7 +106,7 @@ namespace cfile
 		childPath.append(DirectorySeparatorStr).append(path);
 		childPath = normalizePath(childPath);
 
-		EntryType type = getEntryType(childPath);
+		EntryType type = getFileData(childPath).type;
 
 		if (type == UNKNOWN)
 		{
@@ -124,7 +126,7 @@ namespace cfile
 		}
 
 		size_t num = 0;
-		BOOST_FOREACH(const VPFileSystem::FileData& data, parentSystem->fileData)
+		BOOST_FOREACH(const VPFileData& data, parentSystem->fileData)
 		{
 			if (boost::algorithm::starts_with(data.name, path))
 			{
@@ -161,7 +163,7 @@ namespace cfile
 
 		outVector.clear();
 
-		BOOST_FOREACH(const VPFileSystem::FileData& data, parentSystem->fileData)
+		BOOST_FOREACH(const VPFileData& data, parentSystem->fileData)
 		{
 			if (boost::algorithm::starts_with(data.name, path))
 			{
@@ -189,28 +191,31 @@ namespace cfile
 
 	EntryType VPFileSystemEntry::getType() const
 	{
-		return getEntryType(path);
+		return getFileData(path).type;
 	}
 
-	EntryType VPFileSystemEntry::getEntryType(const string_type& path) const
+	VPFileData VPFileSystemEntry::getFileData(const string_type& path) const
 	{
 		if (path.length() == 0)
 		{
 			// Special case: The root entry is always a directory
-			return DIRECTORY;
+			VPFileData data;
+			data.type = DIRECTORY;
+
+			return data;
 		}
 
-		std::vector<VPFileSystem::FileData>::const_iterator iter;
+		std::vector<VPFileData>::const_iterator iter;
 		for (iter = parentSystem->fileData.begin(); iter != parentSystem->fileData.end(); ++iter)
 		{
 			if (boost::algorithm::iequals(iter->name, path))
 			{
 				// Only compare case insensitive
-				return iter->type;
+				return *iter;
 			}
 		}
 
-		return UNKNOWN;
+		return VPFileData();
 	}
 
 	bool VPFileSystemEntry::deleteChild(const string_type& name)
@@ -235,8 +240,8 @@ namespace cfile
 			throw InvalidOperationException("VP archives are read only!");
 		}
 
-		VPFileSystem::FileData data;
-		std::vector<VPFileSystem::FileData>::const_iterator iter;
+		VPFileData data;
+		std::vector<VPFileData>::const_iterator iter;
 		for (iter = parentSystem->fileData.begin(); iter != parentSystem->fileData.end(); ++iter)
 		{
 			// Only compare case insensitive
@@ -246,49 +251,37 @@ namespace cfile
 			}
 		}
 
-		//if (mode & MODE_MEMORY_MAPPED)
+		if (mode & MODE_MEMORY_MAPPED)
 		{
-			/*
-			typedef stream_buffer<mapped_file> mapped_buffer;
-
-			basic_mapped_file_params<boost::filesystem::path> params(getEntryPath());
-			params.mode = openmode;
-
-			shared_ptr<mapped_buffer> buffer = shared_ptr<mapped_buffer>(new mapped_buffer(params));
-			if (!buffer->is_open())
-			{
-				throw FileSystemException("Failed to open memory mapped file!");
-			}
-			else
-			{
-				return buffer;
-			}
-			*/
+			throw FileSystemException("Cannot open VP-entry in memory mapped mode!");
 		}
-		//else
+
+		typedef stream_buffer<VPFileSource> vpBuffer;
+
+		VPFileSource source;
+		source.begin = data.offset;
+		source.size = data.size;
+		source.vpStream = &parentSystem->vpStream;
+
+		shared_ptr<vpBuffer> buffer = shared_ptr<vpBuffer>(new vpBuffer(source));
+
+		if (!buffer->is_open())
 		{
-			typedef stream_buffer<VPFileSource> vpBuffer;
-
-			VPFileSource source;
-			source.begin = data.offset;
-			source.size = data.size;
-			source.vpStream = &parentSystem->vpStream;
-
-			shared_ptr<vpBuffer> buffer = shared_ptr<vpBuffer>(new vpBuffer(source));
-
-			if (!buffer->is_open())
-			{
-				throw FileSystemException("Failed to open memory mapped file!");
-			}
-			else
-			{
-				return buffer;
-			}
+			throw FileSystemException("Failed to open memory mapped file!");
+		}
+		else
+		{
+			return buffer;
 		}
 	}
 
 	void VPFileSystemEntry::rename(const string_type& newPath)
 	{
 		throw InvalidOperationException("VP archives are read-only!");
+	}
+
+	time_t VPFileSystemEntry::lastWriteTime()
+	{
+		return getFileData(path).time;
 	}
 }

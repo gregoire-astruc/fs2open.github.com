@@ -597,7 +597,7 @@ int targa_read_bitmap(const char *real_filename, ubyte *image_data, ubyte *palet
 
 	// skip the Image ID field -- should not be needed
 	if(header.id_length>0) {
-		if (!cfile::seek(targa_file, header.id_length, cfile::SEEK_MODE_CUR)) {
+		if (cfile::seek(targa_file, header.id_length, cfile::SEEK_MODE_CUR)) {
 			cfile::close(targa_file);
 			return TARGA_ERROR_READING;
 		}

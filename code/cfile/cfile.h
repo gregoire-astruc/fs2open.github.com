@@ -146,7 +146,7 @@ namespace cfile
 		SORT_REVERSE = 3,
 	};
 
-	typedef bool(*ListFilterFunction)(const SCP_string&);
+	typedef bool(*ListFilterFunction)(const std::string&);
 
 	bool init(const char* rootDir, const char* cdromDir);
 
@@ -180,7 +180,7 @@ namespace cfile
 
 	bool flush(FileHandle* handle);
 
-	bool seek(FileHandle *fp, int offset, cfile::SeekMode where);
+	int seek(FileHandle *fp, int offset, cfile::SeekMode where);
 
 	int tell(FileHandle* fp);
 
@@ -265,6 +265,17 @@ namespace cfile
 	namespace util
 	{
 		void generateVPChecksums();
+
+		template<class String>
+		void removeExtension(String& string)
+		{
+			String::size_type dot = string.find_last_of(".");
+
+			if (dot != String::npos)
+			{
+				string.resize(dot);
+			}
+		}
 
 #ifdef WIN32
 		const char PlatformDirectorySeparator = '\\';

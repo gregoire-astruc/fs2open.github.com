@@ -4452,6 +4452,9 @@ void multi_create_list_load_missions()
 	SCP_vector<SCP_string> fileList;
 	cfile::listFiles(fileList, cfile::TYPE_MISSIONS, wild_card);
 
+	// Remove file ectensions
+	std::for_each(fileList.begin(), fileList.end(), cfile::util::removeExtension<SCP_string>);
+
 	// maybe create a standalone dialog
 	if (Game_mode & GM_STANDALONE_SERVER) {
 		std_create_gen_dialog("Loading missions");
@@ -4512,6 +4515,9 @@ void multi_create_list_load_campaigns()
 
 	SCP_vector<SCP_string> fileList;
 	cfile::listFiles(fileList, cfile::TYPE_MISSIONS, wild_card);
+
+	// Remove file ectensions
+	std::for_each(fileList.begin(), fileList.end(), cfile::util::removeExtension<SCP_string>);
 
 	// maybe create a standalone dialog
 	if (Game_mode & GM_STANDALONE_SERVER) {

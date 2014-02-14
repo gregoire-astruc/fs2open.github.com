@@ -27,6 +27,10 @@
 #include <boost/iostreams/device/mapped_file.hpp>
 
 #include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string_regex.hpp>
+
+#include <boost/bind.hpp>
+#include <boost/ref.hpp>
 
 namespace cfile
 {
@@ -46,8 +50,12 @@ namespace cfile
 
 		std::iostream stream;
 
+		size_t maxReadLength;
+		std::streampos readLengthStart;
+		std::streamoff readLengthOffset;
+
 		FileHandle(boost::shared_ptr<std::streambuf> bufferIn, FileEntryPointer entryIn, int modeIn)
-			: buffer(bufferIn), stream(bufferIn.get()), entry(entryIn), mode(modeIn)
+			: buffer(bufferIn), stream(bufferIn.get()), entry(entryIn), mode(modeIn), maxReadLength(0)
 		{
 			Assert(buffer);
 			Assert(entryIn);
@@ -142,8 +150,15 @@ namespace cfile
 						{
 							try
 							{
-								mprintf(("Searching root pack '%s' ... ", (*iter)->getPath().c_str()));
-								VPFileSystem* system = new VPFileSystem(buffer, entry->getPath().c_str());
+								shared_ptr<MergedEntry> mergedEntry = dynamic_pointer_cast<MergedEntry>((*iter));
+								Assert(mergedEntry);
+
+								shared_ptr<PhysicalEntry> vpEntry = dynamic_pointer_cast<PhysicalEntry>(mergedEntry->getContainedEntry());
+								Assert(vpEntry);
+
+								mprintf(("Searching root pack '%s' ... ", vpEntry->getEntryPath().string().c_str()));
+
+								VPFileSystem* system = new VPFileSystem(vpEntry->getEntryPath(), buffer, entry->getPath().c_str());
 								systems.push_back(system);
 							}
 							catch (std::exception& e)
@@ -223,6 +238,7 @@ namespace cfile
 
 		// Construct first file system to search for pack files
 		fileSystem.reset(new MergedFileSystem());
+		fileSystem->setCaseInsensitive(true);
 
 		fileSystem->addFileSystem(new PhysicalFileSystem(rootDir.c_str()));
 
@@ -365,6 +381,14 @@ namespace cfile
 		}
 	};
 
+	struct TimeSorter
+	{
+		bool operator()(const FileEntryPointer& entryA, const FileEntryPointer& entryB) const
+		{
+			return entryA->lastWriteTime() < entryB->lastWriteTime();
+		}
+	};
+
 	void sortEntryVector(std::vector<FileEntryPointer>& children, SortMode mode)
 	{
 		switch (mode)
@@ -373,10 +397,10 @@ namespace cfile
 			std::sort(children.begin(), children.end(), NameSorter());
 			break;
 		case SORT_TIME:
-			// TODO: Actually implement time based sorting!
-			std::sort(children.begin(), children.end(), NameSorter());
+			std::sort(children.begin(), children.end(), TimeSorter());
 			break;
 		case SORT_REVERSE:
+			std::sort(children.begin(), children.end(), NameSorter());
 			std::reverse(children.begin(), children.end());
 			break;
 		default:
@@ -404,9 +428,56 @@ namespace cfile
 		return out;
 	}
 
-	void filterFiles(std::vector<FileEntryPointer> childrenm, const SCP_string& filter, ListFilterFunction filterFunc)
+	bool shouldRemoveFull(FileEntryPointer& entryPointer, const boost::regex& wildcardMatcher, ListFilterFunction filterFunc)
 	{
-		// TODO: Implement me!
+		const string_type& path = entryPointer->getPath();
+
+		// as string::npos is (size_t)-1, using + 1 will make it overflow to 0
+		size_t begin = path.find_last_of(DirectorySeparatorStr) + 1;
+
+		bool keep = boost::regex_match(path.begin() + begin, path.end(), wildcardMatcher);
+
+		if (keep && filterFunc != NULL)
+		{
+			keep = filterFunc(path.substr(begin));
+		}
+
+		return !keep;
+	}
+
+	bool shouldRemoveFunc(FileEntryPointer& entryPointer, ListFilterFunction filterFunc)
+	{
+		const string_type& path = entryPointer->getPath();
+
+		// as string::npos is (size_t)-1, using + 1 will make it overflow to 0
+		size_t begin = path.find_last_of(DirectorySeparatorStr) + 1;
+
+		return filterFunc(path.substr(begin));
+	}
+
+	void filterFiles(std::vector<FileEntryPointer>& children, const SCP_string& filter, ListFilterFunction filterFunc)
+	{
+		if (!filter.empty())
+		{
+			// RegExp magic to escape otherwise invalid characters
+			const boost::regex esc("([\\^\\.\\$\\|\\(\\)\\[\\]\\*\\+\\?\\/\\\\])");
+			const char* replacement = "\\\\\\1";
+			std::string filterResult = boost::regex_replace(std::string(filter.begin(), filter.end()), esc,
+				replacement, boost::match_default | boost::format_sed);
+
+			// We also escaped our wildcards so we need to restore those
+			boost::replace_all(filterResult, "\\*", ".*");
+			boost::replace_all(filterResult, "\\?", ".");
+
+			boost::regex wildcardMatcher(filterResult);
+
+			children.erase(std::remove_if(children.begin(), children.end(),
+				boost::bind(shouldRemoveFull, _1, boost::cref(wildcardMatcher), filterFunc)), children.end());
+		}
+		else if (filterFunc != NULL)
+		{
+			children.erase(std::remove_if(children.begin(), children.end(), boost::bind(shouldRemoveFunc, _1, filterFunc)), children.end());
+		}
 	}
 
 	void listFiles(SCP_vector<SCP_string>& names, DirType pathType, const SCP_string& filter, SortMode sortMode, ListFilterFunction filterFunc)
@@ -538,11 +609,26 @@ namespace cfile
 		}
 		else
 		{
+			SCP_string correctName(name);
+
+			size_t dot = correctName.find_last_of(".");
+
+			if (dot != SCP_string::npos)
+			{
+				// We may only strip the extension if it is longer than 1 character
+				if (correctName.size() - dot > 2)
+				{
+					correctName.resize(dot);
+				}
+			}
+
 			SCP_string workString;
 
 			for (size_t i = 0; i < numExts; ++i)
 			{
-				workString.assign(name);
+				Assertion(strlen(exts[i]) > 3, "It is assumed that any extension is at least 3 characters long, get a coder!");
+
+				workString.assign(correctName);
 				workString.append(exts[i]);
 
 				FileEntryPointer entry = getFileEntry(workString, MODE_READ, type, localize);
@@ -552,7 +638,8 @@ namespace cfile
 					if (out_extIndex)
 						*out_extIndex = i;
 
-					outName.assign(entry->getPath().c_str());
+					outName.assign(getEntryFileName(entry));
+
 
 					return true;
 				}
@@ -658,13 +745,19 @@ namespace cfile
 	std::iostream& getStream(FileHandle* handle)
 	{
 		Assert(handle != NULL);
+		Assertion(handle->maxReadLength == 0, "Trying to use C++ stream with read length restriction is not possible!");
 
 		return handle->stream;
 	}
 
 	void setMaxReadLength(FileHandle* handle, size_t size)
 	{
+		Assert(handle != NULL);
+		Assert(handle->mode & MODE_READ);
 
+		handle->maxReadLength = size;
+		handle->readLengthOffset = 0;
+		handle->readLengthStart = handle->stream.tellg();
 	}
 
 	const std::string& getFilePath(FileHandle* handle)
@@ -694,7 +787,7 @@ namespace cfile
 		return true;
 	}
 
-	bool seek(FileHandle *fp, int offset, cfile::SeekMode where)
+	int seek(FileHandle *fp, int offset, cfile::SeekMode where)
 	{
 		Assert(fp != NULL);
 
@@ -722,7 +815,15 @@ namespace cfile
 		if (fp->mode & MODE_READ)
 			fp->stream.seekp(offset, dir);
 
-		return true;
+
+		if (!fp->stream.fail())
+		{
+			return 0;
+		}
+		else
+		{
+			return 1;
+		}
 	}
 
 	int tell(FileHandle* fp)
@@ -742,6 +843,13 @@ namespace cfile
 	bool eof(FileHandle* fp)
 	{
 		Assert(fp != NULL);
+		Assert(fp->mode & MODE_READ);
+
+		// Not very elegant but sadly needed
+		if (fp->stream.peek() == EOF)
+		{
+			return true;
+		}
 
 		return fp->stream.eof();
 	}
@@ -759,9 +867,6 @@ namespace cfile
 		return length;
 	}
 
-	template<class T>
-	T read(FileHandle* handle);
-
 	template<>
 	char read<char>(FileHandle* handle)
 	{
@@ -770,7 +875,7 @@ namespace cfile
 		char c;
 
 		if (read(&c, sizeof(c), 1, handle) != 1)
-			throw EOFException();
+			return 0;
 
 		return c;
 	}
@@ -783,7 +888,7 @@ namespace cfile
 		ubyte c;
 
 		if (read(&c, sizeof(c), 1, handle) != 1)
-			throw EOFException();
+			return 0;
 
 		return c;
 	}
@@ -796,7 +901,7 @@ namespace cfile
 		int i;
 
 		if (read(&i, sizeof(i), 1, handle) != 1)
-			throw EOFException();
+			return 0;
 
 		i = INTEL_INT(i);
 		return i;
@@ -810,7 +915,7 @@ namespace cfile
 		short s;
 
 		if (read(&s, sizeof(s), 1, handle) != 1)
-			throw EOFException();
+			return 0;
 
 		s = INTEL_SHORT(s);
 		return s;
@@ -824,7 +929,7 @@ namespace cfile
 		ushort s;
 
 		if (read(&s, sizeof(s), 1, handle) != 1)
-			throw EOFException();
+			return 0;
 
 		s = INTEL_SHORT(s);
 		return s;
@@ -838,7 +943,7 @@ namespace cfile
 		uint i;
 
 		if (read(&i, sizeof(i), 1, handle) != 1)
-			throw EOFException();
+			return 0;
 
 		i = INTEL_INT(i);
 		return i;
@@ -852,7 +957,7 @@ namespace cfile
 		float f;
 
 		if (read(&f, sizeof(f), 1, handle) != 1)
-			throw EOFException();
+			return 0.0f;
 
 		f = INTEL_FLOAT(&f);
 		return f;
@@ -866,7 +971,7 @@ namespace cfile
 		double f;
 
 		if (read(&f, sizeof(f), 1, handle) != 1)
-			throw EOFException();
+			return 0.0;
 
 		f = INTEL_FLOAT(&f);
 		return f;
@@ -889,10 +994,27 @@ namespace cfile
 	int read(void* buf, int elsize, int nelem, FileHandle* handle)
 	{
 		Assert(handle != NULL);
+		Assert(handle->mode & MODE_READ);
+
+		if (handle->maxReadLength > 0)
+		{
+			std::streampos diff = handle->stream.tellg() - handle->readLengthStart;
+
+			Assertion(diff >= 0, "Seeked before read length restriction start!");
+
+			if (diff > handle->maxReadLength)
+			{
+				std::ostringstream os;
+
+				os << "Attempted to read " << (diff.seekpos() - handle->maxReadLength) << "-byte(s) beyond length limit";
+
+				throw MaxReadLengthException(os.str());
+			}
+		}
 
 		handle->stream.read(reinterpret_cast<char*>(buf), elsize * nelem);
 
-		return static_cast<int>(handle->stream.gcount()) / nelem;
+		return static_cast<int>(handle->stream.gcount()) / elsize;
 	}
 
 	void readString(char* buf, int n, FileHandle* handle)
@@ -955,9 +1077,6 @@ namespace cfile
 
 		buf[len] = 0;
 	}
-
-	template<class T>
-	bool write(typename boost::call_traits<T>::param_type val, FileHandle* handle);
 
 	template<>
 	bool write<char>(boost::call_traits<char>::param_type val, FileHandle* handle)
@@ -1024,11 +1143,12 @@ namespace cfile
 	int write(const void* buf, int elsize, int nelem, FileHandle* handle)
 	{
 		Assert(handle != NULL);
+		Assert(handle->mode & MODE_WRITE);
 
 		handle->stream.write(reinterpret_cast<const char*>(buf), elsize * nelem);
 
 		// Assume everything was written
-		return elsize * nelem;
+		return nelem;
 	}
 
 	void writeStringLen(const char* buf, FileHandle* handle)
@@ -1050,7 +1170,8 @@ namespace cfile
 
 		typedef stream_buffer<mapped_file> mapped_buffer;
 
-		shared_ptr<mapped_buffer> mappedBuffer = static_pointer_cast<mapped_buffer>(handle->buffer);
+		shared_ptr<mapped_buffer> mappedBuffer = dynamic_pointer_cast<mapped_buffer>(handle->buffer);
+		Assert(mappedBuffer);
 
 		return (*mappedBuffer)->data();
 	}

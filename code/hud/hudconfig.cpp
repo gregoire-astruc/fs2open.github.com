@@ -1794,6 +1794,8 @@ void hud_config_color_init()
 
 	// get a list of all hcf files
 	cfile::listFiles(HC_filenames, cfile::TYPE_PLAYERS, "*.hcf", cfile::SORT_NAME);
+
+	std::for_each(HC_filenames.begin(), HC_filenames.end(), cfile::util::removeExtension<SCP_string>);
 }
 
 void hud_config_color_close()

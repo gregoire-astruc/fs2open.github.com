@@ -8,6 +8,8 @@ namespace cfile
 {
 	class VPFileSystem;
 
+	class VPFileData;
+
 	using namespace vfspp;
 
 	class VPFileSystemEntry : public IFileSystemEntry
@@ -33,8 +35,10 @@ namespace cfile
 
 		virtual void rename(const string_type& newPath);
 
+		virtual time_t lastWriteTime();
+
 	private:
-		EntryType getEntryType(const string_type& path) const;
+		VPFileData getFileData(const string_type& path) const;
 
 		VPFileSystem* parentSystem;
 	};

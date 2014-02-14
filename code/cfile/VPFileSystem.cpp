@@ -24,8 +24,8 @@ namespace cfile
 		_fs_time_t write_time;
 	};
 
-	VPFileSystem::VPFileSystem(boost::shared_ptr<std::streambuf>& vpFileBufferIn, const std::string& rootPathIn)
-		: vpFileBuffer(vpFileBufferIn), rootPath(rootPathIn), vpStream(vpFileBuffer.get())
+	VPFileSystem::VPFileSystem(const boost::filesystem::path& filePathIn, boost::shared_ptr<std::streambuf>& vpFileBufferIn, const std::string& rootPathIn)
+		: vpFileBuffer(vpFileBufferIn), rootPath(rootPathIn), vpStream(vpFileBuffer.get()), filePath(filePathIn)
 	{
 		Assert(vpFileBuffer);
 
@@ -74,8 +74,10 @@ namespace cfile
 
 				currentDir.append(part);
 
-				FileData data;
+				VPFileData data;
 				data.name.assign(currentDir);
+				boost::to_lower(data.name);
+
 				data.type = DIRECTORY;
 				
 				data.offset = 0;
@@ -128,8 +130,10 @@ namespace cfile
 
 					currentDir.append(file.filename);
 
-					FileData data;
+					VPFileData data;
 					data.name.assign(currentDir);
+					boost::to_lower(data.name);
+
 					data.type = DIRECTORY;
 
 					data.offset = 0;
@@ -143,7 +147,7 @@ namespace cfile
 			{
 				++numFiles;
 
-				FileData data;
+				VPFileData data;
 				data.type = vfspp::FILE;
 
 				data.offset = file.offset;
@@ -153,6 +157,8 @@ namespace cfile
 				data.name.assign(currentDir);
 				data.name.append(DirectorySeparatorStr);
 				data.name.append(file.filename);
+
+				boost::to_lower(data.name);
 
 				fileData.push_back(data);
 			}

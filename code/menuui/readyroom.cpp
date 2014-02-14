@@ -402,7 +402,7 @@ int sim_room_line_add(int type, char *name, char *filename, int x, int y, int fl
 }
 
 // build up a list of all missions in all campaigns.
-bool sim_room_campaign_mission_filter(const SCP_string& filename)
+bool sim_room_campaign_mission_filter(const std::string& filename)
 {
 	int num;
 
@@ -416,7 +416,7 @@ bool sim_room_campaign_mission_filter(const SCP_string& filename)
 }
 
 // filter out all missions already used in existing campaigns
-bool sim_room_standalone_mission_filter(const SCP_string& filename)
+bool sim_room_standalone_mission_filter(const std::string& filename)
 {
 	int type;
 	char mission_name[255];
@@ -1093,6 +1093,9 @@ void sim_room_init()
 	SCP_vector<SCP_string> missionNames;
 
 	cfile::listFiles(missionNames, cfile::TYPE_MISSIONS, wild_card, cfile::SORT_NAME, sim_room_standalone_mission_filter);
+
+	// Remove file extensions
+	std::for_each(missionNames.begin(), missionNames.end(), cfile::util::removeExtension<SCP_string>);
 
 	Assert(missionNames.size() <= MAX_MISSIONS);
 

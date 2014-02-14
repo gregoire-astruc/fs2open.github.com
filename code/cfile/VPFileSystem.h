@@ -11,26 +11,33 @@
 
 #include <boost/scoped_ptr.hpp>
 
+#include <boost/filesystem.hpp>
+
 namespace cfile
 {
 	using namespace vfspp;
 
+	class VPFileData
+	{
+	public:
+		std::string name;
+		EntryType type;
+
+		size_t offset;
+		size_t size;
+		time_t time;
+
+		VPFileData() : name(), type(UNKNOWN), offset(0), size(0), time(0)
+		{}
+	};
+
 	class VPFileSystem : public IFileSystem
 	{
 	private:
-		struct FileData
-		{
-			std::string name;
-			EntryType type;
-
-			size_t offset;
-			size_t size;
-			_fs_time_t time;
-		};
-
-		std::vector<FileData> fileData;
+		std::vector<VPFileData> fileData;
 
 		std::string rootPath;
+		boost::filesystem::path filePath;
 
 		boost::shared_ptr<std::streambuf> vpFileBuffer;
 		std::istream vpStream;
@@ -40,7 +47,7 @@ namespace cfile
 		friend class VPFileSystemEntry;
 
 	public:
-		VPFileSystem(boost::shared_ptr<std::streambuf>& vpFileBuffer, const std::string& rootPath);
+		VPFileSystem(const boost::filesystem::path& filePath, boost::shared_ptr<std::streambuf>& vpFileBuffer, const std::string& rootPath);
 
 		virtual ~VPFileSystem();
 

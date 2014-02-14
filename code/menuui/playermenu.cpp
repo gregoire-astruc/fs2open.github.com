@@ -199,7 +199,7 @@ void player_select_eval_very_first_pilot();
 void player_select_commit();
 void player_select_cancel_create();
 
-bool player_select_pilot_file_filter(const SCP_string& filename);
+bool player_select_pilot_file_filter(const std::string& filename);
 
 extern int delete_pilot_file(char *pilot_name);
 
@@ -822,6 +822,9 @@ int player_select_get_last_pilot()
 
 		cfile::listFiles(pilotFiles, cfile::TYPE_PLAYERS, "*.plr", cfile::SORT_TIME, player_select_pilot_file_filter);
 
+		// Remove file extensions
+		std::for_each(pilotFiles.begin(), pilotFiles.end(), cfile::util::removeExtension<SCP_string>);
+
 		Assert(pilotFiles.size() < MAX_PILOTS);
 
 		int i = 0;
@@ -830,6 +833,13 @@ int player_select_get_last_pilot()
 		for (iter = pilotFiles.begin(); iter != pilotFiles.end(); ++iter, ++i)
 		{
 			strcpy_s(Pilots_arr[i], iter->c_str());
+			Pilots[i] = Pilots_arr[i];
+		}
+
+		// Copy all the pointers from the Pilots_arr array
+		for (int i = 0; i < MAX_PILOTS; ++i)
+		{
+			Pilots[i] = Pilots_arr[i];
 		}
 
 		Player_select_num_pilots = (int) pilotFiles.size();
@@ -871,6 +881,9 @@ void player_select_init_player_stuff(int mode)
 
 	cfile::listFiles(pilotFiles, cfile::TYPE_PLAYERS, "*.plr", cfile::SORT_TIME, player_select_pilot_file_filter);
 
+	// Remove file extensions
+	std::for_each(pilotFiles.begin(), pilotFiles.end(), cfile::util::removeExtension<SCP_string>);
+
 	Assert(pilotFiles.size() < MAX_PILOTS);
 
 	int i = 0;
@@ -879,6 +892,12 @@ void player_select_init_player_stuff(int mode)
 	for (iter = pilotFiles.begin(); iter != pilotFiles.end(); ++iter, ++i)
 	{
 		strcpy_s(Pilots_arr[i], iter->c_str());
+	}
+
+	// Copy all the pointers from the Pilots_arr array
+	for (int i = 0; i < MAX_PILOTS; ++i)
+	{
+		Pilots[i] = Pilots_arr[i];
 	}
 
 	Player_select_num_pilots = (int)pilotFiles.size();
@@ -1175,7 +1194,7 @@ void player_select_display_all_text()
 	}
 }
 
-bool player_select_pilot_file_filter(const SCP_string& filename)
+bool player_select_pilot_file_filter(const std::string& filename)
 {
 	return Pilot.verify(filename.c_str());
 }

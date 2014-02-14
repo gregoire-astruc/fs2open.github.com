@@ -133,7 +133,7 @@ static int audiostr_read_uint(cfile::FileHandle *rw, uint *i)
 {
 	int rc = cfile::read((void *)i, sizeof(uint), 1, rw);
 
-	if (rc != sizeof(uint))
+	if (rc != 1)
 		return 0;
 
 	*i = INTEL_INT(*i); //-V570
@@ -145,7 +145,7 @@ static int audiostr_read_word(cfile::FileHandle *rw, WORD *i)
 {
 	int rc = cfile::read((void *)i, sizeof(WORD), 1, rw);
 
-	if (rc != sizeof(WORD))
+	if (rc != 1)
 		return 0;
 
 	*i = INTEL_SHORT(*i); //-V570
@@ -157,7 +157,7 @@ static int audiostr_read_dword(cfile::FileHandle *rw, DWORD *i)
 {
 	int rc = cfile::read((void *)i, sizeof(DWORD), 1, rw);
 
-	if (rc != sizeof(DWORD))
+	if (rc != 1)
 		return 0;
 
 	*i = INTEL_INT(*i); //-V570
@@ -459,9 +459,14 @@ bool WaveFile::Open(char *pszFilename, bool keep_ext)
 	else {
 		size_t extIndex;
 
-		cfile::findFile(pszFilename, fullName, cfile::TYPE_ANY, audio_ext, NUM_EXT, &extIndex);
-
-		rc = (int)extIndex;
+		if (!cfile::findFile(pszFilename, fullName, cfile::TYPE_ANY, audio_ext, NUM_EXT, &extIndex))
+		{
+			rc = -1;
+		}
+		else
+		{
+			rc = (int)extIndex;
+		}
 	}
 
 	if (rc < 0) {
@@ -471,7 +476,7 @@ bool WaveFile::Open(char *pszFilename, bool keep_ext)
 		strcat_s( filename, audio_ext[rc] );
 	}
 
-	m_snd_info.cfp = cfile::open(fullName, cfile::MODE_READ, cfile::OPEN_MEMORY_MAPPED);
+	m_snd_info.cfp = cfile::open(fullName, cfile::MODE_READ, cfile::OPEN_NORMAL);
 
 	if (m_snd_info.cfp == NULL)
 		goto OPEN_ERROR;
@@ -566,7 +571,7 @@ bool WaveFile::Open(char *pszFilename, bool keep_ext)
 
 						// Read those extra bytes, append to WAVEFORMATEX structure
 						if (cbExtra != 0)
-							cfile::read(((char *)(m_pwfmt_original)+sizeof(WAVEFORMATEX)), (int) cbExtra, 1, m_snd_info.cfp);
+							cfile::read(((char *)(m_pwfmt_original)+sizeof(WAVEFORMATEX)), 1, (int)cbExtra, m_snd_info.cfp);
 					} else {
 						Int3();		// malloc failed
 						goto OPEN_ERROR;
@@ -883,7 +888,7 @@ int WaveFile::Read(ubyte *pbDest, uint cbSize, int service)
 		// IEEE FLOAT is special too, downsampling can give short buffers
 		else if (m_wave_format == WAVE_FORMAT_IEEE_FLOAT) {
 			while ( !m_abort_next_read && ((uint)actual_read < num_bytes_read) ) {
-				rc = cfile::read((char *)dest_buf, num_bytes_read, 1, m_snd_info.cfp);
+				rc = cfile::read((char *)dest_buf, 1, num_bytes_read, m_snd_info.cfp);
 
 				if (rc <= 0) {
 					break;
@@ -936,7 +941,7 @@ int WaveFile::Read(ubyte *pbDest, uint cbSize, int service)
 		}
 		// standard WAVE reading
 		else {
-			actual_read = cfile::read((char *)dest_buf, num_bytes_read, 1, m_snd_info.cfp);
+			actual_read = cfile::read((char *)dest_buf, 1, num_bytes_read, m_snd_info.cfp);
 		}
 
 		if ( (actual_read <= 0) || (m_abort_next_read) ) {

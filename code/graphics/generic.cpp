@@ -175,6 +175,8 @@ int generic_anim_stream(generic_anim *ga)
 		return -1;
 	}
 
+	rval = (int)index;
+
 	strcat_s(ga->filename, ext_list[rval]);
 	ga->type = type_list[rval];
 	//seek to the end

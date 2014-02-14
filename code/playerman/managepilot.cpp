@@ -148,7 +148,7 @@ void init_new_pilot(player *p, int reset)
 
 int local_num_campaigns = 0;
 
-bool campaign_file_list_filter(const SCP_string& filename)
+bool campaign_file_list_filter(const std::string& filename)
 {
 	char name[NAME_LENGTH];
 	char *desc = NULL;
@@ -184,6 +184,9 @@ void pilot_set_start_campaign(player* p)
 	// NOTE: we don't do sorting here, but we assume CF_SORT_NAME, and do it manually below
 	SCP_vector<SCP_string> campaigns;
 	cfile::listFiles(campaigns, cfile::TYPE_MISSIONS, wild_card, cfile::SORT_NONE, campaign_file_list_filter);
+
+	// Remove file ectensions
+	std::for_each(campaigns.begin(), campaigns.end(), cfile::util::removeExtension<SCP_string>);
 
 	SCP_vector<SCP_string>::iterator iter;
 	for (iter = campaigns.begin(); iter != campaigns.end(); ++iter)
@@ -318,6 +321,9 @@ void pilot_load_pic_list()
 	SCP_vector<SCP_string> images;
 	cfile::listFiles(images, cfile::TYPE_PLAYER_IMAGES, "*.pcx", cfile::SORT_NAME);
 
+	// Remove file ectensions
+	std::for_each(images.begin(), images.end(), cfile::util::removeExtension<SCP_string>);
+
 	Assert(images.size() < MAX_PILOT_IMAGES);
 
 	Num_pilot_images = static_cast<int>(images.size());
@@ -327,6 +333,10 @@ void pilot_load_pic_list()
 	for (iter = images.begin(); iter != images.end(); ++iter, ++i)
 	{
 		strcpy_s(Pilot_images_arr[i], iter->c_str());
+	}
+
+	for (int i = 0; i < MAX_PILOT_IMAGES; ++i)
+	{
 		Pilot_image_names[i] = Pilot_images_arr[i];
 	}
 }
@@ -339,6 +349,9 @@ void pilot_load_squad_pic_list()
 	SCP_vector<SCP_string> images;
 	cfile::listFiles(images, cfile::TYPE_SQUAD_IMAGES, "*.pcx", cfile::SORT_NAME);
 
+	// Remove file ectensions
+	std::for_each(images.begin(), images.end(), cfile::util::removeExtension<SCP_string>);
+
 	Assert(images.size() < MAX_PILOT_IMAGES);
 
 	Num_pilot_squad_images = static_cast<int>(images.size());
@@ -348,6 +361,10 @@ void pilot_load_squad_pic_list()
 	for (iter = images.begin(); iter != images.end(); ++iter, ++i)
 	{
 		strcpy_s(Pilot_squad_images_arr[i], iter->c_str());
+	}
+
+	for (int i = 0; i < MAX_PILOT_IMAGES; ++i)
+	{
 		Pilot_squad_image_names[i] = Pilot_squad_images_arr[i];
 	}
 }

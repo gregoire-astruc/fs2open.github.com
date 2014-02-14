@@ -79,12 +79,18 @@ void convert_pilot_files()
 	// get list of pilots which already exist (new or converted already)
 	cfile::listFiles(existing, cfile::TYPE_PLAYERS, "*.plr");
 
+	// Remove file extensions
+	std::for_each(existing.begin(), existing.end(), cfile::util::removeExtension<SCP_string>);
+
 	// get list of old pilots which may need converting, starting with inferno pilots
 
 	cfile::listFiles(old_files, cfile::TYPE_SINGLE_PLAYERS_INFERNO, "*.pl2");
 	inf_count = old_files.size();
 
 	cfile::listFiles(old_files, cfile::TYPE_SINGLE_PLAYERS, "*.pl2");
+
+	// Remove file extensions
+	std::for_each(old_files.begin(), old_files.end(), cfile::util::removeExtension<SCP_string>);
 
 	if ( old_files.empty() ) {
 		return;
@@ -142,6 +148,9 @@ void convert_pilot_files()
 			{
 				cfile::listFiles(savefiles, cfile::TYPE_SINGLE_PLAYERS, wildcard);
 			}
+
+			// Remove file extensions
+			std::for_each(savefiles.begin(), savefiles.end(), cfile::util::removeExtension<SCP_string>);
 
 			for (j = 0; j < savefiles.size(); j++) {
 				pcon->csg_convert(savefiles[j].c_str(), inferno);
