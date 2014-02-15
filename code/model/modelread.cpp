@@ -2244,7 +2244,7 @@ int read_model_file(polymodel * pm, const char *filename, int n_subsystems, mode
 				break;
 
 		}
-		cfile::seek(fp, next_chunk, cfile::SEEK_MODE_CUR);
+		cfile::seek(fp, next_chunk, cfile::SEEK_MODE_SET);
 
 		id = cfile::read<int>(fp);
 		len = cfile::read<int>(fp);
