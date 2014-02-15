@@ -12,6 +12,8 @@
 #include <boost/iostreams/stream_buffer.hpp>
 #include <boost/iostreams/device/mapped_file.hpp>
 
+#include <boost/thread/lock_guard.hpp>
+
 namespace cfile
 {
 	using namespace boost;
@@ -24,9 +26,11 @@ namespace cfile
 		std::streamsize size;
 		std::istream* vpStream;
 
+		boost::mutex *streamMutex;
+
 		std::streamsize offset;
 
-		VPFileSource() : begin(-1), size(-1), offset(0), vpStream(NULL)
+		VPFileSource(boost::mutex *streamMutexIn) : begin(-1), size(-1), offset(0), vpStream(NULL), streamMutex(streamMutexIn)
 		{}
 
 		std::streamsize read(char* s, std::streamsize n)
@@ -50,6 +54,8 @@ namespace cfile
 			{
 				n = remaining;
 			}
+
+			boost::lock_guard<boost::mutex> readGuard(*streamMutex);
 
 			vpStream->seekg(currentPos, std::ios_base::beg);
 			vpStream->read(s, n);
@@ -258,7 +264,7 @@ namespace cfile
 
 		typedef stream_buffer<VPFileSource> vpBuffer;
 
-		VPFileSource source;
+		VPFileSource source(&(parentSystem->streamMutex));
 		source.begin = data.offset;
 		source.size = data.size;
 		source.vpStream = &parentSystem->vpStream;

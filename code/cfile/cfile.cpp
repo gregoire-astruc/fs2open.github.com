@@ -12,6 +12,8 @@
 #include "cfile/cfile.h"
 #include "cfile/VPFileSystem.h"
 
+#include "cmdline/cmdline.h"
+
 #include "parse/encrypt.h"
 #include "osapi/osapi.h"
 
@@ -63,6 +65,8 @@ namespace cfile
 	};
 
 	SCP_string rootDir;
+
+	SCP_string userDir;
 
 	boost::shared_ptr<boost::object_pool<FileHandle> > cfilePool;
 
@@ -218,6 +222,23 @@ namespace cfile
 		}
 	}
 
+	void initModDirectories()
+	{
+		if (Cmdline_mod)
+		{
+			const char* cur_pos;
+			SCP_string currentMod;
+
+			// stackable Mod support -- Kazan
+			for (cur_pos = Cmdline_mod; *cur_pos != '\0'; cur_pos += (strlen(cur_pos) + 1))
+			{
+				currentMod.assign(cur_pos);
+
+				mprintf((currentMod.c_str()));
+			}
+		}
+	}
+
 	bool init(const char* rootDirStr, const char* cdromDirStr)
 	{
 		if (inited)
@@ -233,6 +254,10 @@ namespace cfile
 
 		cfile::rootDir.assign(rootString.begin(), rootString.end());
 
+#ifdef SCP_UNIX
+		userDir.assign(detect_home()).append("/").append(Osreg_user_dir).append("/");
+#endif
+
 		// initialize encryption
 		encrypt_init();
 
@@ -240,7 +265,25 @@ namespace cfile
 		fileSystem.reset(new MergedFileSystem());
 		fileSystem->setCaseInsensitive(true);
 
-		fileSystem->addFileSystem(new PhysicalFileSystem(rootDir.c_str()));
+		PhysicalFileSystem* userFileSystem = NULL;
+		// If we have a valid user directory, use it for writing and make the other read only
+		if (!userDir.empty())
+		{
+			userFileSystem = new PhysicalFileSystem(userDir.c_str());
+			fileSystem->addFileSystem(userFileSystem);
+
+			// Make this read only so all write operations are directed to the user dir
+			PhysicalFileSystem* readSystem = new PhysicalFileSystem(rootDir.c_str());
+			readSystem->setAllowedOperations(OP_READ);
+
+			fileSystem->addFileSystem(readSystem);
+		}
+		else
+		{
+			fileSystem->addFileSystem(new PhysicalFileSystem(rootDir.c_str()));
+		}
+
+		initModDirectories();
 
 		if (cdromDirStr != NULL)
 		{
@@ -265,6 +308,8 @@ namespace cfile
 		fileSystem->populateEntries(1);
 
 		cfilePool.reset(new boost::object_pool<FileHandle>());
+
+		checksum::crc::init();
 
 		return true;
 	}
@@ -1222,7 +1267,7 @@ namespace cfile
 				return crc;
 			}
 
-			void long_init()
+			void init()
 			{
 				int i, j;
 				uint crc;

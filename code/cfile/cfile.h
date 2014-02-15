@@ -252,6 +252,8 @@ namespace cfile
 
 			// update cur_chksum with the chksum of the new_data of size new_data_size
 			uint addLong(uint seed, ubyte *buffer, int size);
+
+			void init();
 		}
 	}
 

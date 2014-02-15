@@ -13,6 +13,8 @@
 
 #include <boost/filesystem.hpp>
 
+#include <boost/thread/mutex.hpp>
+
 namespace cfile
 {
 	using namespace vfspp;
@@ -43,6 +45,8 @@ namespace cfile
 		std::istream vpStream;
 
 		boost::scoped_ptr<VPFileSystemEntry> rootEntry;
+
+		boost::mutex streamMutex;
 
 		friend class VPFileSystemEntry;
 
