@@ -24,11 +24,9 @@ namespace cfile
 		_fs_time_t write_time;
 	};
 
-	VPFileSystem::VPFileSystem(const boost::filesystem::path& filePathIn, boost::shared_ptr<std::streambuf>& vpFileBufferIn, const std::string& rootPathIn)
-		: vpFileBuffer(vpFileBufferIn), rootPath(rootPathIn), vpStream(vpFileBuffer.get()), filePath(filePathIn)
+	VPFileSystem::VPFileSystem(const boost::filesystem::path& filePathIn, const std::string& rootPathIn)
+		: rootPath(rootPathIn), vpStream(filePathIn, std::ios::binary), filePath(filePathIn)
 	{
-		Assert(vpFileBuffer);
-
 		VP_FILE_HEADER header;
 		vpStream.read(reinterpret_cast<char*>(&header), sizeof(header));
 
@@ -161,8 +159,6 @@ namespace cfile
 		}
 
 		rootEntry.reset(new VPFileSystemEntry(this, ""));
-
-		mprintf(("%d files\n", numFiles));
 	}
 
 	VPFileSystem::~VPFileSystem()

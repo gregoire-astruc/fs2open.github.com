@@ -14,6 +14,7 @@
 #include <boost/scoped_ptr.hpp>
 
 #include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
 
 #include <boost/thread/mutex.hpp>
 
@@ -44,8 +45,7 @@ namespace cfile
 		std::string rootPath;
 		boost::filesystem::path filePath;
 
-		boost::shared_ptr<std::streambuf> vpFileBuffer;
-		std::istream vpStream;
+		boost::filesystem::ifstream vpStream;
 
 		boost::scoped_ptr<VPFileSystemEntry> rootEntry;
 
@@ -58,7 +58,7 @@ namespace cfile
 		friend class VPFileSystemEntry;
 
 	public:
-		VPFileSystem(const boost::filesystem::path& filePath, boost::shared_ptr<std::streambuf>& vpFileBuffer, const std::string& rootPath);
+		VPFileSystem(const boost::filesystem::path& filePath, const std::string& rootPath);
 
 		virtual ~VPFileSystem();
 

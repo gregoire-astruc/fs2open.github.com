@@ -100,8 +100,8 @@ LRESULT CALLBACK win32_message_handler(HWND hwnd,UINT msg,WPARAM wParam, LPARAM 
 char Cur_path[MAX_PATH_LEN];
 const char *detect_home(void)
 {
-	if ( !cfile::rootDir.empty() )
-		return cfile::rootDir.c_str();
+	if ( !cfile::getRootDir().empty() )
+		return cfile::getRootDir().c_str();
 
 	memset( Cur_path, 0, MAX_PATH_LEN );
 	GetCurrentDirectory( MAX_PATH_LEN-1, Cur_path );

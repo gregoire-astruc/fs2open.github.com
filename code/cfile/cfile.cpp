@@ -20,6 +20,7 @@
 #include <VFSPP/core.hpp>
 #include <VFSPP/merged.hpp>
 #include <VFSPP/system.hpp>
+#include <VFSPP/7zip.hpp>
 
 #include <boost/filesystem.hpp>
 
@@ -41,6 +42,7 @@ namespace cfile
 	using namespace vfspp::system;
 
 	using namespace boost;
+	namespace fs = boost::filesystem;
 	
 	struct FileHandle
 	{
@@ -64,9 +66,9 @@ namespace cfile
 		}
 	};
 
-	SCP_string rootDir;
+	fs::path rootDir;
 
-	SCP_string userDir;
+	fs::path userDir;
 
 	boost::shared_ptr<boost::object_pool<FileHandle> > cfilePool;
 
@@ -124,104 +126,142 @@ namespace cfile
 		{ "data/fiction" },
 	};
 
-	void addVPsInEntry(IFileSystemEntry* entry, SCP_vector<IFileSystem*>& systems)
+	void addModDirs(SCP_vector<fs::path>& rootDirs, const fs::path& rootDir)
 	{
-		if (entry == NULL)
-		{
-			return;
-		}
+		if (Cmdline_mod) {
+			const char* cur_pos;
 
-		if (entry->getType() != DIRECTORY)
-		{
-			return;
-		}
-
-		std::vector<FileEntryPointer> children;
-		entry->listChildren(children);
-
-		std::vector<FileEntryPointer>::iterator iter;
-		for (iter = children.begin(); iter != children.end(); ++iter)
-		{
-			if ((*iter)->getType() == vfspp::FILE)
+			// stackable Mod support -- Kazan
+			for (cur_pos = Cmdline_mod; *cur_pos != '\0'; cur_pos += (strlen(cur_pos) + 1))
 			{
-				if (boost::iends_with((*iter)->getPath(), ".vp"))
+				fs::path modRoot = rootDir / cur_pos;
+
+				if (fs::is_directory(modRoot))
 				{
-					try
-					{
-						shared_ptr<std::streambuf> buffer = (*iter)->open(MODE_READ);
-
-						if (buffer)
-						{
-							try
-							{
-								shared_ptr<MergedEntry> mergedEntry = dynamic_pointer_cast<MergedEntry>((*iter));
-								Assert(mergedEntry);
-
-								shared_ptr<PhysicalEntry> vpEntry = dynamic_pointer_cast<PhysicalEntry>(mergedEntry->getContainedEntry());
-								Assert(vpEntry);
-
-								mprintf(("Searching root pack '%s' ... ", vpEntry->getEntryPath().string().c_str()));
-
-								VPFileSystem* system = new VPFileSystem(vpEntry->getEntryPath(), buffer, entry->getPath().c_str());
-								systems.push_back(system);
-							}
-							catch (std::exception& e)
-							{
-								mprintf(("Unhandled exception while reading file: %s\n", e.what()));
-							}
-						}
-					}
-					catch (FileSystemException& e)
-					{
-						mprintf(("Failed to open \"%s\": %s\n", (*iter)->getPath().c_str(), e.what()));
-					}
+					rootDirs.push_back(modRoot);
 				}
 			}
 		}
 	}
 
-	void searchVPs(SCP_vector<IFileSystem*>& systems)
+	void searchRootDirectories(SCP_vector<fs::path>& rootDirs, const char* cdromDirStr)
 	{
-		for (int i = 1; i < MAX_PATH_TYPES; ++i)
+		// First init root directory
+		rootDir = fs::current_path();
+
+#ifdef SCP_UNIX
+		userDir.assign(detect_home());
+		userDir /= Osreg_user_dir;
+#endif
+
+		if (!userDir.empty())
 		{
-			if (i == 1)
+			addModDirs(rootDirs, userDir);
+
+			rootDirs.push_back(userDir);
+		}
+
+		addModDirs(rootDirs, rootDir);
+
+		rootDirs.push_back(rootDir);
+
+		if (cdromDirStr != NULL)
+		{
+			rootDirs.push_back(fs::path(cdromDirStr));
+		}
+	}
+
+	void maybeAddPackSystem(fs::directory_entry entry, SCP_vector<IFileSystem*>& fileSystems)
+	{
+		if (entry.path().has_extension())
+		{
+			if (boost::iequals(entry.path().extension().string(), ".vp"))
 			{
-				// Root
-				addVPsInEntry(fileSystem->getRootEntry(), systems);
+				// Standard VPs
+				try
+				{
+					mprintf(("Found root pack '%s' ... ", entry.path().string().c_str()));
+
+					VPFileSystem* system = new VPFileSystem(entry.path(), "");
+					fileSystems.push_back(system);
+				}
+				catch (std::exception& e)
+				{
+					mprintf(("Unhandled exception while reading file: %s\n", e.what()));
+				}
+			}
+			else if (boost::iequals(entry.path().extension().string(), ".cvp"))
+			{
+				// Compressed VP aka 7-zip archive
+				try
+				{
+					mprintf(("Searching root pack '%s' ... ", entry.path().string().c_str()));
+
+					sevenzip::SevenZipFileSystem* system = new sevenzip::SevenZipFileSystem(entry.path());
+					fileSystems.push_back(system);
+				}
+				catch (std::exception& e)
+				{
+					mprintf(("Unhandled exception while reading file: %s\n", e.what()));
+				}
+			}
+		}
+	}
+
+	void initializeFileSystems(SCP_vector<IFileSystem*>& fileSytems, const SCP_vector<fs::path>& rootDirs)
+	{
+		bool haveUserDir = !userDir.empty();
+
+		// Initialize physical file systems
+		for each (const fs::path& path in rootDirs)
+		{
+			PhysicalFileSystem* pathSystem = new PhysicalFileSystem(path);
+
+			if (haveUserDir)
+			{
+				// If we have a user dir then direct all write operations there
+				bool isUserDir = fs::equivalent(path, userDir);
+
+				if (isUserDir)
+				{
+					pathSystem->setAllowedOperations(OP_READ | OP_WRITE | OP_CREATE | OP_DELETE);
+				}
+				else
+				{
+					// Only allow read operations anywhere else for now
+					pathSystem->setAllowedOperations(OP_READ);
+				}
 			}
 			else
 			{
-				// Something else
-				FileEntryPointer ptr = fileSystem->getRootEntry()->getChild(Pathtypes[i]);
+				// If we have no user dir then use the root for writing
+				bool isRootDir = fs::equivalent(path, rootDir);
 
-				addVPsInEntry(ptr.get(), systems);
+				if (isRootDir)
+				{
+					pathSystem->setAllowedOperations(OP_READ | OP_WRITE | OP_CREATE | OP_DELETE);
+				}
+				else
+				{
+					// Only allow read operations anywhere else for now
+					pathSystem->setAllowedOperations(OP_READ);
+				}
 			}
+
+			fileSytems.push_back(pathSystem);
 		}
-	}
-
-	void findFilePacks(SCP_vector<IFileSystem*>& systems)
-	{
-		searchVPs(systems);
-	}
-
-	void initModDirectories()
-	{
-		if (Cmdline_mod)
+		
+		fs::directory_iterator endIter;
+		// Now go through every root and search for pack files
+		for each (const fs::path& path in rootDirs)
 		{
-			const char* cur_pos;
-			SCP_string currentMod;
+			fs::directory_iterator dirIter(path);
 
-			// stackable Mod support -- Kazan
-			for (cur_pos = Cmdline_mod; *cur_pos != '\0'; cur_pos += (strlen(cur_pos) + 1))
-			{
-				currentMod.assign(cur_pos);
-
-				mprintf((currentMod.c_str()));
-			}
+			std::for_each(dirIter, endIter, boost::bind(maybeAddPackSystem, _1, boost::ref(fileSytems)));
 		}
 	}
 
-	bool init(const char* rootDirStr, const char* cdromDirStr)
+	bool init(const char* cdromDirStr)
 	{
 		if (inited)
 		{
@@ -230,15 +270,19 @@ namespace cfile
 
 		inited = true;
 
-		boost::filesystem::path exePath(rootDirStr);
+		SCP_vector<fs::path> rootDirs;
+		searchRootDirectories(rootDirs, cdromDirStr);
 
-		std::string rootString = exePath.parent_path().string();
-
-		cfile::rootDir.assign(rootString.begin(), rootString.end());
-
-#ifdef SCP_UNIX
-		userDir.assign(detect_home()).append("/").append(Osreg_user_dir).append("/");
+#ifndef NDEBUG
+		// Print the roots we use in debug mode
+		for each (const fs::path& path in rootDirs)
+		{
+			mprintf(("Found root %s...", path.string().c_str()));
+		}
 #endif
+
+		SCP_vector<IFileSystem*> fileSystems;
+		initializeFileSystems(fileSystems, rootDirs);
 
 		// initialize encryption
 		encrypt_init();
@@ -247,44 +291,9 @@ namespace cfile
 		fileSystem.reset(new MergedFileSystem());
 		fileSystem->setCaseInsensitive(true);
 
-		PhysicalFileSystem* userFileSystem = NULL;
-		// If we have a valid user directory, use it for writing and make the other read only
-		if (!userDir.empty())
+		for each (IFileSystem* system in fileSystems)
 		{
-			userFileSystem = new PhysicalFileSystem(userDir.c_str());
-			fileSystem->addFileSystem(userFileSystem);
-
-			// Make this read only so all write operations are directed to the user dir
-			PhysicalFileSystem* readSystem = new PhysicalFileSystem(rootDir.c_str());
-			readSystem->setAllowedOperations(OP_READ);
-
-			fileSystem->addFileSystem(readSystem);
-		}
-		else
-		{
-			fileSystem->addFileSystem(new PhysicalFileSystem(rootDir.c_str()));
-		}
-
-		initModDirectories();
-
-		if (cdromDirStr != NULL)
-		{
-			fileSystem->addFileSystem(new PhysicalFileSystem(cdromDirStr));
-		}
-
-		SCP_vector<IFileSystem*> systems;
-		findFilePacks(systems);
-
-		if (cdromDirStr != NULL)
-		{
-			fileSystem->addFileSystem(new PhysicalFileSystem(cdromDirStr));
-		}
-
-		std::vector<IFileSystem*>::iterator iter;
-		for (iter = systems.begin(); iter != systems.end(); ++iter)
-		{
-			Assert((*iter) != NULL);
-			fileSystem->addFileSystem((*iter));
+			fileSystem->addFileSystem(system);
 		}
 
 		fileSystem->populateEntries(1);
@@ -293,7 +302,7 @@ namespace cfile
 
 		checksum::crc::init();
 
-		return false;
+		return true;
 	}
 
 	void shutdown()
@@ -303,16 +312,20 @@ namespace cfile
 		fileSystem.reset();
 	}
 
-	bool access(const SCP_string& file, cfile::DirType type, int mode)
+	SCP_string getRootDir()
 	{
-		using namespace boost::filesystem;
+		std::string str = rootDir.string();
 
-		path rootPath(std::string(rootDir.begin(), rootDir.end()));
+		return SCP_string(str.begin(), str.end());
+	}
 
-		rootPath /= Pathtypes[type];
-		rootPath /= std::string(file.begin(), file.end());
+	bool access(const SCP_string& file, cfile::DirType type, int mode)
+	{		
+		fs::path workPath(rootDir);
+		workPath /= Pathtypes[type];
+		workPath /= std::string(file.begin(), file.end());
 
-		file_status fileStatus = status(rootPath);
+		fs::file_status fileStatus = fs::status(workPath);
 
 		return fileStatus.permissions() == mode;
 	}

@@ -20,8 +20,6 @@ namespace cfile
 {
 	struct FileHandle;
 
-	extern SCP_string rootDir;
-
 	// exceptions and other errors
 	class Exception : public std::exception
 	{
@@ -148,9 +146,11 @@ namespace cfile
 
 	typedef bool(*ListFilterFunction)(const std::string&);
 
-	bool init(const char* rootDir, const char* cdromDir);
+	bool init(const char* cdromDir = NULL);
 
 	void shutdown();
+
+	SCP_string getRootDir();
 
 	void listFiles(SCP_vector<SCP_string>& names, DirType pathType, const SCP_string& filter = "", SortMode sortMode = SORT_NONE, ListFilterFunction = NULL, bool returnFullPath = false);
 
