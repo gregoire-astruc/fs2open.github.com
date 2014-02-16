@@ -38,8 +38,6 @@ namespace cfile
 		virtual time_t lastWriteTime();
 
 	private:
-		VPFileData getFileData(const string_type& path) const;
-
 		VPFileSystem* parentSystem;
 	};
 }

@@ -9,6 +9,8 @@
 #include "globalincs/pstypes.h"
 #include "cfile/VPFileSystemEntry.h"
 
+#include <boost/unordered_map.hpp>
+
 #include <boost/scoped_ptr.hpp>
 
 #include <boost/filesystem.hpp>
@@ -37,6 +39,7 @@ namespace cfile
 	{
 	private:
 		std::vector<VPFileData> fileData;
+		boost::unordered_map<string_type, size_t> indexMap;
 
 		std::string rootPath;
 		boost::filesystem::path filePath;
@@ -47,6 +50,10 @@ namespace cfile
 		boost::scoped_ptr<VPFileSystemEntry> rootEntry;
 
 		boost::mutex streamMutex;
+
+		VPFileData getFileData(const string_type& path) const;
+
+		void addFileData(VPFileData& data);
 
 		friend class VPFileSystemEntry;
 

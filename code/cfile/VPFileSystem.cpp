@@ -76,7 +76,6 @@ namespace cfile
 
 				VPFileData data;
 				data.name.assign(currentDir);
-				boost::to_lower(data.name);
 
 				data.type = DIRECTORY;
 				
@@ -84,7 +83,7 @@ namespace cfile
 				data.size = 0;
 				data.time = 0;
 
-				fileData.push_back(data);
+				addFileData(data);
 			}
 		}
 
@@ -132,7 +131,6 @@ namespace cfile
 
 					VPFileData data;
 					data.name.assign(currentDir);
-					boost::to_lower(data.name);
 
 					data.type = DIRECTORY;
 
@@ -140,7 +138,7 @@ namespace cfile
 					data.size = 0;
 					data.time = 0;
 
-					fileData.push_back(data);
+					addFileData(data);
 				}
 			}
 			else
@@ -158,9 +156,7 @@ namespace cfile
 				data.name.append(DirectorySeparatorStr);
 				data.name.append(file.filename);
 
-				boost::to_lower(data.name);
-
-				fileData.push_back(data);
+				addFileData(data);
 			}
 		}
 
@@ -171,5 +167,36 @@ namespace cfile
 
 	VPFileSystem::~VPFileSystem()
 	{
+	}
+
+	VPFileData VPFileSystem::getFileData(const string_type& path) const
+	{
+		if (path.length() == 0)
+		{
+			// Special case: The root entry is always a directory
+			VPFileData data;
+			data.type = DIRECTORY;
+
+			return data;
+		}
+
+		boost::unordered_map<string_type, size_t>::const_iterator iter = indexMap.find(path);
+
+		if (iter == indexMap.end())
+		{
+			return VPFileData();
+		}
+		else
+		{
+			return fileData[iter->second];
+		}
+	}
+
+	void VPFileSystem::addFileData(VPFileData& data)
+	{
+		boost::to_lower(data.name);
+
+		fileData.push_back(data);
+		indexMap.insert(std::make_pair(data.name, fileData.size() - 1));
 	}
 }

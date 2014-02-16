@@ -112,7 +112,7 @@ namespace cfile
 		childPath.append(DirectorySeparatorStr).append(path);
 		childPath = normalizePath(childPath);
 
-		EntryType type = getFileData(childPath).type;
+		EntryType type = parentSystem->getFileData(childPath).type;
 
 		if (type == UNKNOWN)
 		{
@@ -197,31 +197,7 @@ namespace cfile
 
 	EntryType VPFileSystemEntry::getType() const
 	{
-		return getFileData(path).type;
-	}
-
-	VPFileData VPFileSystemEntry::getFileData(const string_type& path) const
-	{
-		if (path.length() == 0)
-		{
-			// Special case: The root entry is always a directory
-			VPFileData data;
-			data.type = DIRECTORY;
-
-			return data;
-		}
-
-		std::vector<VPFileData>::const_iterator iter;
-		for (iter = parentSystem->fileData.begin(); iter != parentSystem->fileData.end(); ++iter)
-		{
-			if (boost::algorithm::iequals(iter->name, path))
-			{
-				// Only compare case insensitive
-				return *iter;
-			}
-		}
-
-		return VPFileData();
+		return parentSystem->getFileData(path).type;
 	}
 
 	bool VPFileSystemEntry::deleteChild(const string_type& name)
@@ -246,16 +222,7 @@ namespace cfile
 			throw InvalidOperationException("VP archives are read only!");
 		}
 
-		VPFileData data;
-		std::vector<VPFileData>::const_iterator iter;
-		for (iter = parentSystem->fileData.begin(); iter != parentSystem->fileData.end(); ++iter)
-		{
-			// Only compare case insensitive
-			if (boost::algorithm::iequals(iter->name, path))
-			{
-				data = *iter;
-			}
-		}
+		VPFileData data = parentSystem->getFileData(path);
 
 		if (mode & MODE_MEMORY_MAPPED)
 		{
@@ -288,6 +255,6 @@ namespace cfile
 
 	time_t VPFileSystemEntry::lastWriteTime()
 	{
-		return getFileData(path).time;
+		return parentSystem->getFileData(path).time;
 	}
 }
