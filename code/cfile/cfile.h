@@ -152,7 +152,7 @@ namespace cfile
 
 	void shutdown();
 
-	void listFiles(SCP_vector<SCP_string>& names, DirType pathType, const SCP_string& filter = "", SortMode sortMode = SORT_NONE, ListFilterFunction = NULL);
+	void listFiles(SCP_vector<SCP_string>& names, DirType pathType, const SCP_string& filter = "", SortMode sortMode = SORT_NONE, ListFilterFunction = NULL, bool returnFullPath = false);
 
 	bool exists(const SCP_string& path, DirType type = TYPE_ANY, bool localize = false);
 

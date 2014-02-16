@@ -204,24 +204,6 @@ namespace cfile
 		searchVPs(systems);
 	}
 
-	void printEntryRec(IFileSystemEntry* entry, int level)
-	{
-		mprintf(("%s\n", entry->getPath().c_str()));
-
-		if (entry->getType() == DIRECTORY)
-		{
-			std::vector<FileEntryPointer> children;
-			entry->listChildren(children);
-
-			std::vector<FileEntryPointer>::iterator iter;
-			for (iter = children.begin(); iter != children.end(); ++iter)
-			{
-				if (level == 0 && (*iter)->getPath() != "data")continue;
-				printEntryRec(iter->get(), level + 1);
-			}
-		}
-	}
-
 	void initModDirectories()
 	{
 		if (Cmdline_mod)
@@ -311,7 +293,7 @@ namespace cfile
 
 		checksum::crc::init();
 
-		return true;
+		return false;
 	}
 
 	void shutdown()
@@ -473,6 +455,13 @@ namespace cfile
 		return out;
 	}
 
+	SCP_string getEntryPath(FileEntryPointer& entry)
+	{
+		const std::string& path = entry->getPath();
+
+		return SCP_string(path.begin(), path.end());
+	}
+
 	bool shouldRemoveFull(FileEntryPointer& entryPointer, const boost::regex& wildcardMatcher, ListFilterFunction filterFunc)
 	{
 		const string_type& path = entryPointer->getPath();
@@ -525,7 +514,7 @@ namespace cfile
 		}
 	}
 
-	void listFiles(SCP_vector<SCP_string>& names, DirType pathType, const SCP_string& filter, SortMode sortMode, ListFilterFunction filterFunc)
+	void listFiles(SCP_vector<SCP_string>& names, DirType pathType, const SCP_string& filter, SortMode sortMode, ListFilterFunction filterFunc, bool returnFullPath)
 	{
 		Assert(dirTypeValid(pathType));
 
@@ -548,7 +537,14 @@ namespace cfile
 
 		names.resize(children.size());
 
-		std::transform(children.begin(), children.end(), names.begin(), getEntryFileName);
+		if (returnFullPath)
+		{
+			std::transform(children.begin(), children.end(), names.begin(), getEntryPath);
+		}
+		else
+		{
+			std::transform(children.begin(), children.end(), names.begin(), getEntryFileName);
+		}
 	}
 
 	bool deleteFile(const SCP_string& path, DirType type, bool localize)
