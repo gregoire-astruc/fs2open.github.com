@@ -483,7 +483,7 @@ bool WaveFile::Open(char *pszFilename, bool keep_ext)
 
 	// if Ogg Vorbis...
 	if (rc == 0) {
-		if (ov_open_callbacks(&m_snd_info, &m_snd_info.vorbis_file, NULL, 0, cfile_callbacks) == 0) {
+		if (ov_open_callbacks(m_snd_info.cfp, &m_snd_info.vorbis_file, NULL, 0, cfile_callbacks) == 0) {
 			// got an Ogg Vorbis, so lets read the info in
 			ov_info(&m_snd_info.vorbis_file, -1);
 
