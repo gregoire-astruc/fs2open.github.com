@@ -180,7 +180,7 @@ namespace cfile
 				// Standard VPs
 				try
 				{
-					mprintf(("Found root pack '%s' ... ", entry.path().string().c_str()));
+					mprintf(("Found root pack '%s' ... \n", entry.path().string().c_str()));
 
 					VPFileSystem* system = new VPFileSystem(entry.path(), "");
 					fileSystems.push_back(system);
@@ -195,7 +195,7 @@ namespace cfile
 				// Compressed VP aka 7-zip archive
 				try
 				{
-					mprintf(("Searching root pack '%s' ... ", entry.path().string().c_str()));
+					mprintf(("Searching root pack '%s' ... \n", entry.path().string().c_str()));
 
 					sevenzip::SevenZipFileSystem* system = new sevenzip::SevenZipFileSystem(entry.path());
 					fileSystems.push_back(system);
@@ -535,7 +535,11 @@ namespace cfile
 
 		FileEntryPointer parentDir = fileSystem->getRootEntry()->getChild(Pathtypes[pathType]);
 
-		Assert(parentDir);
+		if (!parentDir)
+		{
+			// Directory not present, no children to be listed...
+			return;
+		}
 
 		std::vector<FileEntryPointer> children;
 
