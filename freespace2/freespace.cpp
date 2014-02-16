@@ -1687,7 +1687,6 @@ void game_init()
 {
 	int s1, e1;
 	const char *ptr;
-	char whee[MAX_PATH_LEN];
 
 	Game_current_mission_filename[0] = 0;
 
@@ -1732,16 +1731,11 @@ void game_init()
 	cmdline_debug_print_cmdline();
 #endif
 
-	GetCurrentDirectory(MAX_PATH_LEN-1, whee);
-
-	strcat_s(whee, DIR_SEPARATOR_STR);
-	strcat_s(whee, EXE_FNAME);
-
 	profile_init();
 	//Initialize the libraries
 	s1 = timer_get_milliseconds();
 
-	if ( !cfile::init(whee, strlen(Game_CDROM_dir) ? Game_CDROM_dir : NULL) ) {			// initialize before calling any cfopen stuff!!!
+	if ( !cfile::init(strlen(Game_CDROM_dir) ? Game_CDROM_dir : NULL) ) {			// initialize before calling any cfopen stuff!!!
 		exit(1);
 	}
 
