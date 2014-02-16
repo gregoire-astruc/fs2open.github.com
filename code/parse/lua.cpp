@@ -12095,7 +12095,7 @@ SCP_string constructFilePath(const char* c_file, const char* c_path)
 	{
 		path.assign(c_file);
 	}
-	else
+	else if (strlen(c_path) > 0)
 	{
 		path.assign(c_path);
 
@@ -12106,6 +12106,10 @@ SCP_string constructFilePath(const char* c_file, const char* c_path)
 		}
 
 		path.append("/").append(c_file);
+	}
+	else
+	{
+		path.assign(c_file);
 	}
 
 	std::replace(path.begin(), path.end(), '\\', '/');
