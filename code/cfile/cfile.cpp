@@ -136,7 +136,7 @@ namespace cfile
 			{
 				fs::path modRoot = rootDir / cur_pos;
 
-				if (fs::is_directory(modRoot))
+				if (fs::exists(modRoot))
 				{
 					rootDirs.push_back(modRoot);
 				}
@@ -190,12 +190,12 @@ namespace cfile
 					mprintf(("Unhandled exception while reading file: %s\n", e.what()));
 				}
 			}
-			else if (boost::iequals(entry.path().extension().string(), ".cvp"))
+			else if (boost::iequals(entry.path().extension().string(), ".vp7"))
 			{
 				// Compressed VP aka 7-zip archive
 				try
 				{
-					mprintf(("Searching root pack '%s' ... \n", entry.path().string().c_str()));
+					mprintf(("Found root pack '%s' ... \n", entry.path().string().c_str()));
 
 					sevenzip::SevenZipFileSystem* system = new sevenzip::SevenZipFileSystem(entry.path());
 					fileSystems.push_back(system);
@@ -215,6 +215,12 @@ namespace cfile
 		// Initialize physical file systems
 		for each (const fs::path& path in rootDirs)
 		{
+			if (!fs::exists(path))
+			{
+				mprintf(("Was prompted to add root '%s' but it doesn't exist, skiping...", path.string().c_str()));
+				continue;
+			}
+
 			PhysicalFileSystem* pathSystem = new PhysicalFileSystem(path);
 
 			if (haveUserDir)
@@ -277,7 +283,7 @@ namespace cfile
 		// Print the roots we use in debug mode
 		for each (const fs::path& path in rootDirs)
 		{
-			mprintf(("Found root %s...", path.string().c_str()));
+			mprintf(("Found root %s... \n", path.string().c_str()));
 		}
 #endif
 
