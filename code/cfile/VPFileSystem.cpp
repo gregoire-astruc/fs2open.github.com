@@ -57,7 +57,7 @@ namespace cfile
 		if (!rootPath.empty())
 		{
 			// normalize path
-			rootPath = normalizePath(rootPath);
+			rootPath = vfspp::util::normalizePath(rootPath);
 
 			std::vector<std::string> dirParts;
 
@@ -81,7 +81,8 @@ namespace cfile
 				data.size = 0;
 				data.time = 0;
 
-				addFileData(data);
+				boost::to_lower(data.name);
+				addFileData(data.name, data);
 			}
 		}
 
@@ -136,7 +137,8 @@ namespace cfile
 					data.size = 0;
 					data.time = 0;
 
-					addFileData(data);
+					boost::to_lower(data.name);
+					addFileData(data.name, data);
 				}
 			}
 			else
@@ -154,7 +156,8 @@ namespace cfile
 				data.name.append(DirectorySeparatorStr);
 				data.name.append(file.filename);
 
-				addFileData(data);
+				boost::to_lower(data.name);
+				addFileData(data.name, data);
 			}
 		}
 
@@ -163,36 +166,5 @@ namespace cfile
 
 	VPFileSystem::~VPFileSystem()
 	{
-	}
-
-	VPFileData VPFileSystem::getFileData(const string_type& path) const
-	{
-		if (path.length() == 0)
-		{
-			// Special case: The root entry is always a directory
-			VPFileData data;
-			data.type = DIRECTORY;
-
-			return data;
-		}
-
-		boost::unordered_map<string_type, size_t>::const_iterator iter = indexMap.find(path);
-
-		if (iter == indexMap.end())
-		{
-			return VPFileData();
-		}
-		else
-		{
-			return fileData[iter->second];
-		}
-	}
-
-	void VPFileSystem::addFileData(VPFileData& data)
-	{
-		boost::to_lower(data.name);
-
-		fileData.push_back(data);
-		indexMap.insert(std::make_pair(data.name, fileData.size() - 1));
 	}
 }

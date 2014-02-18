@@ -110,7 +110,7 @@ namespace cfile
 
 		string_type childPath = this->path;
 		childPath.append(DirectorySeparatorStr).append(path);
-		childPath = normalizePath(childPath);
+		childPath = vfspp::util::normalizePath(childPath);
 
 		EntryType type = parentSystem->getFileData(childPath).type;
 

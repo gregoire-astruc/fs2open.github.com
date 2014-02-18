@@ -4,7 +4,7 @@
 
 #include <fstream>
 
-#include "VFSPP/core.hpp"
+#include "VFSPP/util.hpp"
 
 #include "globalincs/pstypes.h"
 #include "cfile/VPFileSystemEntry.h"
@@ -36,12 +36,9 @@ namespace cfile
 		{}
 	};
 
-	class VPFileSystem : public IFileSystem
+	class VPFileSystem : public vfspp::util::ArchiveFileSystem<VPFileData>
 	{
 	private:
-		std::vector<VPFileData> fileData;
-		boost::unordered_map<string_type, size_t> indexMap;
-
 		std::string rootPath;
 		boost::filesystem::path filePath;
 
@@ -50,10 +47,6 @@ namespace cfile
 		boost::scoped_ptr<VPFileSystemEntry> rootEntry;
 
 		boost::mutex streamMutex;
-
-		VPFileData getFileData(const string_type& path) const;
-
-		void addFileData(VPFileData& data);
 
 		friend class VPFileSystemEntry;
 

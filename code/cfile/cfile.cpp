@@ -10,7 +10,9 @@
 #include "globalincs/pstypes.h"
 
 #include "cfile/cfile.h"
+
 #include "cfile/VPFileSystem.h"
+#include "cfile/ZipFileSystem.h"
 
 #include "cmdline/cmdline.h"
 
@@ -34,6 +36,8 @@
 
 #include <boost/bind.hpp>
 #include <boost/ref.hpp>
+
+#include <unzip.h>
 
 namespace cfile
 {
@@ -192,12 +196,27 @@ namespace cfile
 			}
 			else if (boost::iequals(entry.path().extension().string(), ".vp7"))
 			{
-				// Compressed VP aka 7-zip archive
+				// 7-zip archive
 				try
 				{
 					mprintf(("Found root pack '%s' ... \n", entry.path().string().c_str()));
 
 					sevenzip::SevenZipFileSystem* system = new sevenzip::SevenZipFileSystem(entry.path());
+					fileSystems.push_back(system);
+				}
+				catch (std::exception& e)
+				{
+					mprintf(("Unhandled exception while reading file: %s\n", e.what()));
+				}
+			}
+			else if (boost::iequals(entry.path().extension().string(), ".vpz"))
+			{
+				// Zip-archive
+				try
+				{
+					mprintf(("Found root pack '%s' ... \n", entry.path().string().c_str()));
+
+					ZipFileSystem* system = new ZipFileSystem(entry.path());
 					fileSystems.push_back(system);
 				}
 				catch (std::exception& e)
@@ -213,7 +232,7 @@ namespace cfile
 		bool haveUserDir = !userDir.empty();
 
 		// Initialize physical file systems
-		for each (const fs::path& path in rootDirs)
+		for (const fs::path& path : rootDirs)
 		{
 			if (!fs::exists(path))
 			{
@@ -259,7 +278,7 @@ namespace cfile
 		
 		fs::directory_iterator endIter;
 		// Now go through every root and search for pack files
-		for each (const fs::path& path in rootDirs)
+		for (const fs::path& path : rootDirs)
 		{
 			fs::directory_iterator dirIter(path);
 
@@ -281,7 +300,7 @@ namespace cfile
 
 #ifndef NDEBUG
 		// Print the roots we use in debug mode
-		for each (const fs::path& path in rootDirs)
+		for (const fs::path& path : rootDirs)
 		{
 			mprintf(("Found root %s... \n", path.string().c_str()));
 		}
@@ -297,7 +316,7 @@ namespace cfile
 		fileSystem.reset(new MergedFileSystem());
 		fileSystem->setCaseInsensitive(true);
 
-		for each (IFileSystem* system in fileSystems)
+		for (IFileSystem* system : fileSystems)
 		{
 			fileSystem->addFileSystem(system);
 		}
@@ -702,7 +721,7 @@ namespace cfile
 					if (out_extIndex)
 						*out_extIndex = i;
 
-					outName.assign(getEntryFileName(entry));
+					outName.assign(entry->getPath().begin(), entry->getPath().end());
 
 
 					return true;
