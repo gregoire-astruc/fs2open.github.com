@@ -27,7 +27,7 @@ namespace cfile
 		std::string name;
 		EntryType type;
 
-		unz_file_pos position;
+		unz64_file_pos position;
 		size_t size;
 		time_t time;
 

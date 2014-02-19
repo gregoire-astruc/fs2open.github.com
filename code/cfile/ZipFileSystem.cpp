@@ -57,7 +57,7 @@ namespace cfile
 			data.name = vfspp::util::normalizePath(fileName);
 			data.size = info.uncompressed_size;
 			data.time = makeTimestamp(&info.tmu_date);
-			unzGetFilePos(zipFile, &data.position);
+			unzGetFilePos64(zipFile, &data.position);
 			
 			const char last = fileName[fileName.length() - 1];
 			if ((last == '/') || (last == '\\'))
@@ -93,7 +93,7 @@ namespace cfile
 			throw FileSystemException("Path is not known!");
 		}
 
-		unzGoToFilePos(zipFile, &data.position);
+		unzGoToFilePos64(zipFile, &data.position);
 
 		unz_file_info fi;
 		unzGetCurrentFileInfo(zipFile, &fi, NULL, 0, NULL, 0, NULL, 0);
