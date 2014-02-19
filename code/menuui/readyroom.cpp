@@ -1101,7 +1101,7 @@ void sim_room_init()
 
 	i = 0;
 	SCP_vector<SCP_string>::iterator iter;
-	for (iter = missionNames.begin(); iter != missionNames.end(); ++iter)
+	for (iter = missionNames.begin(); iter != missionNames.end(); ++iter, ++i)
 	{
 		Mission_filenames[i] = (char*)vm_malloc(iter->size() + 1);
 		memset(Mission_filenames[i], 0, iter->size() + 1);
