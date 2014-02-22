@@ -191,7 +191,7 @@ namespace cfile
 				}
 				catch (std::exception& e)
 				{
-					mprintf(("Unhandled exception while reading file: %s\n", e.what()));
+					Error(LOCATION, "Error while reading file %s: %s\n", entry.path().filename().string().c_str(), e.what());
 				}
 			}
 			else if (boost::iequals(entry.path().extension().string(), ".vp7"))
@@ -206,7 +206,7 @@ namespace cfile
 				}
 				catch (std::exception& e)
 				{
-					mprintf(("Unhandled exception while reading file: %s\n", e.what()));
+					Error(LOCATION, "Error while reading file %s: %s\n", entry.path().filename().string().c_str(), e.what());
 				}
 			}
 			else if (boost::iequals(entry.path().extension().string(), ".vpz"))
@@ -221,7 +221,7 @@ namespace cfile
 				}
 				catch (std::exception& e)
 				{
-					mprintf(("Unhandled exception while reading file: %s\n", e.what()));
+					Error(LOCATION, "Error while reading file %s: %s\n", entry.path().filename().string().c_str(), e.what());
 				}
 			}
 		}

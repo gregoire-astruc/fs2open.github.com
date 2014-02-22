@@ -44,9 +44,19 @@ namespace cfile
 		header.index_offset = INTEL_INT(header.index_offset); //-V570
 		header.num_files = INTEL_INT(header.num_files); //-V570
 
-		if (header.version > 2)
+		if (header.version != 2)
 		{
 			throw Exception("VP version is not supported!");
+		}
+
+		if (header.index_offset < 0)
+		{
+			throw Exception("Index offset is less than zero, VP archives may not be bigger than 2^31-1 bytes!");
+		}
+
+		if (header.num_files < 0)
+		{
+			throw Exception("Number of files is less than zero, VP archives may not contain more than 2^31-1 files!");
 		}
 
 		// Build the fileData vector
