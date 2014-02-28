@@ -21,7 +21,7 @@
  *  @details IMPORTANT: When you add a new event, update the initialization for GS_event_text[] which is done in
  *      gamesequence.cpp. Otherwise, the fs2_open.log string "Got event..." will not display properly.
  */
-enum GS_EVENT {
+enum GameEvent {
 	GS_EVENT_MAIN_MENU                  = 0,    // first event to move to first state
 	GS_EVENT_START_GAME,                        // start a new game (Loads a mission then goes to briefing state)
 	GS_EVENT_ENTER_GAME,                        // switches into game state, probably after mission briefing or ship selection.
@@ -104,7 +104,7 @@ extern char *GS_event_text[];		// text description for the GS_EVENT_* #defines a
  *  @details IMPORTANT: When you add a new state, you must update the initialization for GS_state_text[] in
  *    gamesequence.cpp. Otherwise, the fs2_open.log string "Got event..." will not display properly.
  */
-enum GS_STATE {
+enum GameState {
 	GS_STATE_INVALID           = 0,    // This state should never be reached
 	GS_STATE_MAIN_MENU,
 	GS_STATE_GAME_PLAY,
@@ -174,32 +174,32 @@ extern int Num_gs_state_text;		//WMC - for scripting
 // function prototypes
 //
 void gameseq_init();
-int gameseq_process_events( void );		// returns current game state
-int gameseq_get_state( int depth = 0 );
-void gameseq_post_event( int event );
-int gameseq_get_event( void );
+GameState gameseq_process_events( void );		// returns current game state
+GameState gameseq_get_state( int depth = 0 );
+void gameseq_post_event( GameEvent event );
+GameEvent gameseq_get_event( void );
 
-void gameseq_set_state(int new_state, int override = 0);
-void gameseq_push_state( int new_state );
+void gameseq_set_state(GameState new_state, int override = 0);
+void gameseq_push_state(GameState new_state);
 void gameseq_pop_state( void );
-int gameseq_get_pushed_state();
+GameState gameseq_get_pushed_state();
 int gameseq_get_depth();
-int gameseq_get_previous_state();
+GameState gameseq_get_previous_state();
 void gameseq_pop_and_discard_state(void);
 
 
 // Called by the sequencing code when things happen.
-void game_process_event(int current_state, int event);
-void game_leave_state(int old_state,int new_state);
-void game_enter_state(int old_state,int new_state);
-void game_do_state(int current_state);
+void game_process_event(GameState current_state, GameEvent event);
+void game_leave_state(GameState old_state, GameState new_state);
+void game_enter_state(GameState old_state, GameState new_state);
+void game_do_state(GameState current_state);
 
 // Kazan
 bool GameState_Stack_Valid();
 
 //WMC
-int gameseq_get_event_idx(char *s);
-int gameseq_get_state_idx(char *s);
+GameEvent gameseq_get_event_idx(char *s);
+GameState gameseq_get_state_idx(char *s);
 
 //zookeeper
 int gameseq_get_state_idx(int state);

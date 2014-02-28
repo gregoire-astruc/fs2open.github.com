@@ -66,6 +66,27 @@ set (file_root_cfile
 	cfile/ZipFileSystemEntry.h
 )
 
+# Chromium files
+set(file_root_chromium
+	chromium/chromium.h
+	chromium/chromium.cpp
+	chromium/ApplicationImpl.h
+	chromium/ApplicationImpl.cpp
+	chromium/ChromiumStateLogic.h
+	chromium/ChromiumStateLogic.cpp
+	chromium/ClientImpl.h
+	chromium/ClientImpl.cpp
+)
+
+# jsapi Files
+set(file_root_chromium_jsapi
+	${CMAKE_CURRENT_SOURCE_DIR}/chromium/jsapi/jsapi.h
+	${CMAKE_CURRENT_SOURCE_DIR}/chromium/jsapi/jsapi.cpp
+	CACHE INTERNAL "" FORCE
+)
+# The JSApi files are chache internal as the chromium process also compiles these
+# The paths must be absolute so prefix them with ${CMAKE_CURRENT_SOURCE_DIR}/
+
 # Cmdline files
 set (file_root_cmdline
 	cmdline/cmdline.cpp
@@ -410,6 +431,12 @@ set (file_root_localization
 	localization/fhash.h
 	localization/localize.cpp
 	localization/localize.h
+)
+
+# Mainloop files
+set(file_root_mainloop
+	mainloop/mainloop.h
+	mainloop/mainloop.cpp
 )
 
 # Math files
@@ -836,6 +863,11 @@ set (file_root_starfield
 	starfield/supernova.h
 )
 
+set(file_root_statelogic
+	statelogic/statelogic.cpp
+	statelogic/statelogic.h
+)
+
 # Stats files
 set (file_root_stats
 	stats/medals.cpp
@@ -917,6 +949,8 @@ source_group("Camera"                             FILES ${file_root_camera})
 source_group("CFile"                              FILES ${file_root_cfile})
 source_group("Cmdline"                            FILES ${file_root_cmdline})
 source_group("CMeasure"                           FILES ${file_root_cmeasure})
+source_group("Chromium"                           FILES ${file_root_chromium})
+source_group("Chromium\\JSAPI"                    FILES ${file_root_chromium_jsapi})
 source_group("ControlConfig"                      FILES ${file_root_controlconfig})
 source_group("Cutscene"                           FILES ${file_root_cutscene})
 source_group("ddsutils"                           FILES ${file_root_ddsutils})
@@ -950,6 +984,7 @@ source_group("JumpNode"                           FILES ${file_root_jumpnode})
 source_group("Lab"                                FILES ${file_root_lab})
 source_group("Lighting"                           FILES ${file_root_lighting})
 source_group("Localization"                       FILES ${file_root_localization})
+source_group("Mainloop"                               FILES ${file_root_mainloop})
 source_group("Math"                               FILES ${file_root_math})
 source_group("MenuUI"                             FILES ${file_root_menuui})
 source_group("Mission"                            FILES ${file_root_mission})
@@ -977,6 +1012,7 @@ source_group("Sound"                              FILES ${file_root_sound})
 source_group("Sound\\ogg"                         FILES ${file_root_sound_ogg})
 source_group("Species_Defs"                       FILES ${file_root_species_defs})
 source_group("Starfield"                          FILES ${file_root_starfield})
+source_group("StateLogic"                         FILES ${file_root_statelogic})
 source_group("Stats"                              FILES ${file_root_stats})
 source_group("TgaUtils"                           FILES ${file_root_tgautils})
 source_group("Ui"                                 FILES ${file_root_ui})
@@ -995,6 +1031,8 @@ set (file_root
 	${file_root_cfile}
 	${file_root_cmdline}
 	${file_root_cmeasure}
+	${file_root_chromium}
+	${file_root_chromium_jsapi}
 	${file_root_controlconfig}
 	${file_root_cutscene}
 	${file_root_ddsutils}
@@ -1023,6 +1061,7 @@ set (file_root
 	${file_root_lab}
 	${file_root_lighting}
 	${file_root_localization}
+	${file_root_mainloop}
 	${file_root_math}
 	${file_root_menuui}
 	${file_root_mission}
@@ -1050,6 +1089,7 @@ set (file_root
 	${file_root_sound_ogg}
 	${file_root_species_defs}
 	${file_root_starfield}
+	${file_root_statelogic}
 	${file_root_stats}
 	${file_root_tgautils}
 	${file_root_ui}

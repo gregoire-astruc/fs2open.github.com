@@ -18,6 +18,9 @@
 #include "globalincs/systemvars.h"
 #include "graphics/2d.h"
 
+// No need to actually include gamesequence.h
+enum GameState;
+
 // --------------------------------------------------------------------------------------------------------
 // FREESPACE DEFINES/VARS
 //
@@ -134,7 +137,7 @@ fix game_get_overall_frametime();
 void game_stop_looped_sounds();
 
 // do stuff that may need to be done regardless of state
-void game_do_state_common(int state,int no_networking = 0);
+void game_do_state_common(GameState state,int no_networking = 0);
 
 
 // skill level --------------------------------------------------------

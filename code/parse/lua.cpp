@@ -1441,14 +1441,14 @@ ADE_FUNC(isValid, l_Font, NULL, "True if valid, false or nil if not", "boolean",
 class gameevent_h
 {
 private:
-	int edx;
+	GameEvent edx;
 public:
-	gameevent_h(){edx=-1;}
-	gameevent_h(int n_event){edx=n_event;}
+	gameevent_h(){ edx = (GameEvent) -1; }
+	gameevent_h(GameEvent n_event){ edx = n_event; }
 
-	bool IsValid(){return (this != NULL && edx > -1 && edx < Num_gs_event_text);}
+	bool IsValid(){return (this != NULL && edx > -1 && edx < GS_NUM_EVENTS);}
 
-	int Get(){return edx;}
+	GameEvent Get(){ return edx; }
 };
 
 ade_obj<gameevent_h> l_GameEvent("gameevent", "Game event");
@@ -1489,12 +1489,12 @@ ADE_VIRTVAR(Name, l_GameEvent, "string", "Game event name", "string", "Game even
 class gamestate_h
 {
 private:
-	int sdx;
+	GameState sdx;
 public:
-	gamestate_h(){sdx=-1;}
-	gamestate_h(int n_state){sdx=n_state;}
+	gamestate_h(){sdx=GS_STATE_INVALID;}
+	gamestate_h(GameState n_state){ sdx = n_state; }
 
-	bool IsValid(){return (this != NULL && sdx > -1 && sdx < Num_gs_state_text);}
+	bool IsValid(){ return (this != NULL && sdx > GS_STATE_INVALID && sdx < GS_NUM_STATES); }
 
 	int Get(){return sdx;}
 };
@@ -12036,17 +12036,19 @@ ADE_INDEXER(l_Base_Events, "number Index/string Name", "Array of game events", "
 	if(!ade_get_args(L, "*s", &name))
 		return ade_set_error(L, "o", l_GameEvent.Set(gameevent_h()));
 
-	int idx = gameseq_get_event_idx(name);
+	GameEvent idx = gameseq_get_event_idx(name);
 
 	if(idx < 0)
 	{
-		idx = atoi(name);
+		int stateIdx = atoi(name);
 
 		//Lua-->FS2
-		idx--;
+		stateIdx--;
 
-		if(idx < 0 || idx >= Num_gs_event_text)
+		if (stateIdx < 0 || stateIdx >= GS_NUM_EVENTS)
 			return ade_set_error(L, "o", l_GameEvent.Set(gameevent_h()));
+
+		idx = (GameEvent)stateIdx;
 	}
 
 	return ade_set_args(L, "o", l_GameEvent.Set(gameevent_h(idx)));
@@ -12066,17 +12068,19 @@ ADE_INDEXER(l_Base_States, "number Index/string Name", "Array of game states", "
 	if(!ade_get_args(L, "*s", &name))
 		return ade_set_error(L, "o", l_GameState.Set(gamestate_h()));
 
-	int idx = gameseq_get_state_idx(name);
+	GameState idx = gameseq_get_state_idx(name);
 
 	if(idx < 0)
 	{
-		idx = atoi(name);
+		int stateIdx = atoi(name);
 
 		//Lua-->FS2
-		idx--;
+		stateIdx--;
 
-		if(idx < 0 || idx >= Num_gs_state_text)
+		if (stateIdx < 0 || stateIdx >= GS_NUM_STATES)
 			return ade_set_error(L, "o", l_GameState.Set(gamestate_h()));
+
+		idx = (GameState)stateIdx;
 	}
 
 	return ade_set_args(L, "o", l_GameState.Set(gamestate_h(idx)));

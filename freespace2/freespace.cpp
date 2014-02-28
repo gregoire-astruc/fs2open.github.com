@@ -28,6 +28,7 @@
 #include "bmpman/bmpman.h"
 #include "camera/camera.h"
 #include "cfile/cfile.h"
+#include "chromium/chromium.h"
 #include "cmdline/cmdline.h"
 #include "cmeasure/cmeasure.h"
 #include "cutscene/cutscenes.h"
@@ -68,6 +69,7 @@
 #include "lab/wmcgui.h"	//So that GUI_System can be initialized
 #include "lighting/lighting.h"
 #include "localization/localize.h"
+#include "mainloop/mainloop.h"
 #include "math/staticrand.h"
 #include "menuui/barracks.h"
 #include "menuui/credits.h"
@@ -148,6 +150,7 @@
 #include "sound/voicerec.h"
 #include "starfield/starfield.h"
 #include "starfield/supernova.h"
+#include "statelogic/statelogic.h"
 #include "stats/medals.h"
 #include "stats/stats.h"
 #include "weapon/beam.h"
@@ -1739,6 +1742,9 @@ void game_init()
 		exit(1);
 	}
 
+	// Initialize mainloop system
+	mainloop::init();
+
 	e1 = timer_get_milliseconds();
 
 	// initialize localization module. Make sure this is done AFTER initialzing OS.
@@ -1987,6 +1993,9 @@ void game_init()
 	// load the list of pilot pic filenames (for barracks and pilot select popup quick reference)
 	pilot_load_pic_list();	
 	pilot_load_squad_pic_list();
+
+	chromium::init();
+	statelogic::init();
 
 	load_animating_pointer(NOX("cursor"), 0, 0);	
 
@@ -4143,7 +4152,7 @@ void game_maybe_do_dead_popup(float frametime)
 // returns true if player is actually in a game_play stats
 int game_actually_playing()
 {
-	int state;
+	GameState state;
 
 	state = gameseq_get_state();
 	if ( (state != GS_STATE_GAME_PLAY) && (state != GS_STATE_DEATH_DIED) && (state != GS_STATE_DEATH_BLEW_UP) )
@@ -5076,7 +5085,7 @@ void os_close()
 
 // All code to process events.   This is the only place
 // that you should change the state of the game.
-void game_process_event( int current_state, int event )
+void game_process_event( GameState current_state, GameEvent event )
 {
 	mprintf(("Got event %s (%d) in state %s (%d)\n", GS_event_text[event], event, GS_state_text[current_state], current_state));
 
@@ -5462,7 +5471,7 @@ void game_process_event( int current_state, int event )
 // new state.     You should never try to change the state
 // in here... if you think you need to, you probably really
 // need to post an event, not change the state.
-void game_leave_state( int old_state, int new_state )
+void game_leave_state(GameState old_state, GameState new_state)
 {
 	int end_mission = 1;
 
@@ -5871,7 +5880,7 @@ int Main_hall_netgame_started = 0;
 // in here... if you think you need to, you probably really
 // need to post an event, not change the state.
 
-void game_enter_state( int old_state, int new_state )
+void game_enter_state(GameState old_state, GameState new_state)
 {
 	//WMC - Scripting override
 	/*
@@ -6389,7 +6398,7 @@ void mouse_force_pos(int x, int y);
 }
 
 // do stuff that may need to be done regardless of state
-void game_do_state_common(int state,int no_networking)
+void game_do_state_common(GameState state, int no_networking)
 {
 	game_maybe_draw_mouse(flFrametime);		// determine if to draw the mouse this frame
 	snd_do_frame();								// update sound system
@@ -6426,7 +6435,7 @@ void game_do_state_common(int state,int no_networking)
 // in here... if you think you need to, you probably really
 // need to post an event, not change the state.
 int Game_do_state_should_skip = 0;
-void game_do_state(int state)
+void game_do_state(GameState state)
 {
 	// always lets the do_state_common() function determine if the state should be skipped
 	Game_do_state_should_skip = 0;
@@ -6924,8 +6933,6 @@ DCF(pofspew, "")
 //		1 on a clean exit
 int game_main(char *cmdline)
 {
-	int state;		
-
 	// check if networking should be disabled, this could probably be done later but the sooner the better
 	// TODO: remove this when multi is fixed to handle more than MAX_SHIP_CLASSES_MULTI
 	if ( Num_ship_classes > MAX_SHIP_CLASSES_MULTI ) {
@@ -7048,15 +7055,7 @@ int game_main(char *cmdline)
 		gameseq_post_event(GS_EVENT_GAME_INIT);		// start the game rolling -- check for default pilot, or go to the pilot select screen
 	}
 
-	while (1) {
-		// only important for non THREADED mode
-		os_poll();
-
-		state = gameseq_process_events();
-		if ( state == GS_STATE_QUIT_GAME ){
-			break;
-		}
-	} 
+	mainloop::execute();
 
 	game_shutdown();
 
@@ -7235,6 +7234,9 @@ void game_launch_launcher_on_exit()
 //
 void game_shutdown(void)
 {
+	statelogic::shutdown();
+	chromium::shutdown();
+
 	gTirDll_TrackIR.Close( );
 	profile_deinit();
 
@@ -7305,6 +7307,9 @@ void game_shutdown(void)
 
 	model_free_all();
 	bm_unload_all();			// unload/free bitmaps, has to be called *after* model_free_all()!
+
+	// Clear mainloop system
+	mainloop::shutdown();
 
 	cfile::shutdown();
 

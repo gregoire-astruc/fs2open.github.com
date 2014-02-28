@@ -180,8 +180,8 @@ int game_start_mission(){return 0;}
 int Game_weapons_tbl_valid;
 int Game_ships_tbl_valid;
 void game_level_close(){}
-void game_enter_state(int, int){}
-void game_leave_state(int, int){}
+void game_enter_state(GameState, GameState){}
+void game_leave_state(GameState, GameState){}
 int Test_begin;
 int Debug_octant;
 int Framerate_delay;
@@ -192,7 +192,7 @@ float FreeSpace_gamma;
 int set_cdrom_path(int){return 0;}
 int find_freespace_cd(char*){return 0;}
 void get_version_string(){}
-void game_do_state_common(int, int){}
+void game_do_state_common(GameState, int){}
 void game_set_frametime(int){}
 void game_increase_skill_level(){}
 void get_version_string(char*, int){}
@@ -202,8 +202,8 @@ int Game_do_state_should_skip;
 long Game_time_compression;
 struct fs_builtin_mission *game_find_builtin_mission(const char*){return NULL;}
 void game_format_time(long, char*){}
-void game_do_state(int){}
-void game_process_event(int, int){}
+void game_do_state(GameState){}
+void game_process_event(GameState, GameEvent){}
 void game_shudder_apply(int, float){}
 int game_hacked_data(){return 0;}
 int game_single_step;

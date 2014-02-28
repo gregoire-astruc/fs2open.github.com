@@ -24,7 +24,7 @@
 #include "graphics/font.h"
 #include "globalincs/alphacolors.h"
 #include "osapi/osapi.h"
-
+#include "statelogic/statelogic.h"
 
 
 #define POPUP_MAX_CHOICES			3					// max number of buttons allowed on popup
@@ -833,7 +833,7 @@ int popup_do(popup_info *pi, int flags)
 
 		// if we're flagged as should be running the state underneath, then do so
 		if(flags & PF_RUN_STATE){
-			game_do_state(gameseq_get_state());
+			statelogic::doFrame(gameseq_get_state());
 		}
 		// otherwise just run the common functions (for networking,etc)
 		else {

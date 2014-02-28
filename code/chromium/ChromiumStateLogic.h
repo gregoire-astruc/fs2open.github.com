@@ -1,0 +1,36 @@
+
+#ifndef CHROMIUMSTATELOGIC_H
+#define CHROMIUMSTATELOGIC_H
+#pragma once
+
+#include <ctime>
+
+#include "globalincs/pstypes.h"
+#include "statelogic/statelogic.h"
+#include "chromium/ClientImpl.h"
+
+#include "include/cef_app.h"
+
+namespace chromium
+{
+	class ChromiumStateLogic : public statelogic::StateLogic
+	{
+	private:
+		CefString initialUrl;
+
+		CefRefPtr<ClientImpl> clientPtr;
+
+		std::clock_t lastUpdate = 0;
+
+	public:
+		ChromiumStateLogic(const SCP_string& url);
+
+		virtual void enterState(GameState oldState) override;
+
+		virtual void doFrame() override;
+
+		virtual void leaveState(GameState newState) override;
+	};
+}
+
+#endif // CHROMIUMSTATELOGIC_H

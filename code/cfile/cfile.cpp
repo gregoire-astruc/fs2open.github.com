@@ -31,6 +31,9 @@
 #include <boost/iostreams/stream_buffer.hpp>
 #include <boost/iostreams/device/mapped_file.hpp>
 
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/lock_guard.hpp>
+
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string_regex.hpp>
 
@@ -79,6 +82,10 @@ namespace cfile
 	boost::shared_ptr<MergedFileSystem> fileSystem;
 
 	bool inited = false;
+
+	boost::mutex cfileLock;
+
+#define CFILE_LOCK_SCOPE boost::lock_guard<boost::mutex> lockGuard(cfileLock)
 
 	// During cfile_init, verify that Pathtypes[n].index == n for each item
 	// Each path must have a valid parent that can be tracable all the way back to the root 
@@ -463,6 +470,7 @@ namespace cfile
 			break;
 		case SORT_TIME:
 			std::sort(children.begin(), children.end(), TimeSorter());
+			std::reverse(children.begin(), children.end()); // Revese so we have a descending order
 			break;
 		case SORT_REVERSE:
 			std::sort(children.begin(), children.end(), NameSorter());
@@ -502,6 +510,11 @@ namespace cfile
 
 	bool shouldRemoveFull(FileEntryPointer& entryPointer, const boost::regex& wildcardMatcher, ListFilterFunction filterFunc)
 	{
+		if (entryPointer->getType() != vfspp::FILE)
+		{
+			return false;
+		}
+
 		const string_type& path = entryPointer->getPath();
 
 		// as string::npos is (size_t)-1, using + 1 will make it overflow to 0
@@ -519,12 +532,22 @@ namespace cfile
 
 	bool shouldRemoveFunc(FileEntryPointer& entryPointer, ListFilterFunction filterFunc)
 	{
+		if (entryPointer->getType() != vfspp::FILE)
+		{
+			return false;
+		}
+
 		const string_type& path = entryPointer->getPath();
 
 		// as string::npos is (size_t)-1, using + 1 will make it overflow to 0
 		size_t begin = path.find_last_of(DirectorySeparatorStr) + 1;
 
 		return filterFunc(path.substr(begin));
+	}
+
+	bool shouldRemoveQuick(FileEntryPointer& entryPointer)
+	{
+		return entryPointer->getType() != vfspp::FILE;
 	}
 
 	void filterFiles(std::vector<FileEntryPointer>& children, const SCP_string& filter, ListFilterFunction filterFunc)
@@ -550,15 +573,27 @@ namespace cfile
 		{
 			children.erase(std::remove_if(children.begin(), children.end(), boost::bind(shouldRemoveFunc, _1, filterFunc)), children.end());
 		}
+		else
+		{
+			// Only remove non-files
+			children.erase(std::remove_if(children.begin(), children.end(), boost::bind(shouldRemoveQuick, _1)), children.end());
+		}
 	}
 
 	void listFiles(SCP_vector<SCP_string>& names, DirType pathType, const SCP_string& filter, SortMode sortMode, ListFilterFunction filterFunc, bool returnFullPath)
 	{
 		Assert(dirTypeValid(pathType));
 
+		listFiles(names, Pathtypes[pathType], filter, sortMode, filterFunc, returnFullPath);
+	}
+
+	void listFiles(SCP_vector<SCP_string>& names, const SCP_string& path, const SCP_string& filter, SortMode sortMode, ListFilterFunction filterFunc, bool returnFullPath)
+	{
+		CFILE_LOCK_SCOPE;
+
 		names.clear();
 
-		FileEntryPointer parentDir = fileSystem->getRootEntry()->getChild(Pathtypes[pathType]);
+		FileEntryPointer parentDir = fileSystem->getRootEntry()->getChild(path.c_str());
 
 		if (!parentDir)
 		{
@@ -591,6 +626,8 @@ namespace cfile
 
 	bool deleteFile(const SCP_string& path, DirType type, bool localize)
 	{
+		CFILE_LOCK_SCOPE;
+
 		FileEntryPointer entry = getFileEntry(path, MODE_READ, type, localize);
 
 		if (entry)
@@ -605,6 +642,8 @@ namespace cfile
 
 	size_t flushDir(DirType type)
 	{
+		CFILE_LOCK_SCOPE;
+
 		Assert(dirTypeValid(type));
 
 		FileEntryPointer entry = fileSystem->getRootEntry()->getChild(Pathtypes[type]);
@@ -654,6 +693,8 @@ namespace cfile
 
 	bool rename(const SCP_string& oldName, const SCP_string& newName, DirType type, bool localize)
 	{
+		CFILE_LOCK_SCOPE;
+
 		Assert(dirTypeValid(type));
 
 		FileEntryPointer entry = getFileEntry(oldName, MODE_READ, type, localize);
@@ -672,6 +713,8 @@ namespace cfile
 
 	bool findFile(const SCP_string& name, SCP_string& outName, DirType type, const char** exts, size_t numExts, size_t* out_extIndex, bool localize)
 	{
+		CFILE_LOCK_SCOPE;
+
 		if (exts == NULL)
 		{
 			FileEntryPointer entry = getFileEntry(name, MODE_READ, type, localize);
@@ -738,6 +781,8 @@ namespace cfile
 
 	bool exists(const SCP_string& path, DirType type, bool localize)
 	{
+		CFILE_LOCK_SCOPE;
+
 		return (bool)getFileEntry(path, MODE_READ, type, localize);
 	}
 
@@ -767,6 +812,8 @@ namespace cfile
 
 	FileHandle* open(const SCP_string& file_path, int mode, OpenType type, DirType dir_type, bool localize)
 	{
+		CFILE_LOCK_SCOPE;
+
 		Assertion(inited, "CFile system has not been inited!");
 
 		Assertion(!file_path.empty(), "Invalid file path given!");
@@ -808,6 +855,8 @@ namespace cfile
 
 	bool close(FileHandle* handle)
 	{
+		CFILE_LOCK_SCOPE;
+
 		Assert(handle);
 		Assertion(cfilePool->is_from(handle), "Handle not allocated by the cfile system!");
 

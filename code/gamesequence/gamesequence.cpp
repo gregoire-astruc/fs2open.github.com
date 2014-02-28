@@ -17,7 +17,7 @@
 #include "gamesequence/gamesequence.h"
 #include "globalincs/pstypes.h"
 #include "parse/scripting.h"
-
+#include "statelogic/statelogic.h"
 
 
 // local defines
@@ -26,9 +26,9 @@
 
 // local variables
 typedef struct state_stack {
-	int	current_state;
-	int previous_state;
-	int	event_queue[MAX_GAMESEQ_EVENTS];
+	GameState	current_state;
+	GameState previous_state;
+	GameEvent	event_queue[MAX_GAMESEQ_EVENTS];
 	int	queue_tail, queue_head;
 } state_stack;
 
@@ -187,8 +187,8 @@ void gameseq_init()
 
 	for (i=0; i<GS_STACK_SIZE; i++ )	{
 		// gs[i].current_state = GS_STATE_MAIN_MENU;
-		gs[i].current_state = 0;
-		gs[i].previous_state = 0;
+		gs[i].current_state = GS_STATE_INVALID;
+		gs[i].previous_state = GS_STATE_INVALID;
 		gs[i].queue_tail=0;
 		gs[i].queue_head=0;
 	}
@@ -206,7 +206,7 @@ void gameseq_init()
 // gameseq_post_event posts a new game sequencing event onto the gameseq
 // event queue
 
-void gameseq_post_event( int event )
+void gameseq_post_event( GameEvent event )
 {
 	if (state_processing_event_post) {
 		nprintf(("Warning", "Received post for event %s during state transtition. Find Allender if you are unsure if this is bad.\n", GS_event_text[event] ));
@@ -220,17 +220,17 @@ void gameseq_post_event( int event )
 
 // returns one of the GS_EVENT_ id's on the game sequencing queue
 
-int gameseq_get_event()
+GameEvent gameseq_get_event()
 {
 	int event;
 
 	if ( gs[gs_current_stack].queue_head == gs[gs_current_stack].queue_tail )
-		return -1;
+		return (GameEvent) -1;
 	event = gs[gs_current_stack].event_queue[gs[gs_current_stack].queue_head++];
 	if ( gs[gs_current_stack].queue_head == MAX_GAMESEQ_EVENTS )
 		gs[gs_current_stack].queue_head = 0;
 
-	return event;
+	return (GameEvent) event;
 }	   
 
 // Is our state stack valid
@@ -240,14 +240,14 @@ bool GameState_Stack_Valid()
 }
 
 // returns one of the GS_STATE_ macros
-int gameseq_get_state(int depth)
+GameState gameseq_get_state(int depth)
 {	
 	Assert(depth <= gs_current_stack);
 			
 	return gs[gs_current_stack - depth].current_state;
 }
 
-int gameseq_get_previous_state()
+GameState gameseq_get_previous_state()
 {
 	return gs[gs_current_stack].previous_state;
 }
@@ -257,9 +257,10 @@ int gameseq_get_depth()
 	return gs_current_stack;
 }
 
-void gameseq_set_state(int new_state, int override)
+void gameseq_set_state(GameState new_state, int override)
 {
-	int event, old_state;
+	GameEvent event;
+	GameState old_state;
 
 	if ( (new_state == gs[gs_current_stack].current_state) && !override )
 		return;
@@ -276,22 +277,22 @@ void gameseq_set_state(int new_state, int override)
 
 	state_processing_event_post++;
 	state_reentry++;
-	game_leave_state(gs[gs_current_stack].current_state,new_state);
+	statelogic::leaveState(gs[gs_current_stack].current_state,new_state);
 
 	gs[gs_current_stack].current_state = new_state;
 	gs[gs_current_stack].previous_state = old_state;
 
-	game_enter_state(old_state,gs[gs_current_stack].current_state);
+	statelogic::enterState(old_state,gs[gs_current_stack].current_state);
 	state_reentry--;
 	state_processing_event_post--;
 }
 	
-void gameseq_push_state( int new_state )
+void gameseq_push_state( GameState new_state )
 {
 	if ( new_state == gs[gs_current_stack].current_state )
 		return;
 
-	int old_state = gs[gs_current_stack].current_state;
+	GameState old_state = gs[gs_current_stack].current_state;
 
 	// Flush all events!!
 // I commented out because I'm not sure if we should throw out events when pushing or not.
@@ -308,26 +309,26 @@ void gameseq_push_state( int new_state )
 
 	state_processing_event_post++;
 	state_reentry++;
-	game_leave_state(old_state,new_state);
+	statelogic::leaveState(old_state, new_state);
 
 	gs[gs_current_stack].current_state = new_state;
 	gs[gs_current_stack].previous_state = old_state;
 	gs[gs_current_stack].queue_tail = 0;
 	gs[gs_current_stack].queue_head = 0;
 
-	game_enter_state(old_state,gs[gs_current_stack].current_state);
+	statelogic::enterState(old_state, gs[gs_current_stack].current_state);
 	state_reentry--;
 	state_processing_event_post--;
 }
 
 void gameseq_pop_state()
 {
-	int popped_state = 0;
+	GameState popped_state = GS_STATE_INVALID;
 
 	Assert(state_reentry == 1);		// Get John! (Invalid state sequencing!)
 
 	if (gs_current_stack >= 1) {
-		int old_state;
+		GameState old_state;
 
 		// set the old state to be the state which is about to be popped off the queue
 		old_state = gs[gs_current_stack].current_state;
@@ -337,7 +338,7 @@ void gameseq_pop_state()
 
 		// leave the current state
 		state_reentry++;
-		game_leave_state(gs[gs_current_stack].current_state,popped_state);
+		statelogic::leaveState(gs[gs_current_stack].current_state, popped_state);
 
 		// set the popped_state to be the one we moved into
 		gs_current_stack--;
@@ -349,7 +350,7 @@ void gameseq_pop_state()
 			gameseq_post_event(gs[gs_current_stack+1].event_queue[gs[gs_current_stack+1].queue_head++]);
 		}
 
-		game_enter_state(old_state, gs[gs_current_stack].current_state);
+		statelogic::enterState(old_state, gs[gs_current_stack].current_state);
 		state_reentry--;
 
 	}
@@ -371,12 +372,12 @@ void gameseq_pop_and_discard_state()
 }
 
 // Returns the last state pushed on stack
-int gameseq_get_pushed_state()
+GameState gameseq_get_pushed_state()
 {
 	if (gs_current_stack >= 1) {
 		return gs[gs_current_stack-1].current_state;
 	} else	
-		return -1;
+		return (GameState) -1;
 }
 
 // gameseq_process_events gets called every time through high level loops
@@ -386,9 +387,11 @@ int gameseq_get_pushed_state()
 		// pull events game sequence events off of the queue.  Process one at a time
 		// based on the current state and the new event.
 
-int gameseq_process_events()	
+GameState gameseq_process_events()
 {
-	int event, old_state;
+	GameEvent event;
+	GameState old_state;
+
 	old_state = gs[gs_current_stack].current_state;
 
 	Assert(state_reentry == 0);		// Get John! (Invalid state sequencing!)
@@ -406,34 +409,34 @@ int gameseq_process_events()
 	}
 
 	state_reentry++;
-	game_do_state(gs[gs_current_stack].current_state);
+	statelogic::doFrame(gs[gs_current_stack].current_state);
 	state_reentry--;
 
 	return gs[gs_current_stack].current_state;
 } 
 
-int gameseq_get_event_idx(char *s)
+GameEvent gameseq_get_event_idx(char *s)
 {
 	for(int i = 0; i < Num_gs_event_text; i++)
 	{
 		if(!stricmp(s, GS_event_text[i])) {
-			return i;
+			return (GameEvent) i;
 		}
 	}
 
-	return -1;
+	return (GameEvent) -1;
 }
 
-int gameseq_get_state_idx(char *s)
+GameState gameseq_get_state_idx(char *s)
 {
 	for(int i = 0; i < Num_gs_state_text; i++)
 	{
 		if(!stricmp(s, GS_state_text[i])) {
-			return i;
+			return (GameState) i;
 		}
 	}
 
-	return -1;
+	return (GameState) -1;
 }
 
 // If the given state exists in the stack then return the index, -1 if not
