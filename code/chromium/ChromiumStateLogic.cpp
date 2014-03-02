@@ -18,6 +18,8 @@ namespace chromium
 	{
 		initialUrl.FromString(url.c_str());
 		clientPtr = new ClientImpl(gr_screen.max_w, gr_screen.max_h);
+
+		clientPtr->addJavascriptCallback("test");
 	}
 
 	void ChromiumStateLogic::enterState(GameState oldState)

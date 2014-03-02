@@ -3,17 +3,25 @@
 
 #include "jsapi.h"
 
+#include "include/cef_runnable.h"
+
 #include <boost/thread/lock_guard.hpp>
 
 namespace
 {
-	const char* const fieldName_Name = "name";
+	const char* const API_FIELD_NAME = "name";
 
-	const char* const fieldName_Args = "args";
+	const char* const API_FIELD_ARGS = "args";
 
-	const char* const fieldName_Callback = "callback";
+	const char* const API_FIELD_CALLBACK = "callback";
 
-	int nextId = 0;
+	const char* const CALLBACK_REGISTER = "registerCallback";
+
+	const char* const CALLBACK_UNREGISTER = "unregisterCallback";
+
+	const char* const STARTUP_COMPLETE_CALLBACK = "startupComplete";
+
+	const char* const IS_STARTUP_COMPLETE = "isStartupComplete";
 
 	template<typename Index, typename List>
 	bool setV8Value(const Index& index, List list, CefRefPtr<CefV8Value> value, CefString& exception)
@@ -140,76 +148,72 @@ namespace
 			return CefV8Value::CreateString("Invalid message value type, please report!");
 		}
 	}
-}
 
-class FunctionHandler : public CefV8Handler
-{
-private:
-	CefRefPtr<CefProcessMessage> constructMessage(const CefString& name, CefRefPtr<CefV8Value> arg, int& id, CefString& exception)
+	class FunctionHandler : public CefV8Handler
 	{
-		id = nextId++;
+	private:
+		CefRefPtr<Application> mApplication;
 
-		CefRefPtr<CefProcessMessage> message = CefProcessMessage::Create(chromium::jsapi::API_MESSAGE_NAME);
-
-		CefRefPtr<CefListValue> argumentList = message->GetArgumentList();
-		argumentList->SetSize(3);
-
-		argumentList->SetInt(0, id);
-		argumentList->SetString(1, name);
-
-		// We wrap the argument into a list so we have a uniform interface in the browser process
-		CefRefPtr<CefListValue> argumentWrapper = CefListValue::Create();
-		argumentWrapper->SetSize(1);
-
-		if (!setV8Value(0, argumentWrapper, arg, exception))
+		CefRefPtr<CefProcessMessage> constructAPIMessage(const CefString& name, CefRefPtr<CefV8Value> arg, int& id, CefString& exception)
 		{
-			return nullptr;
-		}
-		else
-		{
-			argumentList->SetList(2, argumentWrapper);
-			return message;
-		}
-	}
+			id = mApplication->mApiIdProvider.getAndIncrement();
 
-	CefRefPtr<Application> application_;
-public:
-	FunctionHandler(CefRefPtr<Application> application) : application_(application)
-	{}
+			CefRefPtr<CefProcessMessage> message = CefProcessMessage::Create(chromium::jsapi::API_MESSAGE_NAME);
 
-	virtual bool Execute(const CefString& name, CefRefPtr<CefV8Value> object,
-		const CefV8ValueList& arguments, CefRefPtr<CefV8Value>& retval, CefString& exception)
-	{
-		if (name == "queryFunc")
+			CefRefPtr<CefListValue> argumentList = message->GetArgumentList();
+			argumentList->SetSize(3);
+
+			argumentList->SetInt(0, id);
+			argumentList->SetString(1, name);
+
+			// We wrap the argument into a list so we have a uniform interface in the browser process
+			CefRefPtr<CefListValue> argumentWrapper = CefListValue::Create();
+			argumentWrapper->SetSize(1);
+
+			if (!setV8Value(0, argumentWrapper, arg, exception))
+			{
+				return nullptr;
+			}
+			else
+			{
+				argumentList->SetList(2, argumentWrapper);
+				return message;
+			}
+		}
+	public:
+		FunctionHandler(CefRefPtr<Application> application) : mApplication(application)
+		{}
+
+		void handleQuery(const CefV8ValueList& arguments, CefRefPtr<CefV8Value>& retval, CefString& exception)
 		{
 			if (arguments.size() != 1 || !arguments.at(0)->IsObject())
 			{
 				exception = "A query needs exectly one object paramter!";
-				return true;
+				return;
 			}
 
 			CefRefPtr<CefV8Value> queryArg = arguments.at(0);
 
-			CefRefPtr<CefV8Value> nameValue = queryArg->GetValue(fieldName_Name);
+			CefRefPtr<CefV8Value> nameValue = queryArg->GetValue(API_FIELD_NAME);
 			if (!nameValue.get() || !nameValue->IsString())
 			{
-				exception = std::string("Query needs a field named '") + fieldName_Name + "' which is of type string!";
-				return true;
+				exception = std::string("Query needs a field named '") + API_FIELD_NAME + "' which is of type string!";
+				return;
 			}
 
-			CefRefPtr<CefV8Value> callbackValue = queryArg->GetValue(fieldName_Callback);
+			CefRefPtr<CefV8Value> callbackValue = queryArg->GetValue(API_FIELD_CALLBACK);
 			if (!callbackValue.get() || !callbackValue->IsFunction())
 			{
-				exception = std::string("Query needs a field named '") + fieldName_Callback + "' which is of type function!";
-				return true;
+				exception = std::string("Query needs a field named '") + API_FIELD_CALLBACK + "' which is of type function!";
+				return;
 			}
 
-			CefRefPtr<CefV8Value> argsValue = queryArg->GetValue(fieldName_Args);
+			CefRefPtr<CefV8Value> argsValue = queryArg->GetValue(API_FIELD_ARGS);
 
 			if (chromium::jsapi::validateQuery(nameValue->GetStringValue(), argsValue, exception))
 			{
 				int id;
-				CefRefPtr<CefProcessMessage> message = constructMessage(nameValue->GetStringValue(), argsValue, id, exception);
+				CefRefPtr<CefProcessMessage> message = constructAPIMessage(nameValue->GetStringValue(), argsValue, id, exception);
 
 				if (message.get())
 				{
@@ -217,33 +221,208 @@ public:
 					if (context->GetBrowser()->SendProcessMessage(PID_BROWSER, message))
 					{
 						// Save the callback and its ID
-						application_->AddCallbackFunction(id, callbackValue, context);
+						mApplication->AddAPICallbackFunction(id, callbackValue, context);
 					}
 				}
 				else
 				{
 					// Don't set a return value here so the exception gets thrown
-					return true;
+					return;
 				}
 			}
 
 			retval = CefV8Value::CreateNull();
 
-			return true;
+			return;
 		}
 
-		return false;
+		void handleRegisterCallback(const CefV8ValueList& arguments, CefRefPtr<CefV8Value>& retval, CefString& exception)
+		{
+			if (arguments.size() != 2)
+			{
+				exception = "Exactly two arguments are needed!";
+				return;
+			}
+
+			if (!arguments.at(0)->IsString())
+			{
+				exception = "First argument must be a string!";
+				return;
+			}
+
+			if (!arguments.at(1)->IsFunction())
+			{
+				exception = "Second argument must be a function!";
+				return;
+			}
+
+			CefString callbackName = arguments.at(0)->GetStringValue();
+
+			if (!mApplication->hasCallback(callbackName))
+			{
+				exception = "The specified callback name is not known!";
+				return;
+			}
+
+			int id = mApplication->AddApplicationCallback(callbackName, arguments.at(1), CefV8Context::GetCurrentContext());
+
+			retval = CefV8Value::CreateInt(id);
+
+			return;
+		}
+
+		void handleUnregisterCallback(const CefV8ValueList& arguments, CefRefPtr<CefV8Value>& retval, CefString& exception)
+		{
+			if (arguments.size() != 1)
+			{
+				exception = "Need exactly one argument1";
+				return;
+			}
+
+			if (!arguments.at(0)->IsInt())
+			{
+				exception = "Argument needs to be an int!";
+				return;
+			}
+
+			int id = arguments.at(0)->GetIntValue();
+
+			retval = CefV8Value::CreateBool(mApplication->RemoveApplicationCallback(id));
+		}
+
+		virtual bool Execute(const CefString& name, CefRefPtr<CefV8Value> object,
+			const CefV8ValueList& arguments, CefRefPtr<CefV8Value>& retval, CefString& exception)
+		{
+			if (name == "queryFunc")
+			{
+				handleQuery(arguments, retval, exception);
+
+				return true;
+			}
+			else if (name == CALLBACK_REGISTER)
+			{
+				handleRegisterCallback(arguments, retval, exception);
+
+				return true;
+			}
+			else if (name == CALLBACK_UNREGISTER)
+			{
+				handleUnregisterCallback(arguments, retval, exception);
+
+				return true;
+			}
+			else if (name == IS_STARTUP_COMPLETE)
+			{
+				retval = CefV8Value::CreateBool(mApplication->startupReceived);
+
+				return true;
+			}
+
+			return false;
+		}
+
+		IMPLEMENT_REFCOUNTING(FunctionHandler)
+	};
+
+	void apiCallbackExecutor(bool successfull, CefRefPtr<CefV8Value> function, CefRefPtr<CefV8Context> context, CefRefPtr<CefListValue> arguments)
+	{
+		context->Enter();
+
+		CefRefPtr<CefV8Value> successVal = CefV8Value::CreateBool(successfull);
+		CefRefPtr<CefV8Value> value = getV8Value(2, arguments);
+
+		CefV8ValueList list({ successVal, value });
+
+		// We may not rethrow exceptions!
+		function->SetRethrowExceptions(false);
+		function->ExecuteFunction(nullptr, list);
+
+		// If there was an exception there is nothing we can do about it so just clear it.
+		function->ClearException();
+
+		context->Exit();
 	}
 
-	IMPLEMENT_REFCOUNTING(FunctionHandler)
-};
+	void applicationCallbackExecutor(CefRefPtr<CefV8Value> function, CefRefPtr<CefV8Context> context, CefRefPtr<CefListValue> arguments)
+	{
+		context->Enter();
 
-void Application::AddCallbackFunction(int id, CefRefPtr<CefV8Value> function, CefRefPtr<CefV8Context> context)
+		CefRefPtr<CefV8Value> value = getV8Value(0, arguments);
+
+		CefV8ValueList list({ value });
+
+		// We may not rethrow exceptions!
+		function->SetRethrowExceptions(false);
+		function->ExecuteFunction(nullptr, list);
+
+		// If there was an exception there is nothing we can do about it so just clear it.
+		function->ClearException();
+
+		context->Exit();
+	}
+}
+
+Application::Application() : startupReceived(false)
+{
+	// This is the default callback which is fired when the startup message was received
+	mApplicationCallbacks.push_back(STARTUP_COMPLETE_CALLBACK);
+}
+
+void Application::AddAPICallbackFunction(int id, CefRefPtr<CefV8Value> function, CefRefPtr<CefV8Context> context)
 {
 	// Make sure we are here only once
-	boost::lock_guard<boost::mutex> guard(callbackMapLock);
+	boost::lock_guard<boost::mutex> guard(mApiCallbackMapLock);
 
-	callbackMap.insert(std::make_pair(id, std::make_pair(function, context)));
+	mApiCallbackMap.insert(std::make_pair(id, std::make_pair(function, context)));
+}
+
+int Application::AddApplicationCallback(const CefString& name, CefRefPtr<CefV8Value> function, CefRefPtr<CefV8Context> context)
+{
+	// Make sure we are here only once
+	boost::lock_guard<boost::mutex> guard(mApplicationCallbackMapLock);
+
+	int id = mApplicationCallbackIdProvider.getAndIncrement();
+
+	mApplicationCallbackMap.insert(std::make_pair(std::make_pair(id, name), std::make_pair(function, context)));
+
+	return id;
+}
+
+bool Application::RemoveApplicationCallback(int id)
+{
+	// We sadly need to use this O(n) algorithm
+	for (auto it = mApplicationCallbackMap.cbegin(); it != mApplicationCallbackMap.cend();)
+	{
+		if (it->first.first == id)
+		{
+			// Erase all entries that use this context
+			mApplicationCallbackMap.erase(it++);
+
+			// This assumes that ids are unique, which is hopefully the case
+			return true;
+		}
+		else
+		{
+			++it;
+		}
+	}
+
+	return false;
+}
+
+void Application::ExecuteCallback(const CefString& callbackName, CefRefPtr<CefListValue> argList, int argListIndex)
+{
+	for (auto it = mApplicationCallbackMap.cbegin(); it != mApplicationCallbackMap.cend();)
+	{
+		if (it->first.second == callbackName)
+		{
+			it->second.second->GetTaskRunner()->PostTask(NewCefRunnableFunction(applicationCallbackExecutor, it->second.first, it->second.second, argList->Copy()));
+		}
+		else
+		{
+			++it;
+		}
+	}
 }
 
 bool Application::OnProcessMessageReceived(CefRefPtr<CefBrowser> browser, CefProcessId source_process, CefRefPtr<CefProcessMessage> message)
@@ -256,11 +435,11 @@ bool Application::OnProcessMessageReceived(CefRefPtr<CefBrowser> browser, CefPro
 		bool successfull = argList->GetBool(1);
 
 		// Lock the callback map so we get a consistens view
-		boost::lock_guard<boost::mutex> guard(callbackMapLock);
+		boost::lock_guard<boost::mutex> guard(mApiCallbackMapLock);
 
-		auto iter = callbackMap.find(id);
+		auto iter = mApiCallbackMap.find(id);
 
-		if (iter == callbackMap.end())
+		if (iter == mApiCallbackMap.end())
 		{
 			// We don't know this ID, the context might already have been released
 			return true;
@@ -268,48 +447,35 @@ bool Application::OnProcessMessageReceived(CefRefPtr<CefBrowser> browser, CefPro
 
 		auto& pair = iter->second;
 
-		pair.second->Enter();
+		CefRefPtr<CefV8Value> function = pair.first;
+		CefRefPtr<CefV8Context> context = pair.second;
+		// Copy this as we will need it at a later point
+		auto argCopy = message->GetArgumentList()->Copy();
 
-		CefRefPtr<CefV8Value> successVal = CefV8Value::CreateBool(successfull);
-		CefRefPtr<CefV8Value> value = getV8Value(2, argList);
-
-		CefV8ValueList list({ successVal, value });
-
-		// We may not rethrow exceptions!
-		pair.first->SetRethrowExceptions(false);
-		pair.first->ExecuteFunction(nullptr, list);
-
-		// If there was an exception there is nothing we can do about it so just clear it.
-		pair.first->ClearException();
-
-		pair.second->Exit();
+		// We must execute the function in the context thread
+		context->GetTaskRunner()->PostTask(NewCefRunnableFunction(apiCallbackExecutor, successfull, function, context, argCopy));
 
 		return true;
+	}
+	if (message->GetName() == chromium::jsapi::STARTUP_MESSAGE_NAME)
+	{
+		ExecuteCallback(STARTUP_COMPLETE_CALLBACK, message->GetArgumentList(), 0);
+		startupReceived = true;
 	}
 
 	return false;
 }
 
+// This is an automatically generated header with our extension code
+#include "fsoExtension.js.h"
+
 void Application::OnWebKitInitialized()
 {
-	// Register an extension which exposes the FSO API
-
-	std::string extensionCode =
-		"var fso;"
-		"if (!fso)"
-		"  fso = {};"
-		"(function() {"
-		"  fso.query = function(args) {"
-		"    native function queryFunc(args);"
-		"    return queryFunc(args);"
-		"  };"
-		"})();";
-
 	// Create an instance of my CefV8Handler object.
 	CefRefPtr<CefV8Handler> handler = new FunctionHandler(this);
 
-	// Register the extension.
-	CefRegisterExtension("fsoExtension", extensionCode, handler);
+	// Register an extension which exposes the FSO API
+	CefRegisterExtension("fsoExtension", FSOExtensionCode, handler);
 
 	chromium::jsapi::init();
 }
@@ -317,12 +483,26 @@ void Application::OnWebKitInitialized()
 void Application::OnContextReleased(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFrame> frame,
 	CefRefPtr<CefV8Context> context)
 {
-	for (auto it = callbackMap.cbegin(); it != callbackMap.cend();)
+	for (auto it = mApiCallbackMap.cbegin(); it != mApiCallbackMap.cend();)
 	{
 		if (it->second.second->IsSame(context))
 		{
 			// Erase all entries that use this context
-			callbackMap.erase(it++);
+			mApiCallbackMap.erase(it++);
+		}
+		else
+		{
+			++it;
+		}
+	}
+
+	// Also go through application callbacks
+	for (auto it = mApplicationCallbackMap.cbegin(); it != mApplicationCallbackMap.cend();)
+	{
+		if (it->second.second->IsSame(context))
+		{
+			// Erase all entries that use this context
+			mApplicationCallbackMap.erase(it++);
 		}
 		else
 		{
@@ -330,9 +510,3 @@ void Application::OnContextReleased(CefRefPtr<CefBrowser> browser, CefRefPtr<Cef
 		}
 	}
 }
-
-void Application::OnRenderThreadCreated(CefRefPtr<CefListValue> extra_info)
-{
-	// For future usage (probably lua <-> javascript bindings)
-}
-

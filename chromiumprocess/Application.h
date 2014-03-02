@@ -11,16 +11,57 @@
 
 #include "include/cef_app.h"
 
+template<class T>
+class IDProvider
+{
+private:
+	T mNextId;
+
+	boost::mutex mIdLock;
+
+public:
+	IDProvider(const T& nextId = 0) : mNextId(nextId) {}
+
+	T getAndIncrement()
+	{
+		boost::lock_guard<boost::mutex> guard(mIdLock);
+
+		return mNextId++;
+	}
+};
+
 class Application : public CefApp,
 							CefRenderProcessHandler
 {
 private:
-	std::map<int, std::pair<CefRefPtr<CefV8Value>, CefRefPtr<CefV8Context>>> callbackMap;
+	std::map<int, std::pair<CefRefPtr<CefV8Value>, CefRefPtr<CefV8Context>>> mApiCallbackMap;
+	boost::mutex mApiCallbackMapLock;
 
-	boost::mutex callbackMapLock;
+	std::vector<CefString> mApplicationCallbacks;
+	std::map<std::pair<int, CefString>, std::pair<CefRefPtr<CefV8Value>, CefRefPtr<CefV8Context>>> mApplicationCallbackMap;
+	boost::mutex mApplicationCallbackMapLock;
+
+	IDProvider<int> mApplicationCallbackIdProvider;
 
 public:
-	void AddCallbackFunction(int id, CefRefPtr<CefV8Value> function, CefRefPtr<CefV8Context> context);
+	IDProvider<int> mApiIdProvider;
+
+	bool startupReceived;
+
+	Application();
+
+	void AddAPICallbackFunction(int id, CefRefPtr<CefV8Value> function, CefRefPtr<CefV8Context> context);
+
+	int AddApplicationCallback(const CefString& name, CefRefPtr<CefV8Value> function, CefRefPtr<CefV8Context> context);
+
+	bool RemoveApplicationCallback(int id);
+
+	void ExecuteCallback(const CefString& callbackName, CefRefPtr<CefListValue> argList, int argListIndex);
+
+	bool hasCallback(const CefString& callbackName)
+	{
+		return std::find(mApplicationCallbacks.begin(), mApplicationCallbacks.end(), callbackName) != mApplicationCallbacks.end();
+	}
 
 	// CefApp interface
 public:
@@ -33,8 +74,6 @@ public:
 	virtual void OnWebKitInitialized();
 
 	virtual void OnContextReleased(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFrame> frame, CefRefPtr<CefV8Context> context);
-
-	virtual void OnRenderThreadCreated(CefRefPtr<CefListValue> extra_info);
 
 	IMPLEMENT_REFCOUNTING(Application)
 };

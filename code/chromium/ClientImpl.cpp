@@ -48,16 +48,30 @@ namespace chromium
 		return false;
 	}
 
-	void ClientImpl::OnRenderProcessThreadCreated(CefRefPtr<CefListValue> extra_info)
-	{
-		// For future usage (probably lua <-> javascript bindings)
-	}
-
 	void ClientImpl::OnAfterCreated(CefRefPtr<CefBrowser> browser)
 	{
 		Assertion(mainBrowser.get() == nullptr, "Sub-browsers are not supported!");
 
 		mainBrowser = browser;
+
+		// Send startup informations
+		CefRefPtr<CefProcessMessage> message = CefProcessMessage::Create(jsapi::STARTUP_MESSAGE_NAME);
+
+		CefRefPtr<CefListValue> messageList = message->GetArgumentList();
+
+		CefRefPtr<CefListValue> callbacks = CefListValue::Create();
+		callbacks->SetSize(callbackNames.size());
+
+		int i = 0;
+		for (auto& name : callbackNames)
+		{
+			callbacks->SetString(i, name);
+			++i;
+		}
+
+		messageList->SetList(0, callbacks);
+
+		mainBrowser->SendProcessMessage(PID_RENDERER, message);
 
 		// 32-bit per pixel ==> 4 Bytes for each pixel
 		bitmapData = vm_malloc(width * height * 4);
@@ -87,5 +101,10 @@ namespace chromium
 
 		memcpy(bitmapData, buffer, width * height * 4);
 		gr_update_texture(browserBitmapHandle, 32, reinterpret_cast<ubyte*>(bitmapData), width, height);
+	}
+
+	void ClientImpl::addJavascriptCallback(const CefString& name)
+	{
+		callbackNames.push_back(name);
 	}
 }

@@ -1,14 +1,28 @@
 
+
+SET(EXTENSION_HEADER_FILE "${GENERATED_SOURCE_DIR}/chromiumprocess/fsoExtension.js.h")
+# Generate the java script extension header
+ADD_CUSTOM_COMMAND(
+	OUTPUT ${EXTENSION_HEADER_FILE}
+	COMMAND embedfile -text "${CMAKE_CURRENT_SOURCE_DIR}/resources/fsoExtension.js" "${EXTENSION_HEADER_FILE}" "FSOExtensionCode"
+	DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/resources/fsoExtension.js"
+	COMMENT "Generating string file for ${CMAKE_CURRENT_SOURCE_DIR}/resources/fsoExtension.js"
+)
+
 set(SOURCES
 	main.h
 	main.cpp
 	Application.h
 	Application.cpp
 	${file_root_chromium_jsapi}
+	${EXTENSION_HEADER_FILE}
+	resources/fsoExtension.js
 )
 
 add_executable(chromiumprocess ${EXE_GUI_TYPE} ${SOURCES})
 target_link_libraries(chromiumprocess cef_cpp_wrapper)
+
+source_group(Resources FILES resources/fsoExtension.js)
 
 IF(MSVC)
 	set_target_properties(chromiumprocess PROPERTIES
@@ -18,6 +32,7 @@ ENDIF(MSVC)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CODE_HEADERS}/chromium/jsapi)
+include_directories(${GENERATED_SOURCE_DIR}/chromiumprocess)
 
 IF(MSVC)
 	IF(MSVC_USE_RUNTIME_DLL)

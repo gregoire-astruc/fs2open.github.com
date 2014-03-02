@@ -5,13 +5,13 @@
 #include "globalincs/pstypes.h"
 
 #include "include/cef_client.h"
+#include "include/cef_browser_process_handler.h"
 
 namespace chromium
 {
 	class ClientImpl : public CefClient,
 							CefLifeSpanHandler,
-							CefRenderHandler,
-							CefBrowserProcessHandler
+							CefRenderHandler
 	{
 	private:
 		CefRefPtr<CefBrowser> mainBrowser;
@@ -23,6 +23,8 @@ namespace chromium
 
 		void* bitmapData;
 
+		SCP_vector<CefString> callbackNames;
+
 	public:
 		ClientImpl(int widthIn, int heightIn);
 
@@ -32,19 +34,15 @@ namespace chromium
 
 		int getBrowserBitmap() { return browserBitmapHandle; }
 
+		void addJavascriptCallback(const CefString& name);
+
 		// CefClient interface
 	public:
 		virtual CefRefPtr<CefRenderHandler> GetRenderHandler() { return this; }
 
 		virtual CefRefPtr<CefLifeSpanHandler> GetLifeSpanHandler() { return this; }
 
-		virtual CefRefPtr<CefBrowserProcessHandler> GetBrowserProcessHandler() { return this; }
-
 		virtual bool OnProcessMessageReceived(CefRefPtr<CefBrowser> browser, CefProcessId source_process, CefRefPtr<CefProcessMessage> message);
-
-		// CefBrowserProcessHandler interface
-	public:
-		virtual void OnRenderProcessThreadCreated(CefRefPtr<CefListValue> extra_info);
 
 		// CefLifeSpanHandler interface
 	public:
