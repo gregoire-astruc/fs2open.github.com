@@ -72,6 +72,8 @@ set(file_root_chromium
 	chromium/chromium.cpp
 	chromium/ApplicationImpl.h
 	chromium/ApplicationImpl.cpp
+	chromium/Browser.h
+	chromium/Browser.cpp
 	chromium/ChromiumStateLogic.h
 	chromium/ChromiumStateLogic.cpp
 	chromium/ClientImpl.h

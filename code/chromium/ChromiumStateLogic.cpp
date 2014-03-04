@@ -14,34 +14,21 @@
 void game_maybe_draw_mouse(float frametime);
 namespace chromium
 {
-	ChromiumStateLogic::ChromiumStateLogic(const SCP_string& url) : clientPtr(nullptr)
+	ChromiumStateLogic::ChromiumStateLogic(const SCP_string& url) : mBrowser(nullptr)
 	{
-		initialUrl.FromString(url.c_str());
-		clientPtr = new ClientImpl(gr_screen.max_w, gr_screen.max_h);
+		mInitialUrl.FromString(url.c_str());
 
-		clientPtr->addJavascriptCallback("test");
+		mBrowser = Browser::CreateBrowser(gr_screen.max_w, gr_screen.max_h);
 	}
 
 	void ChromiumStateLogic::enterState(GameState oldState)
 	{
-		CefWindowInfo info;
-		info.SetAsOffScreen((HWND) os_get_window());
-		info.SetTransparentPainting(true);
-
-		CefBrowserSettings settings;
-		settings.java = STATE_DISABLED;
-		settings.javascript_close_windows = STATE_DISABLED;
-		settings.javascript_open_windows = STATE_DISABLED;
-		settings.plugins = STATE_DISABLED;
-
-		bool result = CefBrowserHost::CreateBrowser(info, clientPtr.get(), initialUrl, settings, nullptr);
-
-		if (!result)
+		if (!mBrowser->Create(mInitialUrl))
 		{
-			Error(LOCATION, "Failed to create browser!");
+			Error(LOCATION, "Failed to initialize browser!");
 		}
 
-		lastUpdate = 0;
+		mLastUpdate = 0;
 	}
 
 	void ChromiumStateLogic::doFrame()
@@ -50,31 +37,37 @@ namespace chromium
 
 		std::clock_t now = std::clock();
 
-		if (lastUpdate != 0 && ((float)(now - lastUpdate) / CLOCKS_PER_SEC) <= 0.016666f)
+		if (mLastUpdate != 0 && ((float)(now - mLastUpdate) / CLOCKS_PER_SEC) <= 0.016666f)
 		{
-			Sleep(5);
+			os_sleep(5);
 			return;
 		}
 		
 		gr_set_color(255, 255, 255);
 		gr_clear();
 
-		if (bm_is_valid(clientPtr->getBrowserBitmap()))
+		if (mBrowser)
 		{
-			gr_set_bitmap(clientPtr->getBrowserBitmap(), GR_ALPHABLEND_FILTER);
-			gr_bitmap(0, 0, false);
+			if (bm_is_valid(mBrowser->GetClient()->getBrowserBitmap()))
+			{
+				gr_set_bitmap(mBrowser->GetClient()->getBrowserBitmap(), GR_ALPHABLEND_FILTER);
+				gr_bitmap(0, 0, false);
+			}
 		}
 
 		gr_flip();
 
-		lastUpdate = std::clock();
+		mLastUpdate = std::clock();
 	}
 
 	void ChromiumStateLogic::leaveState(GameState newState)
 	{
-		if (clientPtr.get() && clientPtr->getMainBrowser().get())
+		if (mBrowser)
 		{
-			clientPtr->getMainBrowser()->GetHost()->CloseBrowser(true);
+			if (mBrowser->GetClient()->getMainBrowser().get())
+			{
+				mBrowser->GetClient()->getMainBrowser()->GetHost()->CloseBrowser(true);
+			}
 		}
 	}
 }

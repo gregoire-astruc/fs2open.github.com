@@ -8,6 +8,7 @@
 #include "globalincs/pstypes.h"
 #include "statelogic/statelogic.h"
 #include "chromium/ClientImpl.h"
+#include "chromium/Browser.h"
 
 #include "include/cef_app.h"
 
@@ -16,11 +17,11 @@ namespace chromium
 	class ChromiumStateLogic : public statelogic::StateLogic
 	{
 	private:
-		CefString initialUrl;
+		CefString mInitialUrl;
 
-		CefRefPtr<ClientImpl> clientPtr;
+		boost::shared_ptr<Browser> mBrowser;
 
-		std::clock_t lastUpdate = 0;
+		std::clock_t mLastUpdate = 0;
 
 	public:
 		ChromiumStateLogic(const SCP_string& url);
