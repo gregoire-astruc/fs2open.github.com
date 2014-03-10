@@ -82,12 +82,9 @@ set(file_root_chromium
 
 # jsapi Files
 set(file_root_chromium_jsapi
-	${CMAKE_CURRENT_SOURCE_DIR}/chromium/jsapi/jsapi.h
-	${CMAKE_CURRENT_SOURCE_DIR}/chromium/jsapi/jsapi.cpp
-	CACHE INTERNAL "" FORCE
+	chromium/jsapi/jsapi.h
+	chromium/jsapi/jsapi.cpp
 )
-# The JSApi files are chache internal as the chromium process also compiles these
-# The paths must be absolute so prefix them with ${CMAKE_CURRENT_SOURCE_DIR}/
 
 # Cmdline files
 set (file_root_cmdline

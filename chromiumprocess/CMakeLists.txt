@@ -14,7 +14,7 @@ set(SOURCES
 	main.cpp
 	Application.h
 	Application.cpp
-	${file_root_chromium_jsapi}
+	${CODE_HEADERS}/chromium/jsapi/jsapi.h
 	${EXTENSION_HEADER_FILE}
 	resources/fsoExtension.js
 )

@@ -216,7 +216,7 @@ namespace lua
 
 		void addApiFunction(const CefString& name, const LuaFunction& function)
 		{
-			chromium::addAPIFunction(name, LuaFunctionWrapper(function));
+			chromium::jsapi::addFunction(name, LuaFunctionWrapper(function));
 		}
 	}
 }

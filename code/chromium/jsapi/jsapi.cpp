@@ -2,10 +2,7 @@
 #include <functional>
 #include <set>
 
-#include "jsapi.h"
-
-#ifndef BUILDING_CHROMIUMPROCESS
-// Add includes for execution here
+#include "chromium/jsapi/jsapi.h"
 
 #include "globalincs/pstypes.h"
 #include "cfile/cfile.h"
@@ -13,97 +10,50 @@
 #include "include/cef_task.h"
 #include "include/cef_runnable.h"
 
-#endif
-
 #include <boost/algorithm/string.hpp>
 
 #include <boost/bind.hpp>
 #include <boost/detail/container_fwd.hpp>
 
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/lock_guard.hpp>
+
 namespace chromium
 {
 	namespace jsapi
 	{
-#ifdef BUILDING_CHROMIUMPROCESS
-		typedef std::set<CefString> ContainerType;
-#else
-		typedef SCP_map<CefString, FunctionType> ContainerType;
-#endif
-
-		ContainerType functionList;
-
-#ifdef BUILDING_CHROMIUMPROCESS
-#define ADD_FUNCTION(name, executionFunc) functionList.insert(name)
-#else
-#define ADD_FUNCTION(name, executionFunc) functionList.insert(std::make_pair(name, executionFunc))
-#endif
-
-		void cfile_init()
-		{
-			ADD_FUNCTION("cfile_listFiles", [](const CefString&, CefRefPtr<CefListValue> args, int index, CefRefPtr<CefListValue> outArgs)
-			{
-				CefRefPtr<CefDictionaryValue> argumentDict = args->GetDictionary(0);
-
-				CefString dir = argumentDict->GetString("dir");
-				cfile::SortMode sortMode = cfile::SORT_NONE;
-
-				if (argumentDict->HasKey("sort"))
-				{
-					CefString sort = argumentDict->GetString("sort");
-
-					if (boost::iequals(sort.c_str(), "time"))
-					{
-						sortMode = cfile::SORT_TIME;
-					}
-					else if (boost::iequals(sort.c_str(), "name"))
-					{
-						sortMode = cfile::SORT_NAME;
-					}
-				}
-
-				SCP_vector<SCP_string> fileNames;
-				cfile::listFiles(fileNames, dir.ToString().c_str(), "", sortMode);
-
-				CefRefPtr<CefListValue> list = CefListValue::Create();
-
-				size_t size = fileNames.size();
-				list->SetSize(size);
-
-				for (size_t i = 0; i < size; ++i)
-				{
-					list->SetString(i, fileNames[i].c_str());
-				}
-
-				outArgs->SetList(index, list);
-
-				return true;
-			});
-		}
+		SCP_map<CefString, FunctionType> functionList;
+		boost::mutex functionListMutex;
 
 		void init()
 		{
-			cfile_init();
+			// Possibly initialize things here...
 		}
 
-#ifdef BUILDING_CHROMIUMPROCESS
-		bool hasFunction(const CefString& name)
-		{
-			return functionList.find(name) != functionList.end();
-		}
-
-		void addAPIFunction(const CefString& name)
-		{
-			functionList.insert(name);
-		}
-#else
 		void addFunction(const CefString& name, const FunctionType& apiFunction)
 		{
+			boost::lock_guard<boost::mutex> guard(functionListMutex);
+
 			functionList.insert(std::make_pair(name, apiFunction));
 		}
 
 		void removeFunction(const CefString& name)
 		{
+			boost::lock_guard<boost::mutex> guard(functionListMutex);
+
 			functionList.erase(name);
+		}
+
+		void getFunctionNames(SCP_vector<CefString>& outVec)
+		{
+			boost::lock_guard<boost::mutex> guard(functionListMutex);
+
+			outVec.clear();
+
+			for (auto& pair : functionList)
+			{
+				outVec.push_back(pair.first);
+			}
 		}
 
 		void functionExecutor(FunctionType func, CefRefPtr<CefBrowser> browser,
@@ -143,7 +93,7 @@ namespace chromium
 			CefString name = list->GetString(1);
 			CefRefPtr<CefListValue> arguments = list->GetList(2)->Copy();
 
-			ContainerType::iterator iter = functionList.find(name);
+			auto iter = functionList.find(name);
 
 			CefRefPtr<CefTask> task;
 			bool retVal;
@@ -162,6 +112,5 @@ namespace chromium
 
 			return retVal;
 		}
-#endif
 	}
 }

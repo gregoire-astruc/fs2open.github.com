@@ -101,19 +101,8 @@ namespace chromium
 		}
 	}
 
-	void addAPIFunction(const CefString& name, const jsapi::FunctionType& function)
+	bool isInited()
 	{
-		if (chromiumInited)
-		{
-			application->AddAPIFunction(name, function);
-		}
-	}
-
-	void removeAPIFunction(const CefString& name)
-	{
-		if (chromiumInited)
-		{
-			application->RemoveAPIFunction(name);
-		}
+		return chromiumInited;
 	}
 }

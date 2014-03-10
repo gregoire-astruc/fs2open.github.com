@@ -7,16 +7,16 @@
  * This file is used by both the FSO and chromium executable so be careful about what you include here
  */
 
+#ifndef BUILDING_CHROMIUMPROCESS
+
 #include <functional>
 
-#ifdef BUILDING_CHROMIUMPROCESS
-#include "main.h"
-#else
 #include "globalincs/pstypes.h"
-#endif
 
 #include "include/cef_app.h"
 #include "include/cef_v8.h"
+
+#endif
 
 namespace chromium
 {
@@ -26,21 +26,19 @@ namespace chromium
 
 		const char* const CALLBACK_MESSAGE_NAME = "fso_callback";
 
-#ifdef BUILDING_CHROMIUMPROCESS
-		void addAPIFunction(const CefString& name);
-
-		bool hasFunction(const CefString& name);
-#else
+#ifndef BUILDING_CHROMIUMPROCESS
 		typedef std::function<bool(const CefString&, CefRefPtr<CefListValue>, int, CefRefPtr<CefListValue>)> FunctionType;
 
 		void addFunction(const CefString& name, const FunctionType& apiFunction);
 
-		void addFunction(const CefString& name);
+		void removeFunction(const CefString& name);
+
+		void getFunctionNames(SCP_vector<CefString>& outVec);
 
 		bool processRendererMessage(CefRefPtr<CefBrowser> browser, CefRefPtr<CefProcessMessage> message);
-#endif
 
 		void init();
+#endif
 	}
 }
 

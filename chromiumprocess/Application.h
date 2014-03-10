@@ -42,6 +42,8 @@ private:
 	std::map<std::pair<int, CefString>, std::pair<CefRefPtr<CefV8Value>, CefRefPtr<CefV8Context>>> mApplicationCallbackMap;
 	boost::mutex mApplicationCallbackMapLock;
 
+	std::vector<CefString> mAPIFunctions;
+
 	IDProvider<int> mApplicationCallbackIdProvider;
 
 public:
@@ -57,10 +59,9 @@ public:
 
 	void ExecuteCallback(const CefString& callbackName, CefRefPtr<CefListValue> argList, int argListIndex);
 
-	bool hasCallback(const CefString& callbackName)
-	{
-		return std::find(mApplicationCallbacks.begin(), mApplicationCallbacks.end(), callbackName) != mApplicationCallbacks.end();
-	}
+	bool HasCallback(const CefString& callbackName);
+
+	bool HasAPIFunction(const CefString& callbackName);
 
 	// CefApp interface
 public:

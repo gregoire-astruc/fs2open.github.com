@@ -19,19 +19,12 @@ namespace chromium
 		SCP_vector<CefString> mCallbackNames;
 		boost::mutex mCallbacknamesLock;
 
-		SCP_vector<CefString> mExtraAPIFunctionNames;
-		boost::mutex mExtraAPIFunctionNamesLock;
-
 	public:
 		ApplicationImpl() : CefApp() {}
 		
 		void AddCallbackName(const CefString& name);
 
 		void RemoveCallback(const CefString& name);
-
-		void AddAPIFunction(const CefString& name, const jsapi::FunctionType& function);
-
-		void RemoveAPIFunction(const CefString& name);
 
 		// CefApp interface
 	public:

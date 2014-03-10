@@ -263,7 +263,7 @@ namespace
 
 			CefRefPtr<CefV8Value> argsValue = queryArg->GetValue(API_FIELD_ARGS);
 
-			if (chromium::jsapi::hasFunction(nameValue->GetStringValue()))
+			if (mApplication->HasAPIFunction(nameValue->GetStringValue()))
 			{
 				int id;
 				CefRefPtr<CefProcessMessage> message = constructAPIMessage(nameValue->GetStringValue(), argsValue, id, exception);
@@ -311,7 +311,7 @@ namespace
 
 			CefString callbackName = arguments.at(0)->GetStringValue();
 
-			if (!mApplication->hasCallback(callbackName))
+			if (!mApplication->HasCallback(callbackName))
 			{
 				exception = "The specified callback name is not known!";
 				return;
@@ -512,6 +512,16 @@ void Application::ExecuteCallback(const CefString& callbackName, CefRefPtr<CefLi
 	}
 }
 
+bool Application::HasCallback(const CefString& callbackName)
+{
+	return std::find(mApplicationCallbacks.begin(), mApplicationCallbacks.end(), callbackName) != mApplicationCallbacks.end();
+}
+
+bool Application::HasAPIFunction(const CefString& apiFunction)
+{
+	return std::find(mAPIFunctions.begin(), mAPIFunctions.end(), apiFunction) != mAPIFunctions.end();
+}
+
 bool Application::OnProcessMessageReceived(CefRefPtr<CefBrowser> browser, CefProcessId source_process, CefRefPtr<CefProcessMessage> message)
 {
 	if (message->GetName() == chromium::jsapi::API_MESSAGE_NAME)
@@ -565,8 +575,6 @@ void Application::OnWebKitInitialized()
 
 	// Register an extension which exposes the FSO API
 	CefRegisterExtension("fsoExtension", FSOExtensionCode, handler);
-
-	chromium::jsapi::init();
 }
 
 void Application::OnContextReleased(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFrame> frame,
@@ -613,6 +621,6 @@ void Application::OnRenderThreadCreated(CefRefPtr<CefListValue> extra_info)
 
 	for (int i = 0; i < static_cast<int>(extraFunctions->GetSize()); ++i)
 	{
-		chromium::jsapi::addAPIFunction(extraFunctions->GetString(i));
+		mAPIFunctions.push_back(extraFunctions->GetString(i));
 	}
 }

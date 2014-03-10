@@ -1057,22 +1057,6 @@ namespace chromium
 		mCallbackNames.erase(std::remove(mCallbackNames.begin(), mCallbackNames.end(), name));
 	}
 
-	void ApplicationImpl::AddAPIFunction(const CefString& name, const jsapi::FunctionType& function)
-	{
-		boost::lock_guard<boost::mutex> guard(mExtraAPIFunctionNamesLock);
-
-		mExtraAPIFunctionNames.push_back(name);
-
-		jsapi::addFunction(name, function);
-	}
-
-	void ApplicationImpl::RemoveAPIFunction(const CefString& name)
-	{
-		boost::lock_guard<boost::mutex> guard(mExtraAPIFunctionNamesLock);
-
-		mExtraAPIFunctionNames.erase(std::remove(mExtraAPIFunctionNames.begin(), mExtraAPIFunctionNames.end(), name));
-	}
-
 	void ApplicationImpl::OnRegisterCustomSchemes(CefRefPtr<CefSchemeRegistrar> registrar)
 	{
 		// Register custom schemes here
@@ -1095,12 +1079,14 @@ namespace chromium
 
 		extra_info->SetList(0, callbackNames);
 
-		boost::lock_guard<boost::mutex> extraAPIGuard(mExtraAPIFunctionNamesLock);
+		SCP_vector<CefString> apiFunctions;
+		jsapi::getFunctionNames(apiFunctions);
+
 		CefRefPtr<CefListValue> extraFunctions = CefListValue::Create();
-		extraFunctions->SetSize(mExtraAPIFunctionNames.size());
+		extraFunctions->SetSize(apiFunctions.size());
 
 		i = 0;
-		for (auto& name : mExtraAPIFunctionNames)
+		for (auto& name : apiFunctions)
 		{
 			extraFunctions->SetString(i, name);
 

@@ -13,9 +13,7 @@ namespace chromium
 
 	void removeCallback(const CefString& name);
 
-	void addAPIFunction(const CefString& name, const jsapi::FunctionType& function);
-
-	void removeAPIFunction(const CefString& name);
-
 	void shutdown();
+
+	bool isInited();
 }
