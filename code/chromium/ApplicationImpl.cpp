@@ -8,6 +8,7 @@
 #include "include/wrapper/cef_stream_resource_handler.h"
 
 #include "VFSPP/util.hpp"
+#include <boost/thread/lock_guard.hpp>
 
 namespace
 {
@@ -1041,9 +1042,41 @@ namespace chromium
 		}
 	}
 
+	void ApplicationImpl::AddCallbackName(CefString const& name)
+	{
+		boost::lock_guard<boost::mutex> guard(mCallbacknamesLock);
+
+		mCallbackNames.push_back(name);
+	}
+
+	void ApplicationImpl::RemoveCallback(CefString const& name)
+	{
+		boost::lock_guard<boost::mutex> guard(mCallbacknamesLock);
+
+		mCallbackNames.erase(std::remove(mCallbackNames.begin(), mCallbackNames.end(), name));
+	}
+
 	void ApplicationImpl::OnRegisterCustomSchemes(CefRefPtr<CefSchemeRegistrar> registrar)
 	{
 		// Register custom schemes here
+	}
+
+	void ApplicationImpl::OnRenderProcessThreadCreated(CefRefPtr<CefListValue> extra_info)
+	{
+		boost::lock_guard<boost::mutex> guard(mCallbacknamesLock);
+
+		CefRefPtr<CefListValue> listVal = CefListValue::Create();
+		listVal->SetSize(mCallbackNames.size());
+
+		int i = 0;
+		for (auto& name : mCallbackNames)
+		{
+			listVal->SetString(i, name);
+
+			++i;
+		}
+
+		extra_info->SetList(0, listVal);
 	}
 
 	void ApplicationImpl::OnContextInitialized()

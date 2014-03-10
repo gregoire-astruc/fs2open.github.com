@@ -722,6 +722,11 @@ set (file_root_parse
 	parse/sexp.h
 )
 
+set(file_root_parse_lua
+	parse/lua/util.h
+	parse/lua/util.cpp
+)
+
 # Particle files
 set (file_root_particle
 	particle/particle.cpp
@@ -1000,6 +1005,7 @@ source_group("Observer"                           FILES ${file_root_observer})
 source_group("OsApi"                              FILES ${file_root_osapi})
 source_group("Palman"                             FILES ${file_root_palman})
 source_group("Parse"                              FILES ${file_root_parse})
+source_group("Parse\\Lua"                         FILES ${file_root_parse_lua})
 source_group("Particle"                           FILES ${file_root_particle})
 source_group("PcxUtils"                           FILES ${file_root_pcxutils})
 source_group("Physics"                            FILES ${file_root_physics})
@@ -1077,6 +1083,7 @@ set (file_root
 	${file_root_osapi}
 	${file_root_palman}
 	${file_root_parse}
+	${file_root_parse_lua}
 	${file_root_particle}
 	${file_root_pcxutils}
 	${file_root_physics}

@@ -6,6 +6,7 @@
 #include <map>
 
 #include <boost/thread/mutex.hpp>
+#include <boost/thread/lock_guard.hpp>
 
 #include "main.h"
 
@@ -46,8 +47,6 @@ private:
 public:
 	IDProvider<int> mApiIdProvider;
 
-	bool startupReceived;
-
 	Application();
 
 	void AddAPICallbackFunction(int id, CefRefPtr<CefV8Value> function, CefRefPtr<CefV8Context> context);
@@ -74,6 +73,8 @@ public:
 	virtual void OnWebKitInitialized();
 
 	virtual void OnContextReleased(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFrame> frame, CefRefPtr<CefV8Context> context);
+
+	void OnRenderThreadCreated(CefRefPtr<CefListValue> extra_info) override;
 
 	IMPLEMENT_REFCOUNTING(Application)
 };

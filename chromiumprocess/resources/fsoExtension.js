@@ -24,10 +24,4 @@ if (!fsoApi)
 		native function unregisterCallback(id);
 		return unregisterCallback(id);
 	};
-	
-	fsoApi.isStartupComplete = function()
-	{
-	    native function isStartupComplete();
-	    return isStartupComplete();
-	};
 })();

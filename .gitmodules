@@ -1,3 +1,6 @@
 [submodule "lib/vfspp"]
 	path = lib/vfspp
 	url = https://github.com/asarium/vfspp.git
+[submodule "lib/LuaCppUtil"]
+	path = lib/LuaCppUtil
+	url = https://github.com/asarium/LuaCppUtil.git

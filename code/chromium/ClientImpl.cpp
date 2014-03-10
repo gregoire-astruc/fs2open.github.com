@@ -26,6 +26,42 @@ namespace chromium
 		}
 	}
 
+	void ClientImpl::executeCallback(CefString const& callbackName, CefRefPtr<CefListValue> values)
+	{
+		CefRefPtr<CefProcessMessage> message = CefProcessMessage::Create(jsapi::CALLBACK_MESSAGE_NAME);
+
+		CefRefPtr<CefListValue> argumentList = message->GetArgumentList();
+
+		argumentList->SetString(0, callbackName);
+		argumentList->SetList(1, values);
+
+		mainBrowser->SendProcessMessage(PID_RENDERER, message);
+	}
+
+	void ClientImpl::executeCallback(CefString const& callbackName, CefRefPtr<CefDictionaryValue> values)
+	{
+		CefRefPtr<CefProcessMessage> message = CefProcessMessage::Create(jsapi::CALLBACK_MESSAGE_NAME);
+
+		CefRefPtr<CefListValue> argumentList = message->GetArgumentList();
+
+		argumentList->SetString(0, callbackName);
+		argumentList->SetDictionary(1, values);
+
+		mainBrowser->SendProcessMessage(PID_RENDERER, message);
+	}
+
+	bool ClientImpl::forceClose()
+	{
+		if (mainBrowser == nullptr)
+		{
+			return false;
+		}
+
+		mainBrowser->GetHost()->CloseBrowser(true);
+
+		return false;
+	}
+
 	bool ClientImpl::OnProcessMessageReceived(CefRefPtr<CefBrowser> browser, CefProcessId source_process, CefRefPtr<CefProcessMessage> message)
 	{
 		if (mainBrowser == nullptr)
@@ -53,25 +89,6 @@ namespace chromium
 		Assertion(mainBrowser.get() == nullptr, "Sub-browsers are not supported!");
 
 		mainBrowser = browser;
-
-		// Send startup informations
-		CefRefPtr<CefProcessMessage> message = CefProcessMessage::Create(jsapi::STARTUP_MESSAGE_NAME);
-
-		CefRefPtr<CefListValue> messageList = message->GetArgumentList();
-
-		CefRefPtr<CefListValue> callbacks = CefListValue::Create();
-		callbacks->SetSize(callbackNames.size());
-
-		int i = 0;
-		for (auto& name : callbackNames)
-		{
-			callbacks->SetString(i, name);
-			++i;
-		}
-
-		messageList->SetList(0, callbacks);
-
-		mainBrowser->SendProcessMessage(PID_RENDERER, message);
 
 		// 32-bit per pixel ==> 4 Bytes for each pixel
 		bitmapData = vm_malloc(width * height * 4);
@@ -101,10 +118,5 @@ namespace chromium
 
 		memcpy(bitmapData, buffer, width * height * 4);
 		gr_update_texture(browserBitmapHandle, 32, reinterpret_cast<ubyte*>(bitmapData), width, height);
-	}
-
-	void ClientImpl::addJavascriptCallback(const CefString& name)
-	{
-		callbackNames.push_back(name);
 	}
 }

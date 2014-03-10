@@ -49,11 +49,11 @@ namespace cfile
 	using namespace vfspp::system;
 
 	using namespace boost;
-	namespace fs = boost::filesystem;
+	namespace fs = filesystem;
 	
 	struct FileHandle
 	{
-		boost::shared_ptr<std::streambuf> buffer;
+		shared_ptr<std::streambuf> buffer;
 
 		FileEntryPointer entry;
 
@@ -65,7 +65,7 @@ namespace cfile
 		std::streampos readLengthStart;
 		std::streamoff readLengthOffset;
 
-		FileHandle(boost::shared_ptr<std::streambuf> bufferIn, FileEntryPointer entryIn, int modeIn)
+		FileHandle(shared_ptr<std::streambuf> bufferIn, FileEntryPointer entryIn, int modeIn)
 			: buffer(bufferIn), stream(bufferIn.get()), entry(entryIn), mode(modeIn), maxReadLength(0)
 		{
 			Assert(buffer);
@@ -77,15 +77,11 @@ namespace cfile
 
 	fs::path userDir;
 
-	boost::shared_ptr<boost::object_pool<FileHandle> > cfilePool;
+	shared_ptr<object_pool<FileHandle> > cfilePool;
 
-	boost::shared_ptr<MergedFileSystem> fileSystem;
+	shared_ptr<MergedFileSystem> fileSystem;
 
 	bool inited = false;
-
-	boost::mutex cfileLock;
-
-#define CFILE_LOCK_SCOPE boost::lock_guard<boost::mutex> lockGuard(cfileLock)
 
 	// During cfile_init, verify that Pathtypes[n].index == n for each item
 	// Each path must have a valid parent that can be tracable all the way back to the root 
@@ -589,8 +585,6 @@ namespace cfile
 
 	void listFiles(SCP_vector<SCP_string>& names, const SCP_string& path, const SCP_string& filter, SortMode sortMode, ListFilterFunction filterFunc, bool returnFullPath)
 	{
-		CFILE_LOCK_SCOPE;
-
 		names.clear();
 
 		FileEntryPointer parentDir = fileSystem->getRootEntry()->getChild(path.c_str());
@@ -626,8 +620,6 @@ namespace cfile
 
 	bool deleteFile(const SCP_string& path, DirType type, bool localize)
 	{
-		CFILE_LOCK_SCOPE;
-
 		FileEntryPointer entry = getFileEntry(path, MODE_READ, type, localize);
 
 		if (entry)
@@ -642,8 +634,6 @@ namespace cfile
 
 	size_t flushDir(DirType type)
 	{
-		CFILE_LOCK_SCOPE;
-
 		Assert(dirTypeValid(type));
 
 		FileEntryPointer entry = fileSystem->getRootEntry()->getChild(Pathtypes[type]);
@@ -693,8 +683,6 @@ namespace cfile
 
 	bool rename(const SCP_string& oldName, const SCP_string& newName, DirType type, bool localize)
 	{
-		CFILE_LOCK_SCOPE;
-
 		Assert(dirTypeValid(type));
 
 		FileEntryPointer entry = getFileEntry(oldName, MODE_READ, type, localize);
@@ -713,8 +701,6 @@ namespace cfile
 
 	bool findFile(const SCP_string& name, SCP_string& outName, DirType type, const char** exts, size_t numExts, size_t* out_extIndex, bool localize)
 	{
-		CFILE_LOCK_SCOPE;
-
 		if (exts == NULL)
 		{
 			FileEntryPointer entry = getFileEntry(name, MODE_READ, type, localize);
@@ -781,8 +767,6 @@ namespace cfile
 
 	bool exists(const SCP_string& path, DirType type, bool localize)
 	{
-		CFILE_LOCK_SCOPE;
-
 		return (bool)getFileEntry(path, MODE_READ, type, localize);
 	}
 
@@ -812,8 +796,6 @@ namespace cfile
 
 	FileHandle* open(const SCP_string& file_path, int mode, OpenType type, DirType dir_type, bool localize)
 	{
-		CFILE_LOCK_SCOPE;
-
 		Assertion(inited, "CFile system has not been inited!");
 
 		Assertion(!file_path.empty(), "Invalid file path given!");
@@ -855,8 +837,6 @@ namespace cfile
 
 	bool close(FileHandle* handle)
 	{
-		CFILE_LOCK_SCOPE;
-
 		Assert(handle);
 		Assertion(cfilePool->is_from(handle), "Handle not allocated by the cfile system!");
 

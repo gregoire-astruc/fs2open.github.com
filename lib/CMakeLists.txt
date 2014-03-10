@@ -58,6 +58,15 @@ IF(MSVC60 OR MSVC70)
 	INCLUDE(stlport.cmake)
 ENDIF(MSVC60 OR MSVC70)
 
+SET(LUA_TARGET ${LUA_LIBS})
+SET(LUACPP_BUILD_TESTS OFF)
+ADD_SUBDIRECTORY(LuaCppUtil)
+
+set_target_properties(luacpputil
+	PROPERTIES
+		FOLDER "3rdparty"
+)
+
 IF(MSVC)
 	# Add precompiled libraries for visual studio
 	ADD_SUBDIRECTORY(vclibs)

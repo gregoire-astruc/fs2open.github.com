@@ -20,9 +20,9 @@ namespace chromium
 {
 	namespace jsapi
 	{
-		const char * const API_MESSAGE_NAME = "fso_jsapi";
+		const char* const API_MESSAGE_NAME = "fso_jsapi";
 
-		const char* const STARTUP_MESSAGE_NAME = "fso_startup";
+		const char* const CALLBACK_MESSAGE_NAME = "fso_callback";
 
 #ifdef BUILDING_CHROMIUMPROCESS
 		bool validateQuery(const CefString& name, CefRefPtr<CefV8Value> argument, CefString& exception);

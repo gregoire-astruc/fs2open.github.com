@@ -21,6 +21,10 @@ namespace chromium
 
 	std::clock_t lastUpdate = 0;
 
+	bool chromiumInited = false;
+
+	CefRefPtr<ApplicationImpl> application;
+
 	bool doChromiumWork()
 	{
 		std::clock_t now = std::clock();
@@ -60,19 +64,40 @@ namespace chromium
 
 		CefString(&settings.log_file).FromWString((fs::current_path() / "data" / "chromium.log").native());
 		
-		CefRefPtr<ApplicationImpl> myApp(new ApplicationImpl());
+		application = new ApplicationImpl();
 
-		CefInitialize(main_args, settings, myApp.get());
+		CefInitialize(main_args, settings, application.get());
 
 		mainloop::addMainloopFunction(doChromiumWork);
 
 		jsapi::init();
+
+		chromiumInited = true;
 
 		return;
 	}
 
 	void shutdown()
 	{
-		CefShutdown();
+		if (chromiumInited)
+		{
+			CefShutdown();
+		}
+	}
+
+	void addCallback(const CefString& name)
+	{
+		if (chromiumInited)
+		{
+			application->AddCallbackName(name);
+		}
+	}
+
+	void removeCallback(const CefString& name)
+	{
+		if (chromiumInited)
+		{
+			application->RemoveCallback(name);
+		}
 	}
 }

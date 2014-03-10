@@ -23,8 +23,6 @@ namespace chromium
 
 		void* bitmapData;
 
-		SCP_vector<CefString> callbackNames;
-
 	public:
 		ClientImpl(int widthIn, int heightIn);
 
@@ -34,7 +32,11 @@ namespace chromium
 
 		int getBrowserBitmap() { return browserBitmapHandle; }
 
-		void addJavascriptCallback(const CefString& name);
+		void executeCallback(const CefString& callbackName, CefRefPtr<CefListValue> values);
+
+		void executeCallback(const CefString& callbackName, CefRefPtr<CefDictionaryValue> values);
+
+		bool forceClose();
 
 		// CefClient interface
 	public:

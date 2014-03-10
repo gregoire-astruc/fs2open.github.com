@@ -2,6 +2,8 @@
 #include "ai/aigoals.h"
 #include "asteroid/asteroid.h"
 #include "camera/camera.h"
+#include "chromium/Browser.h"
+#include "chromium/chromium.h"
 #include "debris/debris.h"
 #include "cmdline/cmdline.h"
 #include "freespace.h"
@@ -38,6 +40,7 @@
 #include "parse/lua.h"
 #include "parse/parselo.h"
 #include "parse/scripting.h"
+#include "parse/lua/util.h"
 #include "particle/particle.h"
 #include "playerman/player.h"
 #include "render/3d.h"
@@ -51,6 +54,10 @@
 #include "weapon/beam.h"
 #define BMPMAN_INTERNAL
 #include "bmpman/bm_internal.h"
+
+#include <LuaCpp/LuaConvert.hpp>
+#include <LuaCpp/LuaFunction.hpp>
+#include <LuaCpp/LuaTable.hpp>
 
 //*************************Lua globals*************************
 SCP_vector<ade_table_entry> Ade_table_entries;
@@ -11654,6 +11661,141 @@ ADE_FUNC(isValid, l_Particle, NULL, "Detects whether this handle is valid", "boo
 	return ade_set_args(L, "b", ph->isValid());
 }
 
+class browser_h
+{
+private:
+	boost::shared_ptr<chromium::Browser> mBrowser;
+	bool mValid;
+
+public:
+	browser_h() : mValid(false) {}
+
+	browser_h(boost::shared_ptr<chromium::Browser> browser) : mBrowser(browser), mValid(true) {}
+
+	chromium::Browser* getBrowser() { return mBrowser.get(); }
+
+	void reset()
+	{
+		mBrowser.reset();
+	}
+
+	bool isValid() { return mValid; }
+};
+
+ade_obj<browser_h*> l_Browser("browser", "A chromium browser handle");
+
+ADE_FUNC(__gc, l_Browser, NULL, "Cleans up the browser instance", NULL, NULL)
+{
+	using namespace chromium;
+
+	browser_h *handle = NULL;
+
+	if (!ade_get_args(L, "o", l_Browser.Get(&handle)))
+		return ADE_RETURN_FALSE;
+
+	if (handle == NULL || !handle->isValid())
+		return ADE_RETURN_FALSE;
+
+	Browser* browser = handle->getBrowser();
+
+	browser->GetClient()->forceClose();
+
+	delete handle;
+
+	return ADE_RETURN_NIL;
+}
+
+ADE_FUNC(create, l_Browser, "string URL", "Actually creates the browser, call this after you are done with initializing the handle", "boolean", "true if successfull, false otherwise")
+{
+	using namespace chromium;
+
+	browser_h *handle = NULL;
+	char* url = NULL;
+
+	if (!ade_get_args(L, "os", l_Browser.Get(&handle), &url))
+		return ADE_RETURN_FALSE;
+
+	if (handle == NULL || !handle->isValid())
+		return ADE_RETURN_FALSE;
+
+	if (url == NULL)
+		return ADE_RETURN_FALSE;
+
+	Browser* browser = handle->getBrowser();
+
+	bool success = browser->Create(url);
+
+	return ade_set_args(L, "b", success);
+}
+
+ADE_FUNC(getBrowserBitmap, l_Browser, NULL, "Gets the bitmap this browser draws to.", "texture", "The texture or invalid handle if bitmap is not yet valid")
+{
+	using namespace chromium;
+
+	browser_h *handle = NULL;
+
+	if (!ade_get_args(L, "o", l_Browser.Get(&handle)))
+		return ADE_RETURN_FALSE;
+
+	if (handle == NULL || !handle->isValid())
+		return ADE_RETURN_FALSE;
+
+	Browser* browser = handle->getBrowser();
+	
+	return ade_set_args(L, "o", l_Texture.Set(browser->GetClient()->getBrowserBitmap()));
+}
+
+ADE_FUNC(addCallback, l_Browser, "string name", "Adds a callback name which can be usedto execute javascript, see the wiki for more informations.<br>"
+	"Must be called before create()", "boolean", "true if successful, false otherwise")
+{
+	using namespace chromium;
+
+	browser_h *handle = NULL;
+	char* name = NULL;
+
+	if (!ade_get_args(L, "os", l_Browser.Get(&handle), &name))
+		return ADE_RETURN_FALSE;
+
+	if (handle == NULL || !handle->isValid() || name == NULL)
+		return ADE_RETURN_FALSE;
+
+	addCallback(name);
+
+	return ADE_RETURN_TRUE;
+}
+
+ADE_FUNC(executeCallback, l_Browser, "string callback[, table argument]", "Executes a javascript callback and sends the given data with it.", "boolean", "true if successfull, false otherwise")
+{
+	using namespace chromium;
+	using namespace luacpp;
+
+	browser_h *handle = NULL;
+	char* name = NULL;
+	LuaTable table;
+
+	if (!ade_get_args(L, "os|t", l_Browser.Get(&handle), &name, &table))
+		return ADE_RETURN_FALSE;
+
+	if (handle == NULL || !handle->isValid() || name == NULL)
+		return ADE_RETURN_FALSE;
+
+	lua::util::executeCallback(handle->getBrowser()->GetClient(), name, table);
+
+	return ADE_RETURN_TRUE;
+}
+
+ADE_FUNC(isValid, l_Browser, NULL, "Determines if the browser handle is valid", "boolean", "true if the handle can be used, false otherwise")
+{
+	browser_h *handle = NULL;
+	if (!ade_get_args(L, "o", l_Browser.Get(&handle)))
+		return ADE_RETURN_FALSE;
+
+	if (handle == NULL)
+		return ADE_RETURN_FALSE;
+
+	return ade_set_args(L, "b", handle->isValid());
+}
+
 //**********LIBRARY: Audio
 ade_lib l_Audio("Audio", NULL, "ad", "Sound/Music Library");
 
@@ -12007,6 +12149,19 @@ ADE_FUNC(setTips, l_Base, "True or false", "Sets whether to display tips of the 
 		Player->tips = 0;
 
 	return ADE_RETURN_NIL;
+}
+
+ADE_FUNC(createBrowser, l_Base, "number width, number height", "Creates a new browser", "browser", "browser handle or invalid handle on failure")
+{
+	int width;
+	int height;
+
+	if (!ade_get_args(L, "ii", &width, &height))
+		return ade_set_error(L, "o", l_Browser.Set(new browser_h()));
+
+	boost::shared_ptr<chromium::Browser> browser = chromium::Browser::CreateBrowser(width, height);
+
+	return ade_set_error(L, "o", l_Browser.Set(new browser_h(browser)));
 }
 
 ADE_FUNC(postGameEvent, l_Base, "gameevent Event", "Sets current game event. Note that you can crash FreeSpace 2 by posting an event at an improper time, so test extensively if you use it.", "boolean", "True if event was posted, false if passed event was invalid")
@@ -15342,10 +15497,6 @@ int ade_get_args(lua_State *L, char *fmt, ...)
 	total_args += Ade_get_args_skip;
 	while(*fmt && nargs <= total_args)
 	{
-		//Skip functions; I assume these are being used to return args
-		while(lua_type(L, nargs) == LUA_TFUNCTION && nargs <= total_args)
-			nargs++;
-
 		if(nargs > total_args)
 			break;
 
@@ -15450,6 +15601,48 @@ int ade_get_args(lua_State *L, char *fmt, ...)
 					}
 				}
 				break;
+			case 'v':
+				{
+					// a function
+					using namespace luacpp;
+					LuaFunction* od = va_arg(vl, LuaFunction*);
+					if (lua_isfunction(L, nargs))
+					{
+						bool success = convert::popValue(L, *od, nargs, false);
+
+						if (!success)
+						{
+							LuaError(L, "%s: Failed to get function, this probably means you found a bug.", funcname, nargs, ade_get_type_string(L, nargs));
+						}
+					}
+					else
+					{
+						LuaError(L, "%s: Argument %d is an invalid type '%s'; type 'function' expected", funcname, nargs, ade_get_type_string(L, nargs));
+						if (!optional_args) return 0;
+					}
+					break;
+				}
+			case 't':
+				{
+					// a table
+					using namespace luacpp;
+					LuaTable* od = va_arg(vl, LuaTable*);
+					if (lua_istable(L, nargs))
+					{
+						bool success = convert::popValue(L, *od, nargs, false);
+
+						if (!success)
+						{
+							LuaError(L, "%s: Failed to get function, this probably means you found a bug.", funcname, nargs, ade_get_type_string(L, nargs));
+						}
+					}
+					else
+					{
+						LuaError(L, "%s: Argument %d is an invalid type '%s'; type 'table' expected", funcname, nargs, ade_get_type_string(L, nargs));
+						if (!optional_args) return 0;
+					}
+					break;
+				}
 			case '|':
 				nargs--;	//cancel out the nargs++ at the end
 				counted_args--;
@@ -15544,6 +15737,26 @@ int ade_set_args(lua_State *L, char *fmt, ...)
 						ODATA_SIG_TYPE tempsig = ODATA_SIG_DEFAULT;
 						memcpy(newod + od.size, &tempsig, sizeof(ODATA_SIG_TYPE));
 					}
+					break;
+				}
+			case 'v':
+				{
+					// a function
+					using namespace luacpp;
+					LuaFunction* od = va_arg(vl, LuaFunction*);
+
+					convert::pushValue<LuaValue>(L, *od);
+
+					break;
+				}
+			case 't':
+				{
+					// a table
+					using namespace luacpp;
+					LuaTable* od = va_arg(vl, LuaTable*);
+
+					convert::pushValue<LuaValue>(L, *od);
+
 					break;
 				}
 			//WMC -  Don't forget to update lua_set_arg

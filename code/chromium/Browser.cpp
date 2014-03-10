@@ -8,6 +8,8 @@ namespace chromium
 
 	bool Browser::Create(const CefString& url)
 	{
+		Assertion(mClient != nullptr, "Can't create browser from default constructed object!");
+
 		CefWindowInfo info;
 		info.SetAsOffScreen(reinterpret_cast<HWND>(os_get_window()));
 		info.SetTransparentPainting(TRUE);

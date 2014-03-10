@@ -19,10 +19,6 @@ namespace
 
 	const char* const CALLBACK_UNREGISTER = "unregisterCallback";
 
-	const char* const STARTUP_COMPLETE_CALLBACK = "startupComplete";
-
-	const char* const IS_STARTUP_COMPLETE = "isStartupComplete";
-
 	template<typename Index, typename List>
 	bool setV8Value(const Index& index, List list, CefRefPtr<CefV8Value> value, CefString& exception)
 	{
@@ -149,6 +145,63 @@ namespace
 		}
 	}
 
+	template<typename IndexType, typename ListType>
+	void CopyValue(const IndexType& destIndex, const IndexType& sourceIndex, ListType destination, ListType source)
+	{
+		CefValueType type = source->GetType(sourceIndex);
+
+		switch (type)
+		{
+		case VTYPE_NULL:
+			destination->SetNull(destIndex);
+			break;
+		case VTYPE_BOOL:
+			destination->SetBool(destIndex, source->GetBool(sourceIndex));
+			break;
+		case VTYPE_INT:
+			destination->SetInt(destIndex, source->GetInt(sourceIndex));
+			break;
+		case VTYPE_DOUBLE:
+			destination->SetDouble(destIndex, source->GetDouble(sourceIndex));
+			break;
+		case VTYPE_STRING:
+			destination->SetString(destIndex, source->GetString(sourceIndex));
+			break;
+		case VTYPE_DICTIONARY:
+		{
+			CefRefPtr<CefDictionaryValue> dictionaryVal = source->GetDictionary(sourceIndex);
+			CefRefPtr<CefDictionaryValue> newDict = CefDictionaryValue::Create();
+
+			CefDictionaryValue::KeyList keys;
+			dictionaryVal->GetKeys(keys);
+
+			for (auto& key : keys)
+			{
+				CopyValue(key, key, newDict, dictionaryVal);
+			}
+
+			destination->SetDictionary(destIndex, newDict);
+			break;
+		}
+		case VTYPE_LIST:
+		{
+			CefRefPtr<CefListValue> listVal = source->GetList(sourceIndex);
+			CefRefPtr<CefListValue> newList = CefListValue::Create();
+			newList->SetSize(listVal->GetSize());
+
+			for (int i = 0; i < (int)listVal->GetSize(); ++i)
+			{
+				CopyValue(i, i, newList, listVal);
+			}
+
+			destination->SetList(destIndex, newList);
+			break;
+		}
+		default:
+			break;
+		}
+	}
+
 	class FunctionHandler : public CefV8Handler
 	{
 	private:
@@ -264,9 +317,16 @@ namespace
 				return;
 			}
 
-			int id = mApplication->AddApplicationCallback(callbackName, arguments.at(1), CefV8Context::GetCurrentContext());
+			try
+			{
+				int id = mApplication->AddApplicationCallback(callbackName, arguments.at(1), CefV8Context::GetCurrentContext());
 
-			retval = CefV8Value::CreateInt(id);
+				retval = CefV8Value::CreateInt(id);
+			}
+			catch (...)
+			{
+				// Ignore, this is here to not access the context if an exception has been thrown
+			}
 
 			return;
 		}
@@ -311,12 +371,6 @@ namespace
 
 				return true;
 			}
-			else if (name == IS_STARTUP_COMPLETE)
-			{
-				retval = CefV8Value::CreateBool(mApplication->startupReceived);
-
-				return true;
-			}
 
 			return false;
 		}
@@ -343,29 +397,54 @@ namespace
 		context->Exit();
 	}
 
-	void applicationCallbackExecutor(CefRefPtr<CefV8Value> function, CefRefPtr<CefV8Context> context, CefRefPtr<CefListValue> arguments)
+	class CallbackTask : public CefTask
 	{
-		context->Enter();
+	private:
+		CefRefPtr<CefV8Value> mFunction;
+		
+		CefRefPtr<CefV8Context> mContext;
 
-		CefRefPtr<CefV8Value> value = getV8Value(0, arguments);
+		CefRefPtr<CefListValue> mArguments;
 
-		CefV8ValueList list({ value });
+	public:
+		CallbackTask(CefRefPtr<CefV8Value> function,
+			CefRefPtr<CefV8Context> context,
+			CefRefPtr<CefListValue> arguments) :
+			mFunction(function), mContext(context), mArguments(arguments)
+		{
+		}
 
-		// We may not rethrow exceptions!
-		function->SetRethrowExceptions(false);
-		function->ExecuteFunction(nullptr, list);
+		void Execute() override
+		{
+			if (!mContext->IsValid())
+			{
+				return;
+			}
 
-		// If there was an exception there is nothing we can do about it so just clear it.
-		function->ClearException();
+			mContext->Enter();
 
-		context->Exit();
-	}
+			CefRefPtr<CefV8Value> value = getV8Value(0, mArguments);
+
+			CefV8ValueList list({ value });
+
+			// We may not rethrow exceptions!
+			mFunction->SetRethrowExceptions(false);
+			mFunction->ExecuteFunction(nullptr, list);
+
+			// If there was an exception there is nothing we can do about it so just clear it.
+			mFunction->ClearException();
+
+			mContext->Exit();
+		}
+
+		IMPLEMENT_REFCOUNTING(CallbackTask);
+	};
+
+	
 }
 
-Application::Application() : startupReceived(false)
+Application::Application()
 {
-	// This is the default callback which is fired when the startup message was received
-	mApplicationCallbacks.push_back(STARTUP_COMPLETE_CALLBACK);
 }
 
 void Application::AddAPICallbackFunction(int id, CefRefPtr<CefV8Value> function, CefRefPtr<CefV8Context> context)
@@ -390,6 +469,9 @@ int Application::AddApplicationCallback(const CefString& name, CefRefPtr<CefV8Va
 
 bool Application::RemoveApplicationCallback(int id)
 {
+	// Make sure we are here only once
+	boost::lock_guard<boost::mutex> guard(mApplicationCallbackMapLock);
+
 	// We sadly need to use this O(n) algorithm
 	for (auto it = mApplicationCallbackMap.cbegin(); it != mApplicationCallbackMap.cend();)
 	{
@@ -412,16 +494,23 @@ bool Application::RemoveApplicationCallback(int id)
 
 void Application::ExecuteCallback(const CefString& callbackName, CefRefPtr<CefListValue> argList, int argListIndex)
 {
+	// Make sure we are here only once
+	boost::lock_guard<boost::mutex> guard(mApplicationCallbackMapLock);
+
 	for (auto it = mApplicationCallbackMap.cbegin(); it != mApplicationCallbackMap.cend();)
 	{
 		if (it->first.second == callbackName)
 		{
-			it->second.second->GetTaskRunner()->PostTask(NewCefRunnableFunction(applicationCallbackExecutor, it->second.first, it->second.second, argList->Copy()));
+			CefRefPtr<CefListValue> callbackList = CefListValue::Create();
+			callbackList->SetSize(1);
+
+			// Copy over the specified argument so we can use it in the callback task
+			CopyValue(0, argListIndex, callbackList, argList);
+
+			it->second.second->GetTaskRunner()->PostTask(new CallbackTask(it->second.first, it->second.second, callbackList));
 		}
-		else
-		{
-			++it;
-		}
+		
+		++it;
 	}
 }
 
@@ -457,10 +546,12 @@ bool Application::OnProcessMessageReceived(CefRefPtr<CefBrowser> browser, CefPro
 
 		return true;
 	}
-	if (message->GetName() == chromium::jsapi::STARTUP_MESSAGE_NAME)
+	else if (message->GetName() == chromium::jsapi::CALLBACK_MESSAGE_NAME)
 	{
-		ExecuteCallback(STARTUP_COMPLETE_CALLBACK, message->GetArgumentList(), 0);
-		startupReceived = true;
+		CefRefPtr<CefListValue> argumentList = message->GetArgumentList();
+		ExecuteCallback(argumentList->GetString(0), argumentList, 1);
+
+		return true;
 	}
 
 	return false;
@@ -508,5 +599,15 @@ void Application::OnContextReleased(CefRefPtr<CefBrowser> browser, CefRefPtr<Cef
 		{
 			++it;
 		}
+	}
+}
+
+void Application::OnRenderThreadCreated(CefRefPtr<CefListValue> extra_info)
+{
+	auto callbackList = extra_info->GetList(0);
+
+	for (int i = 0; i < static_cast<int>(callbackList->GetSize()); ++i)
+	{
+		mApplicationCallbacks.push_back(callbackList->GetString(i));
 	}
 }

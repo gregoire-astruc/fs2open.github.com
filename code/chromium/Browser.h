@@ -15,9 +15,14 @@ namespace chromium
 	private:
 		CefRefPtr<ClientImpl> mClient;
 
-		Browser();
 	public:
-		~Browser();
+		Browser() : mClient(nullptr)
+		{
+		}
+
+		~Browser()
+		{
+		}
 
 		CefRefPtr<ClientImpl> GetClient() { return mClient; }
 
