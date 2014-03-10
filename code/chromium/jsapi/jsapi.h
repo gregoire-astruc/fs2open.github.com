@@ -27,11 +27,9 @@ namespace chromium
 		const char* const CALLBACK_MESSAGE_NAME = "fso_callback";
 
 #ifdef BUILDING_CHROMIUMPROCESS
-		typedef std::function<bool(const CefString&, CefRefPtr<CefV8Value>, CefString&)> FunctionType;
+		void addAPIFunction(const CefString& name);
 
-		void addUnvalidatedFunction(const CefString& name);
-
-		bool validateQuery(const CefString& name, CefRefPtr<CefV8Value> argument, CefString& exception);
+		bool hasFunction(const CefString& name);
 #else
 		typedef std::function<bool(const CefString&, CefRefPtr<CefListValue>, int, CefRefPtr<CefListValue>)> FunctionType;
 

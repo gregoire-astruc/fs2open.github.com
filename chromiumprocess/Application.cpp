@@ -263,7 +263,7 @@ namespace
 
 			CefRefPtr<CefV8Value> argsValue = queryArg->GetValue(API_FIELD_ARGS);
 
-			if (chromium::jsapi::validateQuery(nameValue->GetStringValue(), argsValue, exception))
+			if (chromium::jsapi::hasFunction(nameValue->GetStringValue()))
 			{
 				int id;
 				CefRefPtr<CefProcessMessage> message = constructAPIMessage(nameValue->GetStringValue(), argsValue, id, exception);
@@ -613,6 +613,6 @@ void Application::OnRenderThreadCreated(CefRefPtr<CefListValue> extra_info)
 
 	for (int i = 0; i < static_cast<int>(extraFunctions->GetSize()); ++i)
 	{
-		chromium::jsapi::addUnvalidatedFunction(extraFunctions->GetString(i));
+		chromium::jsapi::addAPIFunction(extraFunctions->GetString(i));
 	}
 }

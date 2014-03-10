@@ -1,5 +1,6 @@
 
 #include <functional>
+#include <set>
 
 #include "jsapi.h"
 
@@ -17,13 +18,14 @@
 #include <boost/algorithm/string.hpp>
 
 #include <boost/bind.hpp>
+#include <boost/detail/container_fwd.hpp>
 
 namespace chromium
 {
 	namespace jsapi
 	{
 #ifdef BUILDING_CHROMIUMPROCESS
-		typedef std::map<CefString, FunctionType> ContainerType;
+		typedef std::set<CefString> ContainerType;
 #else
 		typedef SCP_map<CefString, FunctionType> ContainerType;
 #endif
@@ -31,61 +33,14 @@ namespace chromium
 		ContainerType functionList;
 
 #ifdef BUILDING_CHROMIUMPROCESS
-#define ADD_FUNCTION(name, validationFunc, executionFunc) functionList.insert(std::make_pair(name, validationFunc))
+#define ADD_FUNCTION(name, executionFunc) functionList.insert(name)
 #else
-#define ADD_FUNCTION(name, validationFunc, executionFunc) functionList.insert(std::make_pair(name, executionFunc))
+#define ADD_FUNCTION(name, executionFunc) functionList.insert(std::make_pair(name, executionFunc))
 #endif
 
 		void cfile_init()
 		{
-			ADD_FUNCTION("cfile_listFiles", [](const CefString& name, CefRefPtr<CefV8Value> argument, CefString& exception)
-			{
-				if (!argument->IsObject())
-				{
-					exception = "Argument must be an object!";
-					return false;
-				}
-
-				CefRefPtr<CefV8Value> dirArg = argument->GetValue("dir");
-				if (!dirArg.get() || !dirArg->IsString())
-				{
-					exception = "Need 'dir' arg and must be a string!";
-					return false;
-				}
-
-				CefRefPtr<CefV8Value> fullPathsArg = argument->GetValue("fullPaths");
-				if (fullPathsArg.get() && !fullPathsArg->IsUndefined())
-				{
-					if (!fullPathsArg->IsBool())
-					{
-						exception = "'fullPaths' must be a boolean!";
-						return false;
-					}
-				}
-
-				CefRefPtr<CefV8Value> sortArg = argument->GetValue("sort");
-				if (dirArg.get() && !sortArg->IsUndefined())
-				{
-					// We have a sort argument
-					if (!sortArg->IsString())
-					{
-						exception = "'sort' argument must be of type string!";
-						return false;
-					}
-
-					CefString val = sortArg->GetStringValue();
-
-					// Validate the sort argument here
-					if (!boost::iequals(val.c_str(), "name")
-						&& !boost::iequals(val.c_str(), "time"))
-					{
-						exception = "Unknown sort type specified!";
-						return false;
-					}
-				}
-
-				return true;
-			}, [](const CefString&, CefRefPtr<CefListValue> args, int index, CefRefPtr<CefListValue> outArgs)
+			ADD_FUNCTION("cfile_listFiles", [](const CefString&, CefRefPtr<CefListValue> args, int index, CefRefPtr<CefListValue> outArgs)
 			{
 				CefRefPtr<CefDictionaryValue> argumentDict = args->GetDictionary(0);
 
@@ -131,32 +86,14 @@ namespace chromium
 		}
 
 #ifdef BUILDING_CHROMIUMPROCESS
-		bool validateQuery(const CefString& name, CefRefPtr<CefV8Value> argument, CefString& exception)
+		bool hasFunction(const CefString& name)
 		{
-			ContainerType::iterator iter = functionList.find(name);
-
-			if (iter == functionList.end())
-			{
-				exception = std::string("No API function with name '") + name.ToString() + "' exists!";
-				return false;
-			}
-
-			const FunctionType& func = iter->second;
-
-			if (func)
-			{
-				return func(name, argument, exception);
-			}
-			else
-			{
-				// We know this function but don't have a validation function, let the browser process handle validation
-				return true;
-			}
+			return functionList.find(name) != functionList.end();
 		}
 
-		void addUnvalidatedFunction(const CefString& name)
+		void addAPIFunction(const CefString& name)
 		{
-			functionList.insert(std::make_pair(name, FunctionType(nullptr)));
+			functionList.insert(name);
 		}
 #else
 		void addFunction(const CefString& name, const FunctionType& apiFunction)
