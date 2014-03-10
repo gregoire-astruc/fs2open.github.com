@@ -23,12 +23,8 @@ namespace chromium
 	namespace jsapi
 	{
 #ifdef BUILDING_CHROMIUMPROCESS
-		typedef std::function<bool(const CefString&, CefRefPtr<CefV8Value>, CefString&)> FunctionType;
-
 		typedef std::map<CefString, FunctionType> ContainerType;
 #else
-		typedef bool(*FunctionType)(const CefString&, CefRefPtr<CefListValue>, int, CefRefPtr<CefListValue>);
-
 		typedef SCP_map<CefString, FunctionType> ContainerType;
 #endif
 
@@ -147,9 +143,32 @@ namespace chromium
 
 			const FunctionType& func = iter->second;
 
-			return func(name, argument, exception);
+			if (func)
+			{
+				return func(name, argument, exception);
+			}
+			else
+			{
+				// We know this function but don't have a validation function, let the browser process handle validation
+				return true;
+			}
+		}
+
+		void addUnvalidatedFunction(const CefString& name)
+		{
+			functionList.insert(std::make_pair(name, FunctionType(nullptr)));
 		}
 #else
+		void addFunction(const CefString& name, const FunctionType& apiFunction)
+		{
+			functionList.insert(std::make_pair(name, apiFunction));
+		}
+
+		void removeFunction(const CefString& name)
+		{
+			functionList.erase(name);
+		}
+
 		void functionExecutor(FunctionType func, CefRefPtr<CefBrowser> browser,
 			int id, CefString name, CefRefPtr<CefListValue> args)
 		{			

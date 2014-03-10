@@ -497,7 +497,7 @@ void Application::ExecuteCallback(const CefString& callbackName, CefRefPtr<CefLi
 	// Make sure we are here only once
 	boost::lock_guard<boost::mutex> guard(mApplicationCallbackMapLock);
 
-	for (auto it = mApplicationCallbackMap.cbegin(); it != mApplicationCallbackMap.cend();)
+	for (auto it = mApplicationCallbackMap.cbegin(); it != mApplicationCallbackMap.cend(); ++it)
 	{
 		if (it->first.second == callbackName)
 		{
@@ -509,8 +509,6 @@ void Application::ExecuteCallback(const CefString& callbackName, CefRefPtr<CefLi
 
 			it->second.second->GetTaskRunner()->PostTask(new CallbackTask(it->second.first, it->second.second, callbackList));
 		}
-		
-		++it;
 	}
 }
 
@@ -609,5 +607,12 @@ void Application::OnRenderThreadCreated(CefRefPtr<CefListValue> extra_info)
 	for (int i = 0; i < static_cast<int>(callbackList->GetSize()); ++i)
 	{
 		mApplicationCallbacks.push_back(callbackList->GetString(i));
+	}
+
+	auto extraFunctions = extra_info->GetList(1);
+
+	for (int i = 0; i < static_cast<int>(extraFunctions->GetSize()); ++i)
+	{
+		chromium::jsapi::addUnvalidatedFunction(extraFunctions->GetString(i));
 	}
 }

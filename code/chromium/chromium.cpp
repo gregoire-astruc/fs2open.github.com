@@ -100,4 +100,20 @@ namespace chromium
 			application->RemoveCallback(name);
 		}
 	}
+
+	void addAPIFunction(const CefString& name, const jsapi::FunctionType& function)
+	{
+		if (chromiumInited)
+		{
+			application->AddAPIFunction(name, function);
+		}
+	}
+
+	void removeAPIFunction(const CefString& name)
+	{
+		if (chromiumInited)
+		{
+			application->RemoveAPIFunction(name);
+		}
+	}
 }

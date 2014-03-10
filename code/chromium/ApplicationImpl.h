@@ -4,6 +4,8 @@
 #pragma once
 
 #include "globalincs/pstypes.h" // Included to suppress warnings
+#include "chromium/jsapi/jsapi.h"
+
 #include "include/cef_app.h"
 
 #include <boost/thread/mutex.hpp>
@@ -17,12 +19,19 @@ namespace chromium
 		SCP_vector<CefString> mCallbackNames;
 		boost::mutex mCallbacknamesLock;
 
+		SCP_vector<CefString> mExtraAPIFunctionNames;
+		boost::mutex mExtraAPIFunctionNamesLock;
+
 	public:
 		ApplicationImpl() : CefApp() {}
 		
 		void AddCallbackName(const CefString& name);
 
 		void RemoveCallback(const CefString& name);
+
+		void AddAPIFunction(const CefString& name, const jsapi::FunctionType& function);
+
+		void RemoveAPIFunction(const CefString& name);
 
 		// CefApp interface
 	public:

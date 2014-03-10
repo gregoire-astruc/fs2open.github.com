@@ -11784,6 +11784,27 @@ ADE_FUNC(executeCallback, l_Browser, "string callback[, table argument]", "Execu
 	return ADE_RETURN_TRUE;
 }
 
+ADE_FUNC(addAPIFunction, l_Browser, "string name, function callback", "Adds a function that can be called from JavaScript.<br>"
+	"Must be called before create()", "boolean", "true if successful, false otherwise")
+{
+	using namespace chromium;
+	using namespace luacpp;
+
+	browser_h *handle = NULL;
+	char* name = NULL;
+	LuaFunction func;
+
+	if (!ade_get_args(L, "osv", l_Browser.Get(&handle), &name, &func))
+		return ADE_RETURN_FALSE;
+
+	if (handle == NULL || !handle->isValid() || name == NULL)
+		return ADE_RETURN_FALSE;
+
+	lua::util::addApiFunction(name, func);
+
+	return ADE_RETURN_TRUE;
+}
+
 ADE_FUNC(isValid, l_Browser, NULL, "Determines if the browser handle is valid", "boolean", "true if the handle can be used, false otherwise")
 {
 	browser_h *handle = NULL;
