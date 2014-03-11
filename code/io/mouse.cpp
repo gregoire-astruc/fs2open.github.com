@@ -103,6 +103,39 @@ void mouse_init()
 	SDL_UnlockMutex( mouse_lock );	
 
 	atexit( mouse_close );
+
+	auto eventHandler = [](const SDL_Event& event)
+	{
+		if (event.button.button == SDL_BUTTON_LEFT)
+		{
+			mouse_mark_button(MOUSE_LEFT_BUTTON, event.button.state);
+			return true;
+		}
+		else if (event.button.button == SDL_BUTTON_MIDDLE)
+		{
+			mouse_mark_button(MOUSE_MIDDLE_BUTTON, event.button.state);
+			return true;
+		}
+		else if (event.button.button == SDL_BUTTON_RIGHT)
+		{
+			mouse_mark_button(MOUSE_RIGHT_BUTTON, event.button.state);
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	};
+
+	os::addEventListener(SDL_MOUSEBUTTONDOWN, eventHandler);
+	os::addEventListener(SDL_MOUSEBUTTONUP, eventHandler);
+
+	os::addEventListener(SDL_MOUSEMOTION, [](const SDL_Event& event)
+	{
+		mouse_event(event.motion.x, event.motion.y, event.motion.xrel, event.motion.yrel);
+
+		return true;
+	});
 }
 
 

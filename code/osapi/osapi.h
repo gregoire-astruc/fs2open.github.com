@@ -11,8 +11,19 @@
 #ifndef _OSAPI_H
 #define _OSAPI_H
 
+#include <functional>
+
 #include "globalincs/pstypes.h"
 #include "osapi/osregistry.h"
+
+#include <SDL_events.h>
+
+#include <boost/shared_ptr.hpp>
+
+namespace os
+{
+	void addEventListener(SDL_EventType type, const std::function<bool(const SDL_Event&)>& listener);
+}
 
 // --------------------------------------------------------------------------------------------------
 // OSAPI DEFINES/VARS

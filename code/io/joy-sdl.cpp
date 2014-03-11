@@ -561,6 +561,28 @@ int joy_init()
 
 	mprintf(("... Joystick successfully initialized!\n"));
 
+	// add event handling...
+	os::addEventListener(SDL_JOYHATMOTION, [](const SDL_Event& event)
+	{
+		joy_set_hat_state(event.jhat.value);
+
+		return true;
+	});
+
+	auto buttonHandler = [](const SDL_Event& event)
+	{
+		if (event.jbutton.button < JOY_NUM_BUTTONS) {
+			joy_set_button_state(event.jbutton.button, event.jbutton.state);
+
+			return true;
+		}
+		
+		return false;
+	};
+
+	os::addEventListener(SDL_JOYBUTTONDOWN, buttonHandler);
+	os::addEventListener(SDL_JOYBUTTONUP, buttonHandler);
+
 	return joy_num_sticks;
 }
 

@@ -730,6 +730,28 @@ void key_init()
 	SDL_UnlockMutex( key_lock );
 
 	atexit(key_close);
+
+	os::addEventListener(SDL_KEYDOWN, [](const SDL_Event& event)
+	{
+		if (SDLtoFS2[event.key.keysym.scancode]) {
+			key_mark(SDLtoFS2[event.key.keysym.scancode], 1, 0);
+
+			return true;
+		}
+
+		return false;
+	});
+
+	os::addEventListener(SDL_KEYUP, [](const SDL_Event& event)
+	{
+		if (SDLtoFS2[event.key.keysym.scancode]) {
+			key_mark(SDLtoFS2[event.key.keysym.scancode], 0, 0);
+
+			return true;
+		}
+
+		return false;
+	});
 }
 
 void key_level_init()

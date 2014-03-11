@@ -20,7 +20,8 @@
 #include <ctype.h>
 #include <assert.h>
 #include <limits.h>
-#ifdef _MSC_VER
+#if _MSC_VER < 1600
+	// Versions after 2008 have this header, for others we need to nclude our own
 	#include "globalincs/msvc/stdint.h"
 #else
 	#include <stdint.h>

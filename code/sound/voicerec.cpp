@@ -118,6 +118,21 @@ bool VOICEREC_init(HWND hWnd, int event_id, int grammar_id, int command_resource
         VOICEREC_deinit();
     }
 
+	if (hr == S_OK)
+	{
+		// Initialize event handling
+		os::addEventListener(SDL_SYSWMEVENT, [](const SDL_Event& event)
+		{
+			if (event.syswm.msg->msg.win.msg == WM_RECOEVENT)
+			{
+				if (Game_mode & GM_IN_MISSION && Cmdline_voice_recognition)
+				{
+					VOICEREC_process_event(event.syswm.msg->msg.win.hwnd);
+				}
+			}
+		});
+	}
+
     return ( hr == S_OK);
 }
 
