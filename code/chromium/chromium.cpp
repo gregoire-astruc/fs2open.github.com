@@ -30,9 +30,9 @@ namespace chromium
 	{
 		std::clock_t now = std::clock();
 
-		if (lastUpdate == 0 || ((float)(now - lastUpdate) / CLOCKS_PER_SEC) > 0.0333f)
+		if (lastUpdate == 0 || ((float)(now - lastUpdate) / CLOCKS_PER_SEC) > 0.016666f)
 		{
-			// Try to limit it to 30 updates per second
+			// Try to limit it to 60 updates per second
 			CefDoMessageLoopWork();
 			lastUpdate = now;
 		}
