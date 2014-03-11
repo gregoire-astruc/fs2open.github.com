@@ -554,7 +554,7 @@ namespace cfile
 	{
 		if (entryPointer->getType() != vfspp::FILE)
 		{
-			return false;
+			return true;
 		}
 
 		const string_type& path = entryPointer->getPath();
@@ -576,7 +576,7 @@ namespace cfile
 	{
 		if (entryPointer->getType() != vfspp::FILE)
 		{
-			return false;
+			return true;
 		}
 
 		const string_type& path = entryPointer->getPath();
