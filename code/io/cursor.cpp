@@ -233,7 +233,11 @@ namespace io
 
 			// Load the default cursor and enable it
 			Cursor* cursor = mSingleton->loadCursor("cursor", true);
-			mSingleton->setCurrentCursor(cursor);
+
+			if (cursor != nullptr)
+			{
+				mSingleton->setCurrentCursor(cursor);
+			}
 
 			// Hide the cursor initially
 			mSingleton->showCursor(false);
