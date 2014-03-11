@@ -6,6 +6,7 @@
 #include "chromium/ApplicationImpl.h"
 #include "mainloop/mainloop.h"
 #include "io/timer.h"
+#include "mod_table/mod_table.h"
 
 #ifdef WIN32
 #include <Windows.h>
@@ -41,6 +42,12 @@ namespace chromium
 
 	void init()
 	{
+		if (!Chromium_enable)
+		{
+			// Just return here, leaving the chromium system uninited
+			return;
+		}
+
 		// TODO: implement code which works for other platforms (possible using argc and argv
 		// to determine the executable path)
 		CefMainArgs main_args(GetModuleHandle(NULL));

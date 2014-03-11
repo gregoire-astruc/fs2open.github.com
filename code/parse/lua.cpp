@@ -11665,12 +11665,9 @@ class browser_h
 {
 private:
 	boost::shared_ptr<chromium::Browser> mBrowser;
-	bool mValid;
 
 public:
-	browser_h() : mValid(false) {}
-
-	browser_h(boost::shared_ptr<chromium::Browser> browser) : mBrowser(browser), mValid(true) {}
+	browser_h(boost::shared_ptr<chromium::Browser> browser = nullptr) : mBrowser(browser) {}
 
 	chromium::Browser* getBrowser() { return mBrowser.get(); }
 
@@ -11679,7 +11676,7 @@ public:
 		mBrowser.reset();
 	}
 
-	bool isValid() { return mValid; }
+	bool isValid() { return mBrowser.get() != nullptr; }
 };
 
 ade_obj<browser_h*> l_Browser("browser", "A chromium browser handle");

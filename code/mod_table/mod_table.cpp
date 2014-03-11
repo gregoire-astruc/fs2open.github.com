@@ -26,6 +26,7 @@ bool Full_color_head_anis = false;
 bool Weapons_inherit_parent_collision_group = false;
 bool Flight_controls_follow_eyepoint_orientation = false;
 int FS2NetD_port = 0;
+bool Chromium_enable = false; // Disable by default to not eat up system resources if it isn't actually used
 
 
 void parse_mod_table(const char *filename)
@@ -167,6 +168,13 @@ void parse_mod_table(const char *filename)
 		stuff_int(&FS2NetD_port);
 		if (FS2NetD_port)
 			mprintf(("Game Settings Table: FS2NetD connecting to port %i\n", FS2NetD_port));
+	}
+
+	optional_string("#CHROMIUM SETTINGS");
+
+	if (optional_string("$Enable Chromium:"))
+	{
+		stuff_boolean(&Chromium_enable);
 	}
 
 	optional_string("#OTHER SETTINGS"); 
