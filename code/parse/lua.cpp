@@ -15632,6 +15632,11 @@ int ade_get_args(lua_State *L, char *fmt, ...)
 						{
 							LuaError(L, "%s: Failed to get function, this probably means you found a bug.", funcname, nargs, ade_get_type_string(L, nargs));
 						}
+						else
+						{
+							// If we were successful, set our error function
+							od->setErrorFunction(ade_friendly_error);
+						}
 					}
 					else
 					{
