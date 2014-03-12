@@ -22,7 +22,9 @@
 
 namespace os
 {
-	void addEventListener(SDL_EventType type, const std::function<bool(const SDL_Event&)>& listener);
+	const int DEFAULT_LISTENER_WEIGHT = 0;
+
+	void addEventListener(SDL_EventType type, int weigth, const std::function<bool(const SDL_Event&)>& listener);
 }
 
 // --------------------------------------------------------------------------------------------------

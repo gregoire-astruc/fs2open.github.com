@@ -127,10 +127,10 @@ void mouse_init()
 		}
 	};
 
-	os::addEventListener(SDL_MOUSEBUTTONDOWN, eventHandler);
-	os::addEventListener(SDL_MOUSEBUTTONUP, eventHandler);
+	os::addEventListener(SDL_MOUSEBUTTONDOWN, os::DEFAULT_LISTENER_WEIGHT, eventHandler);
+	os::addEventListener(SDL_MOUSEBUTTONUP, os::DEFAULT_LISTENER_WEIGHT, eventHandler);
 
-	os::addEventListener(SDL_MOUSEMOTION, [](const SDL_Event& event)
+	os::addEventListener(SDL_MOUSEMOTION, os::DEFAULT_LISTENER_WEIGHT, [](const SDL_Event& event)
 	{
 		mouse_event(event.motion.x, event.motion.y, event.motion.xrel, event.motion.yrel);
 

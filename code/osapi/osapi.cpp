@@ -174,9 +174,9 @@ void os_deinit();
 
 namespace os
 {
-	SCP_map<SDL_EventType, SCP_vector<std::function<bool(const SDL_Event&)>>> eventListeners;
+	SCP_map<SDL_EventType, SCP_map<int, std::function<bool(const SDL_Event&)>>> eventListeners;
 
-	void addEventListener(SDL_EventType type, const std::function<bool(const SDL_Event&)>& listener)
+	void addEventListener(SDL_EventType type, int weigth, const std::function<bool(const SDL_Event&)>& listener)
 	{
 		Assertion(listener, "Listener pointer is not valid!");
 
@@ -184,10 +184,10 @@ namespace os
 
 		if (iter == eventListeners.end())
 		{
-			iter = eventListeners.insert(std::make_pair(type, SCP_vector<std::function<bool(const SDL_Event&)>>())).first;
+			iter = eventListeners.insert(std::make_pair(type, SCP_map<int, std::function<bool(const SDL_Event&)>>())).first;
 		}
 
-		iter->second.push_back(listener);
+		iter->second.insert(std::make_pair(weigth, listener));
 	}
 }
 
@@ -195,7 +195,7 @@ namespace
 {
 	void initializeEventHandling()
 	{
-		os::addEventListener(SDL_WINDOWEVENT, [](const SDL_Event& event)
+		os::addEventListener(SDL_WINDOWEVENT, os::DEFAULT_LISTENER_WEIGHT, [](const SDL_Event& event)
 		{
 			if (event.window.windowID == SDL_GetWindowID(os_get_window())) {
 				switch (event.window.event) {
@@ -398,9 +398,9 @@ void os_poll()
 
 		if (iter != os::eventListeners.end())
 		{
-			for (auto& listener : iter->second)
+			for (auto& pair : iter->second)
 			{
-				if (listener(event))
+				if (pair.second(event))
 				{
 					// event got handled
 					break;
