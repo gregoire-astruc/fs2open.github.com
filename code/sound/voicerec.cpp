@@ -32,6 +32,9 @@
 #include "io/keycontrol.h"
 #include "playerman/player.h"
 #include "ship/ship.h"
+#include "osapi/osapi.h"
+
+#include <SDL_syswm.h>
 
 CComPtr<ISpRecoGrammar>         p_grammarObject; // Pointer to our grammar object
 CComPtr<ISpRecoContext>         p_recogContext;  // Pointer to our recognition context
@@ -50,7 +53,7 @@ bool VOICEREC_init(HWND hWnd, int event_id, int grammar_id, int command_resource
         hr = p_recogEngine.CoCreateInstance(CLSID_SpSharedRecognizer);
         if ( FAILED( hr ) )
         {
-			MessageBox(hWnd,"Failed to create a recognition engine\n","Error",MB_OK);
+			SCP_Messagebox(MESSAGEBOX_ERROR, "Failed to create a recognition engine");
 			printf("Failed to create a recognition engine\n");
             break;
         }
@@ -59,7 +62,7 @@ bool VOICEREC_init(HWND hWnd, int event_id, int grammar_id, int command_resource
         hr = p_recogEngine->CreateRecoContext( &p_recogContext );
         if ( FAILED( hr ) )
         {
-			MessageBox(hWnd,"Failed to create the command recognition context\n","Error",MB_OK);
+			SCP_Messagebox(MESSAGEBOX_ERROR, "Failed to create the command recognition context");
 			printf("Failed to create the command recognition context\n");
             break;
         }
@@ -69,7 +72,7 @@ bool VOICEREC_init(HWND hWnd, int event_id, int grammar_id, int command_resource
         hr = p_recogContext->SetNotifyWindowMessage( hWnd, event_id, 0, 0 );
         if ( FAILED( hr ) )
         {
-			MessageBox(hWnd,"Failed to SetNotifyWindowMessage\n","Error",MB_OK);
+			SCP_Messagebox(MESSAGEBOX_ERROR, "Failed to SetNotifyWindowMessage");
             break;
         }
 
@@ -78,7 +81,7 @@ bool VOICEREC_init(HWND hWnd, int event_id, int grammar_id, int command_resource
         hr = p_recogContext->SetInterest( SPFEI(SPEI_RECOGNITION), SPFEI(SPEI_RECOGNITION) );
         if ( FAILED( hr ) )
         {
-			MessageBox(hWnd,"Failed to set events\n","Error",MB_OK);
+			SCP_Messagebox(MESSAGEBOX_ERROR, "Failed to set events");
             break;
         }
 
@@ -87,7 +90,7 @@ bool VOICEREC_init(HWND hWnd, int event_id, int grammar_id, int command_resource
         hr = p_recogContext->CreateGrammar(grammar_id, &p_grammarObject);
         if (FAILED(hr))
         {
-			MessageBox(hWnd,"Failed to load grammar\n","Error",MB_OK);
+			SCP_Messagebox(MESSAGEBOX_ERROR, "Failed to load grammar");
             break;
         }
 
@@ -96,7 +99,7 @@ bool VOICEREC_init(HWND hWnd, int event_id, int grammar_id, int command_resource
                                                  SPLO_DYNAMIC);
         if ( FAILED( hr ) )
         {
-			MessageBox(hWnd,"Failed to load resource\n","Error",MB_OK);
+			SCP_Messagebox(MESSAGEBOX_ERROR, "Failed to load resource");
             break;
         }
 
@@ -104,7 +107,7 @@ bool VOICEREC_init(HWND hWnd, int event_id, int grammar_id, int command_resource
         hr = p_grammarObject->SetRuleState(NULL, NULL, SPRS_ACTIVE );
         if ( FAILED( hr ) )
         {
-			MessageBox(hWnd,"Failed to set listening for commands\n","Error",MB_OK);
+			SCP_Messagebox(MESSAGEBOX_ERROR, "Failed to set listening for commands");
             break;
         }
 
@@ -116,6 +119,25 @@ bool VOICEREC_init(HWND hWnd, int event_id, int grammar_id, int command_resource
     {
         VOICEREC_deinit();
     }
+
+	if (hr == S_OK)
+	{
+		// Initialize event handling
+		os::addEventListener(SDL_SYSWMEVENT, os::DEFAULT_LISTENER_WEIGHT, [](const SDL_Event& event)
+		{
+			if (event.syswm.msg->msg.win.msg == WM_RECOEVENT)
+			{
+				if (Game_mode & GM_IN_MISSION && Cmdline_voice_recognition)
+				{
+					VOICEREC_process_event(event.syswm.msg->msg.win.hwnd);
+
+					return true;
+				}
+			}
+
+			return false;
+		});
+	}
 
     return ( hr == S_OK);
 }
