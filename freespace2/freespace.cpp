@@ -7018,6 +7018,8 @@ int game_main(int argc, char *argv[])
 
 	mainloop::execute();
 
+	game_shutdown();
+
 	return 0;
 }
 
