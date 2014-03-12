@@ -34,6 +34,8 @@
 #include "ship/ship.h"
 #include "osapi/osapi.h"
 
+#include <SDL_syswm.h>
+
 CComPtr<ISpRecoGrammar>         p_grammarObject; // Pointer to our grammar object
 CComPtr<ISpRecoContext>         p_recogContext;  // Pointer to our recognition context
 CComPtr<ISpRecognizer>			p_recogEngine;   // Pointer to our recognition engine instance
@@ -121,15 +123,19 @@ bool VOICEREC_init(HWND hWnd, int event_id, int grammar_id, int command_resource
 	if (hr == S_OK)
 	{
 		// Initialize event handling
-		os::addEventListener(SDL_SYSWMEVENT, [](const SDL_Event& event)
+		os::addEventListener(SDL_SYSWMEVENT, os::DEFAULT_LISTENER_WEIGHT, [](const SDL_Event& event)
 		{
 			if (event.syswm.msg->msg.win.msg == WM_RECOEVENT)
 			{
 				if (Game_mode & GM_IN_MISSION && Cmdline_voice_recognition)
 				{
 					VOICEREC_process_event(event.syswm.msg->msg.win.hwnd);
+
+					return true;
 				}
 			}
+
+			return false;
 		});
 	}
 

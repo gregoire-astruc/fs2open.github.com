@@ -1844,9 +1844,9 @@ void game_init()
 		SDL_VERSION(&info.version); // initialize info structure with SDL version info
 
 		bool voiceRectOn = false;
-		if(SDL_GetWindowWMInfo(window, &info)) { // the call returns true on success
+		if(SDL_GetWindowWMInfo(os_get_window(), &info)) { // the call returns true on success
 			// success
-			voiceRectOn = VOICEREC_init(info.HWND, WM_RECOEVENT, GRAMMARID1, IDR_CMD_CFG);
+			voiceRectOn = VOICEREC_init(info.info.win.window, WM_RECOEVENT, GRAMMARID1, IDR_CMD_CFG);
 		} else {
 			// call failed
 			mprintf(( "Couldn't get window information: %s\n", SDL_GetError() ));
