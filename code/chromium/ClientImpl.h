@@ -21,7 +21,12 @@ namespace chromium
 		int width;
 		int height;
 
+		bool mFocused;
+
 		void* bitmapData;
+
+		CefRect mPopupRect;
+		CefRect mOriginalPopupRect;
 
 	public:
 		ClientImpl(int widthIn, int heightIn);
@@ -37,6 +42,8 @@ namespace chromium
 		void executeCallback(const CefString& callbackName, CefRefPtr<CefDictionaryValue> values);
 
 		bool forceClose();
+
+		void setFocused(bool focused);
 
 		// CefClient interface
 	public:
@@ -59,6 +66,13 @@ namespace chromium
 		void OnPaint(CefRefPtr<CefBrowser> browser, PaintElementType type,
 			const RectList &dirtyRects, const void *buffer, int width, int height) override;
 
+		void ClientImpl::OnPopupShow(CefRefPtr<CefBrowser> browser, bool show) override;
+
+		void ClientImpl::OnPopupSize(CefRefPtr<CefBrowser> browser, const CefRect& rect) override;
+
+		CefRect ClientImpl::GetPopupRectInWebView(const CefRect& original_rect);
+
+		void ClientImpl::ClearPopupRects();
 
 		IMPLEMENT_REFCOUNTING(ClientImpl);
 	};

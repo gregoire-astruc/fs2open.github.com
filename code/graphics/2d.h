@@ -529,7 +529,7 @@ typedef struct screen {
 	void (*gf_enable_team_color)();
 	void (*gf_disable_team_color)();
 
-	void (*gf_update_texture)(int bitmap_handle, int bpp, ubyte* data, int width, int height);
+	void (*gf_update_texture)(int bitmap_handle, int bpp, const void* data, int width, int height, int x, int y);
 } screen;
 
 // handy macro
@@ -833,7 +833,10 @@ __inline void gr_render_buffer(int start, const vertex_buffer *bufferp, int texi
 #define gr_set_team_color				GR_CALL(*gr_screen.gf_set_team_color)
 #define gr_disable_team_color			GR_CALL(*gr_screen.gf_disable_team_color)
 
-#define gr_update_texture				GR_CALL(*gr_screen.gf_update_texture)
+inline void gr_update_texture(int bitmap_handle, int bpp, const void* data, int width, int height, int x = 0, int y = 0)
+{
+	(*gr_screen.gf_update_texture)(bitmap_handle, bpp, data, width, height, x, y);
+}
 
 // color functions
 void gr_get_color( int *r, int *g, int  b );
@@ -854,7 +857,7 @@ void gr_bitmap_list(bitmap_rect_list* list, int n_bm, bool allow_scaling);
 
 // texture update functions
 ubyte* gr_opengl_get_texture_update_pointer(int bitmap_handle);
-void gr_opengl_update_texture(int bitmap_handle, int bpp, ubyte* data, int width, int height);
+void gr_opengl_update_texture(int bitmap_handle, int bpp, const void* data, int width, int height, int x, int y);
 
 // special function for drawing polylines. this function is specifically intended for
 // polylines where each section is no more than 90 degrees away from a previous section.

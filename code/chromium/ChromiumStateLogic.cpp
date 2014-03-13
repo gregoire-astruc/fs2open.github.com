@@ -6,12 +6,12 @@
 #include "osapi/osapi.h"
 #include "graphics/2d.h"
 #include "sound/sound.h"
+#include "io/cursor.h"
 
 #include "freespace.h"
 
 #include "include/cef_app.h"
 
-void game_maybe_draw_mouse(float frametime);
 namespace chromium
 {
 	ChromiumStateLogic::ChromiumStateLogic(const SCP_string& url) : mBrowser(nullptr)
@@ -28,12 +28,14 @@ namespace chromium
 			Error(LOCATION, "Failed to initialize browser!");
 		}
 
+		mBrowser->RegisterEventHandlers();
+
 		mLastUpdate = 0;
 	}
 
 	void ChromiumStateLogic::doFrame()
 	{
-		game_maybe_draw_mouse(flFrametime);
+		io::mouse::CursorManager::get()->doFrame();
 
 		std::clock_t now = std::clock();
 

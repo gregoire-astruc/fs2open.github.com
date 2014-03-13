@@ -1388,7 +1388,7 @@ int opengl_export_image( int slot, int width, int height, int alpha, int num_mip
 	return m_offset;
 }
 
-void gr_opengl_update_texture(int bitmap_handle, int bpp, ubyte* data, int width, int height)
+void gr_opengl_update_texture(int bitmap_handle, int bpp, const void* data, int width, int height, int x, int y)
 {
 	GLenum texFormat, glFormat;
 	int n = bm_get_cache_slot (bitmap_handle, 1);
@@ -1426,19 +1426,19 @@ void gr_opengl_update_texture(int bitmap_handle, int bpp, ubyte* data, int width
 
 						if ( true_byte_mult > 3 ) {
 							for (int k = 0; k < 3; k++) {
-								luminance += data[(i*width+j)*true_byte_mult+k];
+								luminance += static_cast<const ubyte*>(data)[(i*width+j)*true_byte_mult+k];
 							}
 
-							*texmemp++ = (ubyte)((luminance / 3) * (data[(i*width+j)*true_byte_mult+3]/255.0f));
+							*texmemp++ = (ubyte)((luminance / 3) * (static_cast<const ubyte*>(data)[(i*width + j)*true_byte_mult + 3] / 255.0f));
 						} else {
 							for (int k = 0; k < true_byte_mult; k++) {
-								luminance += data[(i*width+j)*true_byte_mult+k]; 
+								luminance += static_cast<const ubyte*>(data)[(i*width + j)*true_byte_mult + k];
 							}
 
 							*texmemp++ = (ubyte)(luminance / true_byte_mult);
 						}
 					} else {
-						*texmemp++ = GL_xlat[data[i*width+j]];
+						*texmemp++ = GL_xlat[static_cast<const ubyte*>(data)[i*width + j]];
 					}
 				} else {
 					*texmemp++ = 0;
@@ -1446,8 +1446,10 @@ void gr_opengl_update_texture(int bitmap_handle, int bpp, ubyte* data, int width
 			}
 		}
 	}
+
 	glBindTexture(GL_TEXTURE_2D, t->texture_id);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, glFormat, texFormat, (texmem)?texmem:data);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, width, height, glFormat, texFormat, (texmem) ? texmem : data);
+
 	if (texmem != NULL)
 		vm_free(texmem);
 }

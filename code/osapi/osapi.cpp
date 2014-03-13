@@ -174,9 +174,11 @@ void os_deinit();
 
 namespace os
 {
-	SCP_map<SDL_EventType, SCP_map<int, std::function<bool(const SDL_Event&)>>> eventListeners;
+	SCP_map<SDL_EventType, SCP_map<int, std::pair<std::function<bool(const SDL_Event&)>, size_t>>> eventListeners;
 
-	void addEventListener(SDL_EventType type, int weigth, const std::function<bool(const SDL_Event&)>& listener)
+	size_t nextIdentifier = 0;
+
+	int addEventListener(SDL_EventType type, int weigth, const std::function<bool(const SDL_Event&)>& listener)
 	{
 		Assertion(listener, "Listener pointer is not valid!");
 
@@ -184,10 +186,38 @@ namespace os
 
 		if (iter == eventListeners.end())
 		{
-			iter = eventListeners.insert(std::make_pair(type, SCP_map<int, std::function<bool(const SDL_Event&)>>())).first;
+			iter = eventListeners.insert(std::make_pair(type, SCP_map<int,
+				std::pair<std::function<bool(const SDL_Event&)>, size_t>>())).first;
 		}
 
-		iter->second.insert(std::make_pair(weigth, listener));
+		size_t identifier = nextIdentifier++;
+
+		iter->second.insert(std::make_pair(weigth, std::make_pair(listener, identifier)));
+
+		return identifier;
+	}
+
+	bool removeEventListener(size_t identifer)
+	{
+		for (auto& pair : eventListeners)
+		{
+			auto& map = pair.second;
+
+			for (auto iter = map.cbegin(); iter != map.cend();)
+			{
+				if (iter->second.second == identifer)
+				{
+					map.erase(iter);
+					return true;
+				}
+				else
+				{
+					++iter;
+				}
+			}
+		}
+
+		return false;
 	}
 }
 
@@ -282,9 +312,7 @@ void os_init(const char * wclass, const char * title, const char *app_name, cons
 		return;
 	}
 
-#ifdef FS2_VOICER
-	SDL_EventState(SDL_SYSWMEVENT, SDL_ENABLE); // We currently only need this for voice recognition
-#endif
+	SDL_EventState(SDL_SYSWMEVENT, SDL_ENABLE);
 
 	// initialized
 	Os_inited = 1;
@@ -396,7 +424,7 @@ void os_poll()
 		{
 			for (auto& pair : iter->second)
 			{
-				if (pair.second(event))
+				if (pair.second.first(event))
 				{
 					// event got handled
 					break;
