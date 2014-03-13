@@ -5,9 +5,6 @@
 
 #include <map>
 
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/lock_guard.hpp>
-
 #include "main.h"
 
 #include "include/cef_app.h"
@@ -18,17 +15,17 @@ class IDProvider
 private:
 	T mNextId;
 
-	boost::mutex mIdLock;
-
 public:
 	IDProvider(const T& nextId = 0) : mNextId(nextId) {}
 
 	T getAndIncrement()
 	{
-		boost::lock_guard<boost::mutex> guard(mIdLock);
+		AutoLock guard(this);
 
 		return mNextId++;
 	}
+
+	IMPLEMENT_LOCKING(IDProvider);
 };
 
 class Application : public CefApp,
@@ -36,11 +33,9 @@ class Application : public CefApp,
 {
 private:
 	std::map<int, std::pair<CefRefPtr<CefV8Value>, CefRefPtr<CefV8Context>>> mApiCallbackMap;
-	boost::mutex mApiCallbackMapLock;
 
 	std::vector<CefString> mApplicationCallbacks;
 	std::map<std::pair<int, CefString>, std::pair<CefRefPtr<CefV8Value>, CefRefPtr<CefV8Context>>> mApplicationCallbackMap;
-	boost::mutex mApplicationCallbackMapLock;
 
 	std::vector<CefString> mAPIFunctions;
 
@@ -77,7 +72,9 @@ public:
 
 	void OnRenderThreadCreated(CefRefPtr<CefListValue> extra_info) override;
 
-	IMPLEMENT_REFCOUNTING(Application)
+	IMPLEMENT_REFCOUNTING(Application);
+
+	IMPLEMENT_LOCKING(Application);
 };
 
 #endif // APPLICATION_H
