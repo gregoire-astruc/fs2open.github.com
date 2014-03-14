@@ -55,6 +55,8 @@ namespace chromium
 				gr_set_bitmap(mBrowser->GetClient()->getBrowserBitmap(), GR_ALPHABLEND_FILTER);
 				gr_bitmap(0, 0, false);
 			}
+
+			mBrowser->SetFocused(true);
 		}
 
 		gr_flip();
@@ -70,6 +72,8 @@ namespace chromium
 			{
 				mBrowser->GetClient()->getMainBrowser()->GetHost()->CloseBrowser(true);
 			}
+
+			mBrowser->RemoveEventHandlers();
 		}
 	}
 }
