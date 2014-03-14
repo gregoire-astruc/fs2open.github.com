@@ -70,7 +70,7 @@ public:
 
 	virtual void OnContextReleased(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFrame> frame, CefRefPtr<CefV8Context> context);
 
-	void OnRenderThreadCreated(CefRefPtr<CefListValue> extra_info) override;
+	virtual void OnRenderThreadCreated(CefRefPtr<CefListValue> extra_info) override;
 
 	IMPLEMENT_REFCOUNTING(Application);
 
