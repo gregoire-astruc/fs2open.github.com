@@ -8,7 +8,8 @@
 namespace chromium
 {
 	ClientImpl::ClientImpl(int widthIn, int heightIn)
-		: width(widthIn), height(heightIn), bitmapData(NULL), browserBitmapHandle(-1)
+		: width(widthIn), height(heightIn), bitmapData(NULL), browserBitmapHandle(-1),
+		mPaintingPopup(false)
 	{
 	}
 
@@ -95,13 +96,26 @@ namespace chromium
 		return false;
 	}
 
+	bool ClientImpl::OnBeforePopup(CefRefPtr<CefBrowser> browser,
+		CefRefPtr<CefFrame> frame,
+		const CefString& target_url,
+		const CefString& target_frame_name,
+		const CefPopupFeatures& popupFeatures,
+		CefWindowInfo& windowInfo,
+		CefRefPtr<CefClient>& client,
+		CefBrowserSettings& settings,
+		bool* no_javascript_access) {
+		return true; // Always dissallow creating of popups
+	}
+
 	void ClientImpl::OnAfterCreated(CefRefPtr<CefBrowser> browser)
 	{
 		Assertion(mainBrowser.get() == nullptr, "Sub-browsers are not supported!");
 
 		mainBrowser = browser;
+		mainBrowser->GetHost()->SetMouseCursorChangeDisabled(true);
 
-		mainBrowser->GetHost()->SetFocus(mFocused);
+		mainBrowser->GetHost()->SendFocusEvent(mFocused);
 
 		// 32-bit per pixel ==> 4 Bytes for each pixel
 		bitmapData = vm_malloc(width * height * 4);
@@ -123,7 +137,47 @@ namespace chromium
 		return true;
 	}
 
+	bool ClientImpl::GetScreenPoint(CefRefPtr<CefBrowser> browser, int viewX, int viewY,
+		int& screenX, int& screenY)
+	{
+		if (os_get_window())
+		{
+			return false;
+		}
+
+		int windowX;
+		int windowY;
+
+		SDL_GetWindowPosition(os_get_window(), &windowX, &windowY);
+
+		screenX = windowX + viewX;
+		screenY = windowY + viewY;
+
+		return true;
+	}
+
 	void ClientImpl::OnPaint(CefRefPtr<CefBrowser> browser, PaintElementType type,
+		const RectList &dirtyRects, const void *buffer, int width, int height)
+	{
+		if (mPaintingPopup) {
+			ActualPaint(type, dirtyRects, buffer, width, height);
+			return;
+		}
+
+		ActualPaint(type, dirtyRects, buffer, width, height);
+
+		if (type == PET_VIEW && !mPopupRect.IsEmpty()) {
+			mPaintingPopup = true;
+
+			CefRect client_popup_rect(0, 0, mPopupRect.width, mPopupRect.height);
+
+			browser->GetHost()->Invalidate(client_popup_rect, PET_POPUP);
+
+			mPaintingPopup = false;
+		}
+	}
+
+	void ClientImpl::ActualPaint(PaintElementType type,
 		const RectList &dirtyRects, const void *buffer, int width, int height)
 	{
 		if (type == PET_VIEW)
@@ -143,8 +197,9 @@ namespace chromium
 	{
 		if (!show)
 		{
-			// Clear the popup rectangle.
+			CefRect dirty_rect = mPopupRect;
 			ClearPopupRects();
+			browser->GetHost()->Invalidate(dirty_rect, PET_VIEW);
 		}
 	}
 

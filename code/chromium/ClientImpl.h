@@ -22,6 +22,7 @@ namespace chromium
 		int height;
 
 		bool mFocused;
+		bool mPaintingPopup;
 
 		void* bitmapData;
 
@@ -45,19 +46,31 @@ namespace chromium
 
 		void setFocused(bool focused);
 
+		bool isFocused() { return mFocused; }
+
 		// CefClient interface
 	public:
-		virtual CefRefPtr<CefRenderHandler> GetRenderHandler() { return this; }
+		virtual CefRefPtr<CefRenderHandler> GetRenderHandler() override { return this; }
 
-		virtual CefRefPtr<CefLifeSpanHandler> GetLifeSpanHandler() { return this; }
+		virtual CefRefPtr<CefLifeSpanHandler> GetLifeSpanHandler() override { return this; }
 
-		virtual bool OnProcessMessageReceived(CefRefPtr<CefBrowser> browser, CefProcessId source_process, CefRefPtr<CefProcessMessage> message);
+		virtual bool OnProcessMessageReceived(CefRefPtr<CefBrowser> browser, CefProcessId source_process, CefRefPtr<CefProcessMessage> message) override;
 
 		// CefLifeSpanHandler interface
 	public:
 		void OnAfterCreated(CefRefPtr<CefBrowser> browser) override;
 
 		void OnBeforeClose(CefRefPtr<CefBrowser> browser) override;
+
+		virtual bool OnBeforePopup(CefRefPtr<CefBrowser> browser,
+			CefRefPtr<CefFrame> frame,
+			const CefString& target_url,
+			const CefString& target_frame_name,
+			const CefPopupFeatures& popupFeatures,
+			CefWindowInfo& windowInfo,
+			CefRefPtr<CefClient>& client,
+			CefBrowserSettings& settings,
+			bool* no_javascript_access) override;
 
 		// CefRenderHandler interface
 	public:
@@ -66,13 +79,19 @@ namespace chromium
 		void OnPaint(CefRefPtr<CefBrowser> browser, PaintElementType type,
 			const RectList &dirtyRects, const void *buffer, int width, int height) override;
 
-		void ClientImpl::OnPopupShow(CefRefPtr<CefBrowser> browser, bool show) override;
+		void ActualPaint(PaintElementType type,
+			const RectList &dirtyRects, const void *buffer, int width, int height);
 
-		void ClientImpl::OnPopupSize(CefRefPtr<CefBrowser> browser, const CefRect& rect) override;
+		void OnPopupShow(CefRefPtr<CefBrowser> browser, bool show) override;
 
-		CefRect ClientImpl::GetPopupRectInWebView(const CefRect& original_rect);
+		bool GetScreenPoint(CefRefPtr<CefBrowser> browser, int viewX, int viewY,
+			int& screenX, int& screenY) override;
 
-		void ClientImpl::ClearPopupRects();
+		void OnPopupSize(CefRefPtr<CefBrowser> browser, const CefRect& rect) override;
+
+		CefRect GetPopupRectInWebView(const CefRect& original_rect);
+
+		void ClearPopupRects();
 
 		IMPLEMENT_REFCOUNTING(ClientImpl);
 	};
