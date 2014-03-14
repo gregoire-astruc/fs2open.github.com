@@ -5,8 +5,6 @@
 
 #include "include/cef_runnable.h"
 
-#include <boost/thread/lock_guard.hpp>
-
 namespace
 {
 	const char* const API_FIELD_NAME = "name";

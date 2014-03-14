@@ -36,23 +36,11 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CODE_HEADERS}/chromium/jsapi)
 include_directories(${GENERATED_SOURCE_DIR}/chromiumprocess)
 
-IF(MSVC)
-	IF(MSVC_USE_RUNTIME_DLL)
-		SET(Boost_USE_STATIC_RUNTIME FALSE)
-	ELSE(MSVC_USE_RUNTIME_DLL)
-		SET(Boost_USE_STATIC_RUNTIME TRUE)
-	ENDIF(MSVC_USE_RUNTIME_DLL)
-ENDIF(MSVC)
-
-SET(Boost_USE_STATIC_LIBS ON)
-
-find_package(Boost COMPONENTS system)
+find_package(Boost REQUIRED)
 
 include_directories(${Boost_INCLUDE_DIRS})
-target_link_libraries(chromiumprocess ${Boost_LIBRARIES})
 
 add_definitions(-DBUILDING_CHROMIUMPROCESS)
-add_definitions(-DBOOST_ALL_NO_LIB)
 
 install(
 	TARGETS chromiumprocess
