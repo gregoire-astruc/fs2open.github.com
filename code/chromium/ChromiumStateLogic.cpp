@@ -18,7 +18,12 @@ namespace chromium
 	{
 		mInitialUrl.FromString(url.c_str());
 
-		mBrowser = Browser::CreateBrowser(gr_screen.max_w, gr_screen.max_h);
+		int width;
+		int height;
+
+		SDL_GetWindowSize(os_get_window(), &width, &height);
+
+		mBrowser = Browser::CreateBrowser(width, height);
 	}
 
 	void ChromiumStateLogic::enterState(GameState oldState)
