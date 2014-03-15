@@ -11,6 +11,11 @@ namespace chromium
 		: width(widthIn), height(heightIn), bitmapData(NULL), browserBitmapHandle(-1),
 		mPaintingPopup(false)
 	{
+		// 32-bit per pixel ==> 4 Bytes for each pixel
+		bitmapData = vm_malloc(width * height * 4);
+		memset(bitmapData, 0, width * height * 4);
+
+		browserBitmapHandle = bm_create(32, width, height, bitmapData, BMP_TEX_XPARENT);
 	}
 
 	ClientImpl::~ClientImpl()
@@ -96,15 +101,11 @@ namespace chromium
 		return false;
 	}
 
-	bool ClientImpl::OnBeforePopup(CefRefPtr<CefBrowser> browser,
-		CefRefPtr<CefFrame> frame,
-		const CefString& target_url,
-		const CefString& target_frame_name,
-		const CefPopupFeatures& popupFeatures,
-		CefWindowInfo& windowInfo,
-		CefRefPtr<CefClient>& client,
-		CefBrowserSettings& settings,
-		bool* no_javascript_access) {
+	bool ClientImpl::OnBeforePopup(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFrame> frame,
+		const CefString& target_url, const CefString& target_frame_name, const CefPopupFeatures& popupFeatures,
+		CefWindowInfo& windowInfo, CefRefPtr<CefClient>& client, CefBrowserSettings& settings,
+		bool* no_javascript_access)
+	{
 		return true; // Always dissallow creating of popups
 	}
 
@@ -114,14 +115,6 @@ namespace chromium
 
 		mainBrowser = browser;
 		mainBrowser->GetHost()->SetMouseCursorChangeDisabled(true);
-
-		mainBrowser->GetHost()->SendFocusEvent(mFocused);
-
-		// 32-bit per pixel ==> 4 Bytes for each pixel
-		bitmapData = vm_malloc(width * height * 4);
-		memset(bitmapData, 0, width * height * 4);
-
-		browserBitmapHandle = bm_create(32, width, height, bitmapData, BMP_TEX_XPARENT);
 	}
 
 	void ClientImpl::OnBeforeClose(CefRefPtr<CefBrowser> browser)
@@ -137,10 +130,18 @@ namespace chromium
 		return true;
 	}
 
+	bool ClientImpl::GetRootScreenRect(CefRefPtr<CefBrowser> browser, CefRect& rect)
+	{
+		SDL_GetWindowSize(os_get_window(), &rect.width, &rect.height);
+		SDL_GetWindowPosition(os_get_window(), &rect.x, &rect.y);
+
+		return true;
+	}
+
 	bool ClientImpl::GetScreenPoint(CefRefPtr<CefBrowser> browser, int viewX, int viewY,
 		int& screenX, int& screenY)
 	{
-		if (os_get_window())
+		if (os_get_window() == nullptr)
 		{
 			return false;
 		}
