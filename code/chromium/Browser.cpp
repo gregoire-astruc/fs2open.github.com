@@ -2,6 +2,7 @@
 #include "chromium/chromium.h"
 #include "chromium/Browser.h"
 #include "osapi/osapi.h"
+#include "io/cursor.h"
 
 #include <SDL_keyboard.h>
 #include <SDL_syswm.h>
@@ -156,7 +157,23 @@ namespace chromium
 	{
 		if (mClient->getMainBrowser() == nullptr)
 		{
-			return true;
+			return false;
+		}
+
+		if (!io::mouse::CursorManager::get()->isCursorShown())
+		{
+			// Mouse is not shown, don't report mouse events
+			return false;
+		}
+
+		if (!mClient->isFocused())
+		{
+			// Special handling for not focused, may need to be changed to be more flexible
+			if (event.type != SDL_MOUSEMOTION)
+			{
+				// Report mouse motion but nothing else
+				return false;
+			}
 		}
 
 		auto browser = mClient->getMainBrowser();
@@ -206,8 +223,14 @@ namespace chromium
 		case SDL_MOUSEWHEEL:
 		{
 			CefMouseEvent mouseEvent;
-			mouseEvent.x = 0;
-			mouseEvent.y = 0;
+
+			int mouseX;
+			int mouseY;
+
+			SDL_GetMouseState(&mouseX, &mouseY);
+
+			mouseEvent.x = mouseX;
+			mouseEvent.y = mouseY;
 			mouseEvent.modifiers = GetCefModifiers();
 
 			// Multiplying it with 120 as that works for windows, needs testing on other platforms
@@ -224,6 +247,11 @@ namespace chromium
 
 	bool Browser::SystemEvent(const SDL_Event& event)
 	{
+		if (!mClient->isFocused())
+		{
+			return false;
+		}
+
 		auto message = event.syswm.msg->msg.win.msg;
 		auto wParam = event.syswm.msg->msg.win.wParam;
 		auto lParam = event.syswm.msg->msg.win.lParam;
@@ -259,6 +287,14 @@ namespace chromium
 
 				if (mClient->getMainBrowser().get())
 				{
+					SCP_string str;
+					str.resize(256);
+
+					int size = GetKeyNameTextA(lParam, &str[0], 256);
+					str.resize(size);
+
+					mprintf(("%s\n", str.c_str()));
+
 					mClient->getMainBrowser()->GetHost()->SendKeyEvent(keyEvent);
 				}
 				
@@ -299,6 +335,7 @@ namespace chromium
 		settings.javascript_close_windows = STATE_DISABLED;
 		settings.javascript_open_windows = STATE_DISABLED;
 		settings.plugins = STATE_DISABLED;
+		CefString(&settings.default_encoding).FromASCII("UTF-8");
 
 		return CefBrowserHost::CreateBrowser(info, mClient.get(), url, settings, nullptr);
 	}
@@ -307,7 +344,7 @@ namespace chromium
 	{
 		if (!chromium::isInited())
 		{
-			Warning(LOCATION, "Chromium subsystem is not inited, that either means you haven't enable chromium in your mod table or created a browser too early.");
+			Warning(LOCATION, "Chromium subsystem is not inited, that either means you haven't enabled chromium in your mod table or created a browser too early.");
 			return nullptr;
 		}
 
@@ -338,8 +375,8 @@ namespace chromium
 		addEventHandler(SDL_SYSWMEVENT, os::DEFAULT_LISTENER_WEIGHT - 1, systemHandler);
 
 		// Block keyboard input as we use system events for this
-		addEventHandler(SDL_KEYDOWN, os::DEFAULT_LISTENER_WEIGHT - 1, [](const SDL_Event& event) { return true; });
-		addEventHandler(SDL_KEYUP, os::DEFAULT_LISTENER_WEIGHT - 1, [](const SDL_Event& event) { return true; });
+		addEventHandler(SDL_KEYDOWN, os::DEFAULT_LISTENER_WEIGHT - 1, [&](const SDL_Event& event) { return mClient->isFocused(); });
+		addEventHandler(SDL_KEYUP, os::DEFAULT_LISTENER_WEIGHT - 1, [&](const SDL_Event& event) { return mClient->isFocused(); });
 
 		addEventHandler(SDL_WINDOWEVENT, os::DEFAULT_LISTENER_WEIGHT - 1, [&](const SDL_Event& event)
 		{
@@ -348,17 +385,6 @@ namespace chromium
 
 			if (event.window.windowID == SDL_GetWindowID(os_get_window())) {
 				switch (event.window.event) {
-				case SDL_WINDOWEVENT_MINIMIZED:
-				case SDL_WINDOWEVENT_FOCUS_LOST:
-					SetFocused(false);
-					return true;
-
-				case SDL_WINDOWEVENT_MAXIMIZED:
-				case SDL_WINDOWEVENT_RESTORED:
-				case SDL_WINDOWEVENT_FOCUS_GAINED:
-					SetFocused(true);
-					return true;
-
 				case SDL_WINDOWEVENT_LEAVE:
 					host->SendCaptureLostEvent();
 					return true;
