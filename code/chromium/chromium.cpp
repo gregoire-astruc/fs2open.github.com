@@ -64,9 +64,6 @@ namespace chromium
 		CefString(&settings.browser_subprocess_path).FromWString((fs::path(moduleName).parent_path() / CHROMIUM_PROCESS).native());
 
 		settings.multi_threaded_message_loop = false;
-
-		settings.background_color = CefColorSetARGB(255, 255, 255, 255);
-
 		settings.remote_debugging_port = 12345;
 
 		CefString(&settings.log_file).FromWString((fs::current_path() / "data" / "chromium.log").native());
