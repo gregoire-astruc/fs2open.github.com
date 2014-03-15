@@ -287,14 +287,6 @@ namespace chromium
 
 				if (mClient->getMainBrowser().get())
 				{
-					SCP_string str;
-					str.resize(256);
-
-					int size = GetKeyNameTextA(lParam, &str[0], 256);
-					str.resize(size);
-
-					mprintf(("%s\n", str.c_str()));
-
 					mClient->getMainBrowser()->GetHost()->SendKeyEvent(keyEvent);
 				}
 				
