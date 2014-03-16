@@ -30,6 +30,8 @@ namespace chromium
 		CefRect mOriginalPopupRect;
 
 	public:
+		ClientImpl();
+
 		ClientImpl(int widthIn, int heightIn);
 
 		~ClientImpl();

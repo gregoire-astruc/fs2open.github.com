@@ -18,12 +18,7 @@ namespace chromium
 	{
 		mInitialUrl.FromString(url.c_str());
 
-		int width;
-		int height;
-
-		SDL_GetWindowSize(os_get_window(), &width, &height);
-
-		mBrowser = Browser::CreateBrowser(width, height);
+		mBrowser = Browser::CreateFullScreenBrowser();
 	}
 
 	void ChromiumStateLogic::enterState(GameState oldState)
@@ -33,8 +28,6 @@ namespace chromium
 			Error(LOCATION, "Failed to initialize browser!");
 		}
 
-		mBrowser->RegisterEventHandlers();
-
 		mLastUpdate = 0;
 	}
 
@@ -42,31 +35,7 @@ namespace chromium
 	{
 		io::mouse::CursorManager::get()->doFrame();
 
-		std::clock_t now = std::clock();
-
-		if (mLastUpdate != 0 && ((float)(now - mLastUpdate) / CLOCKS_PER_SEC) <= 0.016666f)
-		{
-			os_sleep(5);
-			return;
-		}
-		
-		gr_set_color(255, 255, 255);
-		gr_clear();
-
-		if (mBrowser)
-		{
-			if (bm_is_valid(mBrowser->GetClient()->getBrowserBitmap()))
-			{
-				gr_set_bitmap(mBrowser->GetClient()->getBrowserBitmap(), GR_ALPHABLEND_FILTER);
-				gr_bitmap(0, 0, false);
-			}
-
-			mBrowser->SetFocused(true);
-		}
-
-		gr_flip();
-
-		mLastUpdate = std::clock();
+		os_sleep(10);
 	}
 
 	void ChromiumStateLogic::leaveState(GameState newState)
@@ -77,8 +46,6 @@ namespace chromium
 			{
 				mBrowser->GetClient()->getMainBrowser()->GetHost()->CloseBrowser(true);
 			}
-
-			mBrowser->RemoveEventHandlers();
 		}
 	}
 }

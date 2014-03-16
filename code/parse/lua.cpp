@@ -12178,7 +12178,7 @@ ADE_FUNC(createBrowser, l_Base, "number width, number height", "Creates a new br
 	if (!ade_get_args(L, "ii", &width, &height))
 		return ade_set_error(L, "o", l_Browser.Set(new browser_h()));
 
-	boost::shared_ptr<chromium::Browser> browser = chromium::Browser::CreateBrowser(width, height);
+	boost::shared_ptr<chromium::Browser> browser = chromium::Browser::CreateOffScreenBrowser(width, height);
 
 	return ade_set_error(L, "o", l_Browser.Set(new browser_h(browser)));
 }

@@ -7,6 +7,11 @@
 
 namespace chromium
 {
+	ClientImpl::ClientImpl() : width(-1), height(-1), bitmapData(NULL), browserBitmapHandle(-1),
+		mPaintingPopup(false)
+	{
+	}
+
 	ClientImpl::ClientImpl(int widthIn, int heightIn)
 		: width(widthIn), height(heightIn), bitmapData(NULL), browserBitmapHandle(-1),
 		mPaintingPopup(false)
@@ -114,7 +119,6 @@ namespace chromium
 		Assertion(mainBrowser.get() == nullptr, "Sub-browsers are not supported!");
 
 		mainBrowser = browser;
-		mainBrowser->GetHost()->SetMouseCursorChangeDisabled(true);
 	}
 
 	void ClientImpl::OnBeforeClose(CefRefPtr<CefBrowser> browser)

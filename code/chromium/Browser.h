@@ -17,6 +17,8 @@ namespace chromium
 
 		SCP_vector<size_t> mHandlerIdentifiers;
 
+		bool mOffscreen;
+
 		bool MouseEvent(const SDL_Event& event);
 
 		bool SystemEvent(const SDL_Event& event);
@@ -24,10 +26,10 @@ namespace chromium
 		void addEventHandler(SDL_EventType type, int weigth,
 			const std::function<bool(const SDL_Event&)>& listener);
 
-	public:
-		Browser() : mClient(nullptr)
+		Browser() : mClient(nullptr), mOffscreen(false)
 		{
 		}
+	public:
 
 		~Browser()
 		{
@@ -44,7 +46,9 @@ namespace chromium
 		void RemoveEventHandlers();
 
 	public:
-		static boost::shared_ptr<Browser> CreateBrowser(size_t width, size_t height);
+		static boost::shared_ptr<Browser> CreateOffScreenBrowser(size_t width, size_t height);
+
+		static boost::shared_ptr<Browser> CreateFullScreenBrowser();
 	};
 }
 

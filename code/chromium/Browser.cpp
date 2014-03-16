@@ -67,86 +67,6 @@ namespace
 	{
 		return (GetKeyState(wparam) & 0x8000) != 0;
 	}
-
-	int GetCefKeyboardModifiers(WPARAM wparam, LPARAM lparam) {
-		int modifiers = 0;
-		if (isKeyDown(VK_SHIFT))
-			modifiers |= EVENTFLAG_SHIFT_DOWN;
-		if (isKeyDown(VK_CONTROL))
-			modifiers |= EVENTFLAG_CONTROL_DOWN;
-		if (isKeyDown(VK_MENU))
-			modifiers |= EVENTFLAG_ALT_DOWN;
-
-		// Low bit set from GetKeyState indicates "toggled".
-		if (::GetKeyState(VK_NUMLOCK) & 1)
-			modifiers |= EVENTFLAG_NUM_LOCK_ON;
-		if (::GetKeyState(VK_CAPITAL) & 1)
-			modifiers |= EVENTFLAG_CAPS_LOCK_ON;
-
-		switch (wparam) {
-		case VK_RETURN:
-			if ((lparam >> 16) & KF_EXTENDED)
-				modifiers |= EVENTFLAG_IS_KEY_PAD;
-			break;
-		case VK_INSERT:
-		case VK_DELETE:
-		case VK_HOME:
-		case VK_END:
-		case VK_PRIOR:
-		case VK_NEXT:
-		case VK_UP:
-		case VK_DOWN:
-		case VK_LEFT:
-		case VK_RIGHT:
-			if (!((lparam >> 16) & KF_EXTENDED))
-				modifiers |= EVENTFLAG_IS_KEY_PAD;
-			break;
-		case VK_NUMLOCK:
-		case VK_NUMPAD0:
-		case VK_NUMPAD1:
-		case VK_NUMPAD2:
-		case VK_NUMPAD3:
-		case VK_NUMPAD4:
-		case VK_NUMPAD5:
-		case VK_NUMPAD6:
-		case VK_NUMPAD7:
-		case VK_NUMPAD8:
-		case VK_NUMPAD9:
-		case VK_DIVIDE:
-		case VK_MULTIPLY:
-		case VK_SUBTRACT:
-		case VK_ADD:
-		case VK_DECIMAL:
-		case VK_CLEAR:
-			modifiers |= EVENTFLAG_IS_KEY_PAD;
-			break;
-		case VK_SHIFT:
-			if (isKeyDown(VK_LSHIFT))
-				modifiers |= EVENTFLAG_IS_LEFT;
-			else if (isKeyDown(VK_RSHIFT))
-				modifiers |= EVENTFLAG_IS_RIGHT;
-			break;
-		case VK_CONTROL:
-			if (isKeyDown(VK_LCONTROL))
-				modifiers |= EVENTFLAG_IS_LEFT;
-			else if (isKeyDown(VK_RCONTROL))
-				modifiers |= EVENTFLAG_IS_RIGHT;
-			break;
-		case VK_MENU:
-			if (isKeyDown(VK_LMENU))
-				modifiers |= EVENTFLAG_IS_LEFT;
-			else if (isKeyDown(VK_RMENU))
-				modifiers |= EVENTFLAG_IS_RIGHT;
-			break;
-		case VK_LWIN:
-			modifiers |= EVENTFLAG_IS_LEFT;
-			break;
-		case VK_RWIN:
-			modifiers |= EVENTFLAG_IS_RIGHT;
-			break;
-		}
-		return modifiers;
-	}
 }
 
 namespace chromium
@@ -283,7 +203,7 @@ namespace chromium
 					keyEvent.type = KEYEVENT_CHAR;
 				}
 
-				keyEvent.modifiers = GetCefKeyboardModifiers(wParam, lParam);
+				keyEvent.modifiers = GetCefModifiers();
 
 				if (mClient->getMainBrowser().get())
 				{
@@ -319,8 +239,19 @@ namespace chromium
 		}
 
 		CefWindowInfo info;
-		info.SetAsOffScreen(wmInfo.info.win.window);
-		info.SetTransparentPainting(TRUE);
+
+		if (mOffscreen)
+		{
+			info.SetAsOffScreen(wmInfo.info.win.window);
+			info.SetTransparentPainting(TRUE);
+		}
+		else
+		{
+			RECT rect;
+			GetClientRect(wmInfo.info.win.window, &rect);
+
+			info.SetAsChild(wmInfo.info.win.window, rect);
+		}
 
 		CefBrowserSettings settings;
 		settings.java = STATE_DISABLED;
@@ -330,21 +261,6 @@ namespace chromium
 		CefString(&settings.default_encoding).FromASCII("UTF-8");
 
 		return CefBrowserHost::CreateBrowser(info, mClient.get(), url, settings, nullptr);
-	}
-
-	shared_ptr<Browser> Browser::CreateBrowser(size_t width, size_t height)
-	{
-		if (!chromium::isInited())
-		{
-			Warning(LOCATION, "Chromium subsystem is not inited, that either means you haven't enabled chromium in your mod table or created a browser too early.");
-			return nullptr;
-		}
-
-		shared_ptr<Browser> browser = shared_ptr<Browser>(new Browser());
-
-		browser->mClient = new ClientImpl(static_cast<int>(width), static_cast<int>(height));
-
-		return browser;
 	}
 
 	void Browser::SetFocused(bool focused)
@@ -393,5 +309,38 @@ namespace chromium
 		{
 			os::removeEventListener(ident);
 		}
+	}
+
+	shared_ptr<Browser> Browser::CreateOffScreenBrowser(size_t width, size_t height)
+	{
+		if (!chromium::isInited())
+		{
+			Warning(LOCATION, "Chromium subsystem is not inited, that either means you haven't enabled chromium in your mod table or created a browser too early.");
+			return nullptr;
+		}
+
+		shared_ptr<Browser> browser = shared_ptr<Browser>(new Browser());
+		browser->mOffscreen = true;
+
+		browser->mClient = new ClientImpl(static_cast<int>(width), static_cast<int>(height));
+
+		return browser;
+	}
+
+	shared_ptr<Browser> Browser::CreateFullScreenBrowser()
+	{
+		// This mode uses OS specific functionality to render the page but overrides our cursor so we can't use this
+		if (!chromium::isInited())
+		{
+			Warning(LOCATION, "Chromium subsystem is not inited, that either means you haven't enabled chromium in your mod table or created a browser too early.");
+			return nullptr;
+		}
+
+		shared_ptr<Browser> browser = shared_ptr<Browser>(new Browser());
+		browser->mOffscreen = false;
+
+		browser->mClient = new ClientImpl();
+
+		return browser;
 	}
 }
