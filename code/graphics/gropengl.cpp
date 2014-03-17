@@ -1322,7 +1322,13 @@ int opengl_init_display_device()
 
 	int windowflags = SDL_WINDOW_OPENGL;
 	if (Cmdline_fullscreen_window)
+	{
 		windowflags |= SDL_WINDOW_BORDERLESS;
+	}
+	else if (!Cmdline_window)
+	{
+		windowflags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
+	}
 
 	// This code also gets called in the FRED initialization, that means we possibly already have a window!
 

@@ -7,10 +7,13 @@
 #include "graphics/2d.h"
 #include "sound/sound.h"
 #include "io/cursor.h"
+#include "graphics/gropengl.h"
 
 #include "freespace.h"
 
 #include "include/cef_app.h"
+
+#include <SDL_syswm.h>
 
 namespace chromium
 {
@@ -26,6 +29,22 @@ namespace chromium
 		if (!mBrowser->Create(mInitialUrl))
 		{
 			Error(LOCATION, "Failed to initialize browser!");
+		}
+
+		// UGH! HACK: Cef somehow doesn't draw fullscreen windows right at first
+		// We first go windowed and then back to fix this...
+		if (!Cmdline_window)
+		{
+			if (!Cmdline_fullscreen_window)
+			{
+				SDL_SetWindowFullscreen(os_get_window(), 0);
+				SDL_SetWindowFullscreen(os_get_window(), SDL_WINDOW_FULLSCREEN_DESKTOP);
+			}
+			else
+			{
+				SDL_SetWindowBordered(os_get_window(), SDL_TRUE);
+				SDL_SetWindowBordered(os_get_window(), SDL_FALSE);
+			}
 		}
 
 		mLastUpdate = 0;

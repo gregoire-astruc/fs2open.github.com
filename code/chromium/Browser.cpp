@@ -250,6 +250,19 @@ namespace chromium
 			RECT rect;
 			GetClientRect(wmInfo.info.win.window, &rect);
 
+			if (rect.bottom == 0 && rect.right == 0)
+			{
+				// Fix fullscreen windows which are somehow not reported correctly by windows
+
+				int width;
+				int height;
+
+				SDL_GetWindowSize(os_get_window(), &width, &height);
+
+				rect.right = width;
+				rect.bottom = height;
+			}
+
 			info.SetAsChild(wmInfo.info.win.window, rect);
 		}
 
