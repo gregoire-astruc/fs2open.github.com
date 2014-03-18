@@ -80,6 +80,7 @@
 #include "graphics/gropenglshader.h"
 #include "model/model.h"
 #include "mod_table/mod_table.h"
+#include "osapi/osapi.h"
 
 
 #define NUM_SHIP_SUBSYSTEM_SETS			20		// number of subobject sets to use (because of the fact that it's a linked list,
@@ -5234,7 +5235,7 @@ void ship_set(int ship_index, int objnum, int ship_type)
 		sprintf (err_msg, "Unable to allocate ship subsystems. Maximum is %d. No subsystems have been assigned to %s.", (NUM_SHIP_SUBSYSTEM_SETS* NUM_SHIP_SUBSYSTEMS_PER_SET), shipp->ship_name);
 
 		if (Fred_running) 
-			MessageBox(NULL, err_msg, "Error", MB_OK);
+			SCP_Messagebox(MESSAGEBOX_ERROR, err_msg);
 		else
 			Error(LOCATION, err_msg);
 	}
@@ -15563,11 +15564,11 @@ float ship_get_secondary_weapon_range(ship *shipp)
 		weapon_info	*wip;
 		int bank=swp->current_secondary_bank;
 		if (swp->secondary_bank_weapons[bank] >= 0) {
-		wip = &Weapon_info[swp->secondary_bank_weapons[bank]];
-		if ( swp->secondary_bank_ammo[bank] > 0 ) {
-			srange = wip->max_speed * wip->lifetime;
+			wip = &Weapon_info[swp->secondary_bank_weapons[bank]];
+			if ( swp->secondary_bank_ammo[bank] > 0 ) {
+				srange = wip->max_speed * wip->lifetime;
+			}
 		}
-	}
 	}
 
 	return srange;
@@ -15597,14 +15598,14 @@ int get_max_ammo_count_for_primary_bank(int ship_class, int bank, int ammo_type)
 int get_max_ammo_count_for_bank(int ship_class, int bank, int ammo_type)
 {
 	float capacity, size;
-
+    
 	if (ship_class < 0 || bank < 0 || ammo_type < 0) {
 		return 0;
 	} else {
-	capacity = (float) Ship_info[ship_class].secondary_bank_ammo_capacity[bank];
-	size = (float) Weapon_info[ammo_type].cargo_size;
-	return (int) (capacity / size);
-}
+		capacity = (float) Ship_info[ship_class].secondary_bank_ammo_capacity[bank];
+		size = (float) Weapon_info[ammo_type].cargo_size;
+		return (int) (capacity / size);
+	}
 }
 
 /**
