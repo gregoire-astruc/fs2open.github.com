@@ -8,7 +8,9 @@
 */
 
 
+#include "chromium/jsapi/jsapi.h"
 #include "playerman/player.h"
+#include "pilotfile/pilotfile.h"
 #include "io/joy.h"
 #include "io/joy_ff.h"
 #include "io/mouse.h"
@@ -1281,6 +1283,48 @@ void player_init()
 	Player->flags |= PLAYER_FLAGS_STRUCTURE_IN_USE;
 	Player->failures_this_session = 0;
 	Player->show_skip_popup = (ubyte) 1;
+
+	// add function for JS API
+
+	chromium::jsapi::addFunction("player_select", [](const CefString&, CefRefPtr<CefListValue> args,
+		int retIndex, CefRefPtr<CefListValue> returnList)
+	{
+		CefRefPtr<CefDictionaryValue> argDict = args->GetDictionary(0);
+		CefString name = argDict->GetString("name");
+		bool multiplayer = argDict->GetBool("multi");
+
+		// setup the player  struct
+		Player_num = 0;
+		Player = &Players[0];
+		Player->flags |= PLAYER_FLAGS_STRUCTURE_IN_USE;
+
+		// New pilot file makes no distinction between multi pilots and regular ones, so let's do this here.
+		if (multiplayer) {
+			Player->flags |= PLAYER_FLAGS_IS_MULTI;
+		}
+
+		// WMC - Set appropriate game mode
+		if (Player->flags & PLAYER_FLAGS_IS_MULTI) {
+			Game_mode = GM_MULTIPLAYER;
+		}
+		else {
+			Game_mode = GM_NORMAL;
+		}
+
+		// now read in a the pilot data
+		if (!Pilot.load_player(name.ToString().c_str(), Player)) {
+			Error(LOCATION, "Couldn't load pilot file, bailing");
+			Player = NULL;
+		}
+		else {
+			// NOTE: this may fail if there is no current campaign, it's not fatal
+			Pilot.load_savefile(Player->current_campaign);
+		}
+
+		gameseq_post_event(GS_EVENT_MAIN_MENU);
+
+		return true;
+	});
 }
 
 /**
