@@ -9,6 +9,8 @@ option(MSVC_MULTIPROCESSOR_COMPILE "Enable multiprocessor comilation everywhere 
 MARK_AS_ADVANCED(FORCE MSVC_USE_RUNTIME_DLL)
 MARK_AS_ADVANCED(FORCE MSVC_MULTIPROCESSOR_COMPILE)
 
+add_definitions(-DUNICODE -D_UNICODE)
+
 # Base
 set(CMAKE_C_FLAGS "/analyze- /Zc:wchar_t /errorReport:prompt /WX- /Zc:forScope /Gd /EHsc /nologo")
 set(CMAKE_CXX_FLAGS "/analyze- /Zc:wchar_t /errorReport:prompt /WX- /Zc:forScope /Gd /EHsc /nologo")
