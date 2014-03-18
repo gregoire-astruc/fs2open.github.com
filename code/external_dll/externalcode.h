@@ -36,7 +36,13 @@ protected:
 			return FALSE;
 		
 #ifdef _WIN32
-		m_dll = ::LoadLibrary( externlib );
+		size_t size = strlen(externlib) + 1;
+		wchar_t* wa = new wchar_t[size];
+		mbstowcs(wa, externlib, size);
+
+		m_dll = ::LoadLibrary(wa);
+
+		delete[] wa;
 		
 		if ( m_dll )
 			return TRUE;
