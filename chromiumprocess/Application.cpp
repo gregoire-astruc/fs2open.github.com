@@ -253,9 +253,9 @@ namespace
 			}
 
 			CefRefPtr<CefV8Value> callbackValue = queryArg->GetValue(API_FIELD_CALLBACK);
-			if (!callbackValue.get() || !callbackValue->IsFunction())
+			if (callbackValue.get() && (!callbackValue->IsFunction() && !callbackValue->IsUndefined()))
 			{
-				exception = std::string("Query needs a field named '") + API_FIELD_CALLBACK + "' which is of type function!";
+				exception = std::string("The query field '") + API_FIELD_CALLBACK + "' must be either a function or undefined!";
 				return;
 			}
 
@@ -271,8 +271,11 @@ namespace
 					CefRefPtr<CefV8Context> context = CefV8Context::GetCurrentContext();
 					if (context->GetBrowser()->SendProcessMessage(PID_BROWSER, message))
 					{
-						// Save the callback and its ID
-						mApplication->AddAPICallbackFunction(id, callbackValue, context);
+						if (callbackValue.get() && callbackValue->IsFunction())
+						{
+							// Save the callback and its ID
+							mApplication->AddAPICallbackFunction(id, callbackValue, context);
+						}
 					}
 				}
 				else
@@ -610,15 +613,21 @@ void Application::OnRenderThreadCreated(CefRefPtr<CefListValue> extra_info)
 {
 	auto callbackList = extra_info->GetList(0);
 
-	for (int i = 0; i < static_cast<int>(callbackList->GetSize()); ++i)
+	if (callbackList != nullptr)
 	{
-		mApplicationCallbacks.push_back(callbackList->GetString(i));
+		for (int i = 0; i < static_cast<int>(callbackList->GetSize()); ++i)
+		{
+			mApplicationCallbacks.push_back(callbackList->GetString(i));
+		}
 	}
 
 	auto extraFunctions = extra_info->GetList(1);
 
-	for (int i = 0; i < static_cast<int>(extraFunctions->GetSize()); ++i)
+	if (extraFunctions != nullptr)
 	{
-		mAPIFunctions.push_back(extraFunctions->GetString(i));
+		for (int i = 0; i < static_cast<int>(extraFunctions->GetSize()); ++i)
+		{
+			mAPIFunctions.push_back(extraFunctions->GetString(i));
+		}
 	}
 }
