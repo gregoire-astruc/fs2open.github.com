@@ -61,10 +61,7 @@ namespace chromium
 	{
 		if (mBrowser)
 		{
-			if (mBrowser->GetClient()->getMainBrowser().get())
-			{
-				mBrowser->GetClient()->getMainBrowser()->GetHost()->CloseBrowser(true);
-			}
+			mBrowser->Close();
 		}
 	}
 }

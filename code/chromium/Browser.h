@@ -19,6 +19,8 @@ namespace chromium
 
 		bool mOffscreen;
 
+		HWND mBrowserAreaWindow;
+
 		bool MouseEvent(const SDL_Event& event);
 
 		bool SystemEvent(const SDL_Event& event);
@@ -26,7 +28,9 @@ namespace chromium
 		void addEventHandler(SDL_EventType type, int weigth,
 			const std::function<bool(const SDL_Event&)>& listener);
 
-		Browser() : mClient(nullptr), mOffscreen(false)
+		void CreateBrowserWindow(HWND parentWindow);
+
+		Browser() : mClient(nullptr), mOffscreen(false), mBrowserAreaWindow(nullptr)
 		{
 		}
 	public:
@@ -38,6 +42,8 @@ namespace chromium
 		CefRefPtr<ClientImpl> GetClient() { return mClient; }
 
 		bool Create(const CefString& url);
+
+		void Close();
 
 		void SetFocused(bool focused);
 

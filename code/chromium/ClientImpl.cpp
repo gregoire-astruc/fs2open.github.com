@@ -7,13 +7,14 @@
 
 namespace chromium
 {
-	ClientImpl::ClientImpl() : width(-1), height(-1), bitmapData(NULL), browserBitmapHandle(-1),
+	ClientImpl::ClientImpl() : width(-1), height(-1), bitmapData(nullptr), browserBitmapHandle(-1),
 		mPaintingPopup(false)
 	{
+		// Don't create the bitmap data
 	}
 
 	ClientImpl::ClientImpl(int widthIn, int heightIn)
-		: width(widthIn), height(heightIn), bitmapData(NULL), browserBitmapHandle(-1),
+		: width(widthIn), height(heightIn), bitmapData(nullptr), browserBitmapHandle(-1),
 		mPaintingPopup(false)
 	{
 		// 32-bit per pixel ==> 4 Bytes for each pixel
@@ -31,10 +32,10 @@ namespace chromium
 			browserBitmapHandle = -1;
 		}
 
-		if (bitmapData != NULL)
+		if (bitmapData != nullptr)
 		{
 			vm_free(bitmapData);
-			bitmapData = NULL;
+			bitmapData = nullptr;
 		}
 	}
 
