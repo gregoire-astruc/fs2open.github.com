@@ -346,15 +346,19 @@ namespace chromium
 
 	void Browser::Close()
 	{
+		// And another HACK: CEF closes the root ancestor of its window which is our game window
+		// by setting the parent to null before that happens we fix that
+		if (mBrowserAreaWindow != nullptr)
+		{
+			SetParent(mBrowserAreaWindow, nullptr);
+		}
+
 		GetClient()->getMainBrowser()->GetHost()->CloseBrowser(true);
 
 		if (mBrowserAreaWindow != nullptr)
 		{
-			if (mBrowserAreaWindow != nullptr)
-			{
-				DestroyWindow(mBrowserAreaWindow);
-				mBrowserAreaWindow = nullptr;
-			}
+			DestroyWindow(mBrowserAreaWindow);
+			mBrowserAreaWindow = nullptr;
 		}
 	}
 
