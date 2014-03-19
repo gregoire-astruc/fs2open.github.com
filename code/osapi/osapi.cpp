@@ -172,6 +172,101 @@ void os_deinit();
 // OSAPI FUNCTIONS
 //
 
+namespace os
+{
+	SCP_map<SDL_EventType, SCP_map<int, std::pair<std::function<bool(const SDL_Event&)>, size_t>>> eventListeners;
+
+	size_t nextIdentifier = 0;
+
+	int addEventListener(SDL_EventType type, int weigth, const std::function<bool(const SDL_Event&)>& listener)
+	{
+		Assertion(listener, "Listener pointer is not valid!");
+
+		auto iter = eventListeners.find(type);
+
+		if (iter == eventListeners.end())
+		{
+			iter = eventListeners.insert(std::make_pair(type, SCP_map<int,
+				std::pair<std::function<bool(const SDL_Event&)>, size_t>>())).first;
+		}
+
+		size_t identifier = nextIdentifier++;
+
+		iter->second.insert(std::make_pair(weigth, std::make_pair(listener, identifier)));
+
+		return identifier;
+	}
+
+	bool removeEventListener(size_t identifer)
+	{
+		for (auto& pair : eventListeners)
+		{
+			auto& map = pair.second;
+
+			for (auto iter = map.cbegin(); iter != map.cend();)
+			{
+				if (iter->second.second == identifer)
+				{
+					map.erase(iter);
+					return true;
+				}
+				else
+				{
+					++iter;
+				}
+			}
+		}
+
+		return false;
+	}
+}
+
+namespace
+{
+	void initializeEventHandling()
+	{
+		os::addEventListener(SDL_WINDOWEVENT, os::DEFAULT_LISTENER_WEIGHT, [](const SDL_Event& event)
+		{
+			if (event.window.windowID == SDL_GetWindowID(os_get_window())) {
+				switch (event.window.event) {
+				case SDL_WINDOWEVENT_MINIMIZED:
+				case SDL_WINDOWEVENT_FOCUS_LOST:
+				{
+					if (fAppActive) {
+						if (!Cmdline_no_unfocus_pause) {
+							game_pause();
+						}
+
+						fAppActive = false;
+					}
+					break;
+				}
+				case SDL_WINDOWEVENT_MAXIMIZED:
+				case SDL_WINDOWEVENT_RESTORED:
+				case SDL_WINDOWEVENT_FOCUS_GAINED:
+				{
+					if (!fAppActive) {
+						if (!Cmdline_no_unfocus_pause) {
+							game_unpause();
+						}
+
+						fAppActive = true;
+					}
+					break;
+				}
+				case SDL_WINDOWEVENT_CLOSE:
+					gameseq_post_event(GS_EVENT_QUIT_GAME);
+					break;
+				}
+			}
+
+			gr_activate(fAppActive);
+
+			return true;
+		});
+	}
+}
+
 // detect home/base directory  (placeholder for possible future Win32 userdir support, just returns current directory for now)
 char Cur_path[MAX_PATH_LEN];
 const char *detect_home(void)
@@ -220,9 +315,7 @@ void os_init(const char * wclass, const char * title, const char *app_name, cons
 		return;
 	}
 
-#ifdef FS2_VOICER
-	SDL_EventState(SDL_SYSWMEVENT, SDL_ENABLE); // We currently only need this for voice recognition
-#endif
+	SDL_EventState(SDL_SYSWMEVENT, SDL_ENABLE);
 
 	// initialized
 	Os_inited = 1;
@@ -236,6 +329,8 @@ void os_init(const char * wclass, const char * title, const char *app_name, cons
 #endif // WIN32
 
 	atexit(os_deinit);
+
+	initializeEventHandling();
 }
 
 // set the main window title
@@ -314,115 +409,30 @@ void os_resume()
 // called at shutdown. Makes sure all thread processing terminates.
 void os_deinit()
 {
+	os::eventListeners.clear();
+
 	SDL_DestroyMutex(Os_lock);
 
 	SDL_Quit();
 }
-
-extern SCP_map<int, int> SDLtoFS2;
-extern void joy_set_button_state(int button, int state);
-extern void joy_set_hat_state(int position);
 
 void os_poll()
 {
 	SDL_Event event;
 
 	while (SDL_PollEvent(&event)) {
-		switch (event.type) {
-		case SDL_WINDOWEVENT: {
-			if (event.window.windowID == SDL_GetWindowID(os_get_window())) {
-				switch (event.window.event) {
-				case SDL_WINDOWEVENT_MINIMIZED:
-					case SDL_WINDOWEVENT_FOCUS_LOST:
-					{
-						if (fAppActive) {
-							if (!Cmdline_no_unfocus_pause) {
-								game_pause();
-							}
-							
-							fAppActive = false;
-						}
-						break;
-					}
-					case SDL_WINDOWEVENT_MAXIMIZED:
-					case SDL_WINDOWEVENT_RESTORED:
-					case SDL_WINDOWEVENT_FOCUS_GAINED:
-					{
-						if (!fAppActive) {
-							if (!Cmdline_no_unfocus_pause) {
-								game_unpause();
-							}
-							
-							fAppActive = true;
-						}
-						break;
-					}
-					case SDL_WINDOWEVENT_CLOSE:
-						gameseq_post_event(GS_EVENT_QUIT_GAME);
-						break;
-				}
-			}
-			
-			gr_activate(fAppActive);
-			
-			break;
-		}
+		auto iter = os::eventListeners.find(static_cast<SDL_EventType>(event.type));
 
-		case SDL_SYSWMEVENT:
-#ifdef WIN32
-#ifdef FS2_VOICER
-			switch(event.syswm.msg->msg.win.msg)
+		if (iter != os::eventListeners.end())
+		{
+			for (auto& pair : iter->second)
 			{
-			case WM_RECOEVENT:
-				if ( Game_mode & GM_IN_MISSION && Cmdline_voice_recognition)
+				if (pair.second.first(event))
 				{
-					VOICEREC_process_event( event.syswm.msg->msg.win.hwnd );
+					// event got handled
+					break;
 				}
-				break;
-			default:
-				break;
 			}
-#endif // FS2_VOICER
-#endif // WIN32
-			break;
-
-		case SDL_KEYDOWN:
-			if (SDLtoFS2[event.key.keysym.scancode]) {
-				key_mark(SDLtoFS2[event.key.keysym.scancode], 1, 0);
-			}
-			break;
-
-		case SDL_KEYUP:
-			if (SDLtoFS2[event.key.keysym.scancode]) {
-				key_mark(SDLtoFS2[event.key.keysym.scancode], 0, 0);
-			}
-			break;
-
-		case SDL_MOUSEBUTTONDOWN:
-		case SDL_MOUSEBUTTONUP:
-			if (event.button.button == SDL_BUTTON_LEFT)
-				mouse_mark_button(MOUSE_LEFT_BUTTON, event.button.state);
-			else if (event.button.button == SDL_BUTTON_MIDDLE)
-				mouse_mark_button(MOUSE_MIDDLE_BUTTON, event.button.state);
-			else if (event.button.button == SDL_BUTTON_RIGHT)
-				mouse_mark_button(MOUSE_RIGHT_BUTTON, event.button.state);
-
-			break;
-
-		case SDL_JOYHATMOTION:
-			joy_set_hat_state(event.jhat.value);
-			break;
-
-		case SDL_JOYBUTTONDOWN:
-		case SDL_JOYBUTTONUP:
-			if (event.jbutton.button < JOY_NUM_BUTTONS) {
-				joy_set_button_state(event.jbutton.button, event.jbutton.state);
-			}
-			break;
-		
-		case SDL_MOUSEMOTION:
-			mouse_event(event.motion.x, event.motion.y, event.motion.xrel, event.motion.yrel);
-			break;
 		}
 	}
 }
