@@ -224,51 +224,35 @@ namespace chromium
 		mHandlerIdentifiers.push_back(os::addEventListener(type, weigth, listener));
 	}
 
+	LRESULT CALLBACK ChildProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+	{
+		return CallWindowProc(DefWindowProc, hWnd, message, wParam, lParam);
+	}
+
 	void Browser::CreateBrowserWindow(HWND parentWindow)
 	{
 		RECT rect;
 		GetClientRect(parentWindow, &rect);
 
-		WNDCLASSEX wcex;
+		WNDCLASSEX wcex = { 0 };
 
 		wcex.cbSize = sizeof(WNDCLASSEXW);
-		wcex.style = 0;
-		wcex.lpfnWndProc = nullptr;
-		wcex.cbClsExtra = 0;
-		wcex.cbWndExtra = 0;
+		wcex.lpfnWndProc = &ChildProc;
 		wcex.hInstance = GetModuleHandle(NULL);
-		wcex.hIcon = NULL;
-		wcex.hCursor = nullptr;
+		wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
 		wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
-		wcex.lpszMenuName = NULL;
 		wcex.lpszClassName = TEXT("BrowserChildWindow");
-		wcex.hIconSm = nullptr;
 		
-		ATOM windowClass = RegisterClassEx(&wcex);
-
-		auto unicode = IsWindowUnicode(parentWindow);
+		RegisterClassEx(&wcex);
 
 		mBrowserAreaWindow = CreateWindow(TEXT("BrowserChildWindow"),
 			TEXT("Child window"),
-			WS_BORDER | WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE,
+			WS_CHILD | WS_VISIBLE,
 			rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top,
 			parentWindow,
 			nullptr,
 			GetModuleHandle(NULL),
 			nullptr);
-
-		DWORD   dwLastError = ::GetLastError();
-		TCHAR   lpBuffer[256] = TEXT("?");
-		if (dwLastError != 0)    // Don't want to see a "operation done successfully" error ;-)
-			::FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,                 // It´s a system error
-			NULL,                                      // No string to be formatted needed
-			dwLastError,                               // Hey Windows: Please explain this error!
-			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),  // Do it in the standard language
-			lpBuffer,              // Put the message here
-			255,                     // Number of bytes to store the message
-			NULL);
-
-		mprintf((""));
 	}
 
 	bool Browser::Create(const CefString& url)
