@@ -16,6 +16,7 @@
 #include "network/multimsgs.h"
 #include "network/multi_obj.h"
 #include "freespace.h"
+#include "globalincs/util.h"
 #include "network/stand_gui.h"
 #include "network/multiutil.h"
 #include "network/multi_voice.h"
@@ -139,7 +140,7 @@ void multi_options_read_config()
 #ifdef _WIN32
 						// yuck
 						extern HWND Multi_std_host_passwd;
-						SetWindowText(Multi_std_host_passwd, Multi_options_g.std_passwd);
+						SetWindowText(Multi_std_host_passwd, util::charToWchar(Multi_options_g.std_passwd).c_str());
 #else
 						// TODO: get password ?
 						// argh, gonna have to figure out how to do this - mharris 07/07/2002

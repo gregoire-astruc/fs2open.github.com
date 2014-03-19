@@ -245,6 +245,8 @@ set (file_root_globalincs
 	globalincs/safe_strings_test.cpp
 	globalincs/systemvars.cpp
 	globalincs/systemvars.h
+	globalincs/util.cpp
+	globalincs/util.h
 	globalincs/version.cpp
 	globalincs/version.h
 	globalincs/vmallocator.h
@@ -381,24 +383,9 @@ set (file_root_io
 	io/timer.h
 	io/joy.h
 	io/joy_ff.h
-)	
-
-IF(WIN32)
-	set (file_root_io
-		${file_root_io}
-		io/joy-sdl.cpp
-		io/joy_ff-sdl.cpp
-		io/sw_error.hpp
-		io/sw_force.h
-		io/sw_guid.hpp
-		io/swff_lib.cpp
-	)
-ELSEIF(UNIX)
-	set (file_root_io
-		${file_root_io}
-		io/joy-unix.cpp
-	)
-ENDIF(WIN32)
+	io/joy-sdl.cpp
+	io/joy_ff-sdl.cpp
+)
 
 # jpgutils files
 set (file_root_jpgutils

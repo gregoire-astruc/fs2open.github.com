@@ -12,6 +12,9 @@
 
 #include <Shlobj.h>
 
+#include <sstream>
+
+#include "globalincs/util.h"
 #include "globalincs/pstypes.h"
 #include "osapi/osregistry.h"
 #include "cmdline/cmdline.h"
@@ -44,7 +47,7 @@ static char tmp_string_data[1024];
 // This code is needed for compatibility with the old windows registry
 
 static bool userSIDValid = false;
-static SCP_string userSID;
+static std::wstring userSID;
 
 typedef BOOL(WINAPI *LPFN_ISWOW64PROCESS)(HANDLE, PBOOL);
 typedef BOOL(WINAPI *LPFN_OPENPROCESSTOKEN)(HANDLE, DWORD, PHANDLE);
@@ -61,7 +64,7 @@ LPFN_CONVERTSIDTOSTRINGSID fnConvertSIDToStringSID = NULL;
 LPFN_LOCALFREE fnLocalFree = NULL;
 
 template<typename FunctionType>
-bool load_function(FunctionType *function, const char* name, const char* libName = "Advapi32")
+bool load_function(FunctionType *function, const char* name, const wchar_t* libName = L"Advapi32")
 {
 	Assert(function != NULL);
 
@@ -72,7 +75,7 @@ bool load_function(FunctionType *function, const char* name, const char* libName
 
 bool init_advanced_functions()
 {
-	if (!load_function<LPFN_ISWOW64PROCESS>(&fnIsWOW64Process, "IsWow64Process", "Kernel32"))
+	if (!load_function<LPFN_ISWOW64PROCESS>(&fnIsWOW64Process, "IsWow64Process", L"Kernel32"))
 		return false;
 
 	if (!load_function<LPFN_OPENPROCESSTOKEN>(&fnOpenProcessToken, "OpenProcessToken"))
@@ -84,16 +87,16 @@ bool init_advanced_functions()
 	if (!load_function<LPFN_ISVALIDSID>(&fnIsValidSID, "IsValidSid"))
 		return false;
 
-	if (!load_function<LPFN_CONVERTSIDTOSTRINGSID>(&fnConvertSIDToStringSID, "ConvertSidToStringSidA"))
+	if (!load_function<LPFN_CONVERTSIDTOSTRINGSID>(&fnConvertSIDToStringSID, "ConvertSidToStringSidW"))
 		return false;
 
-	if (!load_function<LPFN_LOCALFREE>(&fnLocalFree, "LocalFree", "Kernel32"))
+	if (!load_function<LPFN_LOCALFREE>(&fnLocalFree, "LocalFree", L"Kernel32"))
 		return false;
 
 	return true;
 }
 
-bool get_user_sid(SCP_string& outStr)
+bool get_user_sid(std::wstring& outStr)
 {
 	HANDLE hToken = NULL;
 	if (fnOpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken) == FALSE)
@@ -152,8 +155,10 @@ BOOL IsWow64()
 	return bIsWow64;
 }
 
-HKEY get_registry_keyname(char* out_keyname, const char* section)
+HKEY get_registry_keyname(std::wstring& out_keyname, const char* section)
 {
+	std::wstringstream stream;
+
 	// Every compiler from Visual Studio 2008 onward should have support for UAC
 #if _MSC_VER >= 1400
 	if (userSIDValid)
@@ -161,21 +166,23 @@ HKEY get_registry_keyname(char* out_keyname, const char* section)
 		if (IsWow64())
 		{
 			if (section) {
-				sprintf(out_keyname, "%s_Classes\\VirtualStore\\Machine\\Software\\Wow6432Node\\%s\\%s\\%s", userSID.c_str(), szCompanyName, szAppName, section);
+				stream << userSID << "_Classes\\VirtualStore\\Machine\\Software\\Wow6432Node\\" << szCompanyName << "\\" << szAppName << "\\" << section;
 			}
 			else {
-				sprintf(out_keyname, "%s_Classes\\VirtualStore\\Machine\\Software\\Wow6432Node\\%s\\%s", userSID.c_str(), szCompanyName, szAppName);
+				stream << userSID << "_Classes\\VirtualStore\\Machine\\Software\\Wow6432Node\\" << szCompanyName << "\\" << szAppName;
 			}
 		}
 		else
 		{
 			if (section) {
-				sprintf(out_keyname, "%s_Classes\\VirtualStore\\Machine\\Software\\%s\\%s\\%s", userSID.c_str(), szCompanyName, szAppName, section);
+				stream << userSID << "_Classes\\VirtualStore\\Machine\\Software\\" << szCompanyName << "\\" << szAppName << "\\" << section;
 			}
 			else {
-				sprintf(out_keyname, "%s_Classes\\VirtualStore\\Machine\\Software\\%s\\%s", userSID.c_str(), szCompanyName, szAppName);
+				stream << userSID << "_Classes\\VirtualStore\\Machine\\Software\\" << szCompanyName << "\\" << szAppName;
 			}
 		}
+
+		out_keyname = stream.str();
 
 		return HKEY_USERS;
 	}
@@ -183,21 +190,25 @@ HKEY get_registry_keyname(char* out_keyname, const char* section)
 	{
 		// This will probably fail
 		if (section) {
-			sprintf(out_keyname, "Software\\%s\\%s\\%s", szCompanyName, szAppName, section);
+			stream << userSID << "Software\\" << szCompanyName << "\\" << szAppName << "\\" << section;
 		}
 		else {
-			sprintf(out_keyname, "Software\\%s\\%s", szCompanyName, szAppName);
+			stream << userSID << "Software\\" << szCompanyName << "\\" << szAppName;
 		}
+
+		out_keyname = stream.str();
 
 		return HKEY_LOCAL_MACHINE;
 	}
 #else
 	if (section) {
-		sprintf(out_keyname, "Software\\%s\\%s\\%s", szCompanyName, szAppName, section);
+		stream << userSID << "Software\\" << szCompanyName << "\\" << szAppName << "\\" << section;
 	}
 	else {
-		sprintf(out_keyname, "Software\\%s\\%s", szCompanyName, szAppName);
+		stream << userSID << "Software\\" << szCompanyName << "\\" << szAppName;
 	}
+
+	out_keyname = stream.str();
 
 	return HKEY_LOCAL_MACHINE;
 #endif
@@ -206,7 +217,7 @@ HKEY get_registry_keyname(char* out_keyname, const char* section)
 bool registry_has_value(const char *section, const char *name)
 {
 	HKEY hKey = NULL;
-	char keyname[1024];
+	std::wstring keyname;
 	LONG lResult;
 	bool retVal = false;
 
@@ -217,7 +228,7 @@ bool registry_has_value(const char *section, const char *name)
 	HKEY useHKey = get_registry_keyname(keyname, section);
 
 	lResult = RegOpenKeyEx(useHKey,			// Where it is
-		keyname,			// name of key
+		keyname.c_str(),			// name of key
 		NULL,				// DWORD reserved
 		KEY_QUERY_VALUE,	// Allows all changes
 		&hKey);			// Location to store key
@@ -231,7 +242,7 @@ bool registry_has_value(const char *section, const char *name)
 	}
 
 	lResult = RegQueryValueEx(hKey,			// Handle to key
-		name,			// The values name
+		util::charToWchar(name).c_str(),	// The values name
 		NULL,			// DWORD reserved
 		NULL,			// What kind it is
 		NULL,			// value to set
@@ -254,7 +265,7 @@ void os_config_write_string(const char *section, const char *name, const char *v
 {
 	HKEY hKey = NULL;
 	DWORD dwDisposition;
-	char keyname[1024];
+	std::wstring keyname;
 	LONG lResult;
 
 	if (!Os_reg_inited){
@@ -264,9 +275,9 @@ void os_config_write_string(const char *section, const char *name, const char *v
 	HKEY useHKey = get_registry_keyname(keyname, section);
 
 	lResult = RegCreateKeyEx(useHKey,						// Where to add it
-		keyname,					// name of key
+		keyname.c_str(),					// name of key
 		NULL,						// DWORD reserved
-		"",							// Object class
+		L"",							// Object class
 		REG_OPTION_NON_VOLATILE,	// Save to disk
 		KEY_ALL_ACCESS,				// Allows all changes
 		NULL,						// Default security attributes
@@ -282,7 +293,7 @@ void os_config_write_string(const char *section, const char *name, const char *v
 	}
 
 	lResult = RegSetValueEx(hKey,					// Handle to key
-		name,					// The values name
+		util::charToWchar(name).c_str(),			// The values name
 		NULL,					// DWORD reserved
 		REG_SZ,					// null terminated string
 		(CONST BYTE *)value,	// value to set
@@ -302,7 +313,7 @@ void os_config_write_uint(const char *section, const char *name, uint value)
 {
 	HKEY hKey = NULL;
 	DWORD dwDisposition;
-	char keyname[1024];
+	std::wstring keyname;
 	LONG lResult;
 
 	if (!Os_reg_inited){
@@ -312,9 +323,9 @@ void os_config_write_uint(const char *section, const char *name, uint value)
 	HKEY useHKey = get_registry_keyname(keyname, section);
 
 	lResult = RegCreateKeyEx(useHKey,						// Where to add it
-		keyname,					// name of key
+		keyname.c_str(),					// name of key
 		NULL,						// DWORD reserved
-		"",							// Object class
+		L"",							// Object class
 		REG_OPTION_NON_VOLATILE,	// Save to disk
 		KEY_ALL_ACCESS,				// Allows all changes
 		NULL,						// Default security attributes
@@ -329,8 +340,8 @@ void os_config_write_uint(const char *section, const char *name, uint value)
 		goto Cleanup;
 	}
 
-	lResult = RegSetValueEx(hKey,					// Handle to key
-		name,					// The values name
+	lResult = RegSetValueEx(hKey,			// Handle to key
+		util::charToWchar(name).c_str(),	// The values name
 		NULL,					// DWORD reserved
 		REG_DWORD,				// null terminated string
 		(CONST BYTE *)&value,	// value to set
@@ -355,7 +366,7 @@ const char * os_config_read_string(const char *section, const char *name, const 
 {
 	HKEY hKey = NULL;
 	DWORD dwType, dwLen;
-	char keyname[1024];
+	std::wstring keyname;
 	LONG lResult;
 
 	if (!Os_reg_inited){
@@ -365,7 +376,7 @@ const char * os_config_read_string(const char *section, const char *name, const 
 	HKEY useHKey = get_registry_keyname(keyname, section);
 
 	lResult = RegOpenKeyEx(useHKey,			// Where it is
-		keyname,			// name of key
+		keyname.c_str(),			// name of key
 		NULL,				// DWORD reserved
 		KEY_QUERY_VALUE,	// Allows all changes
 		&hKey);			// Location to store key
@@ -378,17 +389,21 @@ const char * os_config_read_string(const char *section, const char *name, const 
 		goto Cleanup;
 	}
 
+	TCHAR data[1024];
+
 	dwLen = 1024;
-	lResult = RegQueryValueEx(hKey,									// Handle to key
-		name,									// The values name
-		NULL,									// DWORD reserved
-		&dwType,								// What kind it is
-		(ubyte *)&tmp_string_data,				// value to set
-		&dwLen);								// How many bytes to set
+	lResult = RegQueryValueEx(hKey,			// Handle to key
+		util::charToWchar(name).c_str(),	// The values name
+		NULL,								// DWORD reserved
+		&dwType,							// What kind it is
+		(ubyte *)data,						// value to set
+		&dwLen);							// How many bytes to set
 
 	if (lResult != ERROR_SUCCESS)	{
 		goto Cleanup;
 	}
+
+	wcstombs(tmp_string_data, data, 1023);
 
 	default_value = tmp_string_data;
 
@@ -405,7 +420,7 @@ uint os_config_read_uint(const char *section, const char *name, uint default_val
 {
 	HKEY hKey = NULL;
 	DWORD dwType, dwLen;
-	char keyname[1024];
+	std::wstring keyname;
 	LONG lResult;
 	uint tmp_val;
 
@@ -416,7 +431,7 @@ uint os_config_read_uint(const char *section, const char *name, uint default_val
 	HKEY useHKey = get_registry_keyname(keyname, section);
 
 	lResult = RegOpenKeyEx(useHKey,			// Where it is
-		keyname,			// name of key
+		keyname.c_str(),			// name of key
 		NULL,				// DWORD reserved
 		KEY_QUERY_VALUE,	// Allows all changes
 		&hKey);			// Location to store key
@@ -430,8 +445,8 @@ uint os_config_read_uint(const char *section, const char *name, uint default_val
 	}
 
 	dwLen = 4;
-	lResult = RegQueryValueEx(hKey,				// Handle to key
-		name,				// The values name
+	lResult = RegQueryValueEx(hKey,			// Handle to key
+		util::charToWchar(name).c_str(),	// The values name
 		NULL,				// DWORD reserved
 		&dwType,			// What kind it is
 		(ubyte *)&tmp_val,	// value to set

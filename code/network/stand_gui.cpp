@@ -28,6 +28,7 @@
 #include "network/multi_pmsg.h"
 #include "missionui/chatbox.h"
 #include "network/multi_endgame.h"
+#include "globalincs/util.h"
 #include "gamesequence/gamesequence.h"
 #include "playerman/player.h"
 #include "osapi/osregistry.h"
@@ -38,7 +39,10 @@
 #include "fs2netd/fs2netd_client.h"
 
 #include <string>
+#include <sstream>
 
+#include <boost/format.hpp>
+#include <boost/algorithm/string.hpp>
 
 HANDLE Standalone_thread;
 DWORD Standalone_thread_id;
@@ -101,7 +105,7 @@ int Standalone_ng_stamp;
 char Standalone_ban_list[STANDALONE_MAX_BAN][CALLSIGN_LEN+1];
 int Standalone_ban_count = 0;
 
-char title_str[512];
+TCHAR title_str[512];
 
 // ----------------------------------------------------------------------------------------
 // mission validation dialog
@@ -140,7 +144,7 @@ void std_create_gen_dialog(char *title)
 	// otherwise create the dialog
 	Multi_gen_dialog = CreateDialog(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_GEN), Psht, (DLGPROC)std_gen_dialog_proc);	
 	if(Multi_gen_dialog != NULL){
-		SetWindowText(Multi_gen_dialog, title);		
+		SetWindowText(Multi_gen_dialog, util::charToWchar(title).c_str());
 	}
 }
 
@@ -181,7 +185,7 @@ void std_gen_set_text(const char *str, int field_num)
 		ctrl = GetDlgItem(Multi_gen_dialog,(int)MAKEINTRESOURCE(IDC_FIELD3));
 		break;	
 	}
-	SetWindowText(ctrl, str);
+	SetWindowText(ctrl, util::charToWchar(str).c_str());
 }
 
 // is the validate dialog active
@@ -225,7 +229,7 @@ int std_connect_set_connect_count()
 
 	// set the text itself
    ctrl = GetDlgItem(Page_handles[CONNECT_PAGE],(int)MAKEINTRESOURCE(IDC_CON_COUNT));
-   SetWindowText(ctrl,str);
+   SetWindowText(ctrl, util::charToWchar(str).c_str());
 
 	// return the num of players found
 	return count;
@@ -248,10 +252,10 @@ void std_connect_set_host_connect_status()
 
 	// get the control and set the status
 	ctrl = GetDlgItem(Page_handles[CONNECT_PAGE],(int)MAKEINTRESOURCE(IDC_HOST_IS));
-	if(found){
-		SetWindowText(ctrl, XSTR("Host connected ? Yes",912));
+	if (found){
+		SetWindowText(ctrl, util::charToWchar(XSTR("Host connected ? Yes", 912)).c_str());
 	} else {
-		SetWindowText(ctrl, XSTR("Host connected ? No",913));
+		SetWindowText(ctrl, util::charToWchar(XSTR("Host connected ? No", 913)).c_str());
 	}
 }
 
@@ -399,7 +403,7 @@ void std_connect_set_gamename(char *name)
 	// update the text control
 	strcpy_s(buf,Netgame.name);
 	Multi_std_namechange_force = 0;
-	SetWindowText(Multi_std_name,buf);
+	SetWindowText(Multi_std_name, util::charToWchar(buf).c_str());
 	Multi_std_namechange_force = 1;
 }
 
@@ -607,30 +611,30 @@ void std_multi_set_standalone_missiontime(float mission_time)
 	game_format_time(m_time,time_txt);	
 	sprintf(txt,"  :  %.1f", mission_time);
 	strcat_s(time_txt,txt);
-	SetWindowText(Standalone_missiontime,time_txt);
+	SetWindowText(Standalone_missiontime, util::charToWchar(time_txt).c_str());
 }
 
 // set the mission name
 void std_multi_set_standalone_mission_name(char *mission_name)
 {
 	// set the text
-	SetWindowText(Standalone_mission_name,mission_name);
+	SetWindowText(Standalone_mission_name, util::charToWchar(mission_name).c_str());
 }
 
 // initialize the goal tree for this mission 
 void std_multi_setup_goal_tree()
 {
-   TV_ITEM         new_item;
+	TV_ITEM         new_item;
 	TV_INSERTSTRUCT tree_insert;
-	char goal_name[NAME_LENGTH+1];
+	std::wstring goal_name;
 
 	// clear out the tree control
 	TreeView_DeleteAllItems(Standalone_goals);
 
-   // add the primary goal tag
-   new_item.mask = TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE;
-	new_item.pszText = goal_name;
-	strcpy(new_item.pszText,XSTR("Primary Objectives",917));
+	// add the primary goal tag
+	new_item.mask = TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE;
+	goal_name = util::charToWchar(XSTR("Primary Objectives", 917));
+	new_item.pszText = const_cast<wchar_t*>(goal_name.c_str());
 	new_item.iImage = 0;
 	new_item.iSelectedImage = 0;		
 	tree_insert.hParent      = NULL;
@@ -639,21 +643,21 @@ void std_multi_setup_goal_tree()
 	Goal_items[0] = TreeView_InsertItem(Standalone_goals,&tree_insert);
 
 	// add the secondary goal tag
-	new_item.pszText = goal_name;
-	strcpy(new_item.pszText,XSTR("Secondary Objectives",918));
+	goal_name = util::charToWchar(XSTR("Secondary Objectives", 918));
+	new_item.pszText = const_cast<wchar_t*>(goal_name.c_str());
 	new_item.iImage = 0;
 	new_item.iSelectedImage = 0;	
 	tree_insert.hInsertAfter = TVI_LAST;
 	tree_insert.item = new_item;
-   Goal_items[1] = TreeView_InsertItem(Standalone_goals,&tree_insert);
+	Goal_items[1] = TreeView_InsertItem(Standalone_goals,&tree_insert);
 
 	// add the bonus goal tag
-	new_item.pszText = goal_name;
-	strcpy(new_item.pszText,XSTR("Bonus Objectives",919));
+	goal_name = util::charToWchar(XSTR("Bonus Objectives", 919));
+	new_item.pszText = const_cast<wchar_t*>(goal_name.c_str());
 	new_item.iImage = 0;
 	new_item.iSelectedImage = 0;			
 	tree_insert.item = new_item;
-   Goal_items[2] = TreeView_InsertItem(Standalone_goals,&tree_insert);
+	Goal_items[2] = TreeView_InsertItem(Standalone_goals,&tree_insert);
 }
 
 // add all the goals from the current mission to the tree control
@@ -662,7 +666,7 @@ void std_multi_add_goals()
 	TV_ITEM new_item;
 	TV_INSERTSTRUCT tree_insert;
 	int idx,goal_flags,perm_goal_flags;		
-	char goal_name[NAME_LENGTH+1];
+	std::wstring goal_name;
 
 	// setup data common for every item
 	new_item.mask = TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE;	
@@ -701,8 +705,8 @@ void std_multi_add_goals()
 		tree_insert.hParent = Goal_items[Mission_goals[idx].type & GOAL_TYPE_MASK];  
 
 		// set the goal name
-		new_item.pszText = goal_name;
-		strcpy(new_item.pszText,Mission_goals[idx].name);
+		goal_name = util::charToWchar(Mission_goals[idx].name);
+		new_item.pszText = const_cast<wchar_t*>(goal_name.c_str());
 		
 		// set the correct image indices
 		new_item.iImage = (goal_flags & (1<<0)) ? 3 : 0;
@@ -718,8 +722,8 @@ void std_multi_add_goals()
 	if(!(perm_goal_flags & (1<<1))){
 		// insert the "none" item 
 		tree_insert.hParent = Goal_items[0];
-		new_item.pszText = goal_name;
-		strcpy(new_item.pszText,XSTR("none",920));
+		goal_name = util::charToWchar(XSTR("none", 920));
+		new_item.pszText = const_cast<wchar_t*>(goal_name.c_str());
 		new_item.iImage = 3;
 		new_item.iSelectedImage = 3;
 		tree_insert.item = new_item;
@@ -728,8 +732,8 @@ void std_multi_add_goals()
 	if(!(perm_goal_flags & (1<<2))){
 		// insert the "none" item
 		tree_insert.hParent = Goal_items[1];
-		new_item.pszText = goal_name;
-		strcpy(new_item.pszText,XSTR("none",920));
+		goal_name = util::charToWchar(XSTR("none", 920));
+		new_item.pszText = const_cast<wchar_t*>(goal_name.c_str());
 		new_item.iImage = 3;
 		new_item.iSelectedImage = 3;
 		tree_insert.item = new_item;
@@ -738,8 +742,8 @@ void std_multi_add_goals()
 	if(!(perm_goal_flags & (1<<3))){
 		// insert the "none" item
 		tree_insert.hParent = Goal_items[1];
-		new_item.pszText = goal_name;
-		strcpy(new_item.pszText,XSTR("none",920));
+		goal_name = util::charToWchar(XSTR("none", 920));
+		new_item.pszText = const_cast<wchar_t*>(goal_name.c_str());
 		new_item.iImage = 3;
 		new_item.iSelectedImage = 3;
 		tree_insert.item = new_item;
@@ -823,10 +827,10 @@ void std_multi_update_goals()
 // set the framerate text box for this page
 void std_multi_set_framerate(float f)
 {
-	char fr[10];
+	wchar_t fr[10];
 
 	// set the window text
-	sprintf(fr,"%.1f",f);
+	swprintf(fr,L"%.1f",f);
 	SetWindowText(Standalone_FPS,fr);
 }
 
@@ -834,25 +838,25 @@ void std_multi_set_framerate(float f)
 void std_multi_clear_controls()
 {
 	// clear out the mission name text static
-	SetWindowText(Standalone_mission_name,"");
+	SetWindowText(Standalone_mission_name,L"");
 
 	// clear out the framerate text box
-	SetWindowText(Standalone_FPS,"");
+	SetWindowText(Standalone_FPS,L"");
 
 	// clear out the misison time text box
-	SetWindowText(Standalone_missiontime,"");		
+	SetWindowText(Standalone_missiontime,L"");		
 
 	// clear out the netgame max players text box
-	SetWindowText(Std_ng_max_players,"");
+	SetWindowText(Std_ng_max_players,L"");
 
 	// clear out the netgame max observer text box
-	SetWindowText(Std_ng_max_observers,"");
+	SetWindowText(Std_ng_max_observers,L"");
 
 	// clear out the netgame security text box
-	SetWindowText(Std_ng_security,"");
+	SetWindowText(Std_ng_security,L"");
 
 	// clear out the netgame respawns # text box
-	SetWindowText(Std_ng_respawns,"");
+	SetWindowText(Std_ng_respawns,L"");
 
 	// clear the goal tree control
 	std_multi_setup_goal_tree();
@@ -861,38 +865,38 @@ void std_multi_clear_controls()
 // update the netgame information area controls with the current Netgame settings
 void std_multi_update_netgame_info_controls()
 {
-	char buf[40];
+	wchar_t buf[40];
 
 	// update the 
 	
 	// update the max players control
-	sprintf(buf,"%d",Netgame.max_players);
+	swprintf(buf,L"%d",Netgame.max_players);
 	SetWindowText(Std_ng_max_players,buf);
 
 	// update the max observers control
-	sprintf(buf,"%d",Netgame.options.max_observers);
+	swprintf(buf,L"%d",Netgame.options.max_observers);
 	SetWindowText(Std_ng_max_observers,buf);
 
 	// update the netgame security control
-	sprintf(buf,"%d",Netgame.security);
+	swprintf(buf,L"%d",Netgame.security);
 	SetWindowText(Std_ng_security,buf);
 
 	// update the netgame respawns # control
-	sprintf(buf,"%u",Netgame.respawn);
+	swprintf(buf,L"%u",Netgame.respawn);
 	SetWindowText(Std_ng_respawns,buf);
 }
 
 // handle the user sliding the framerate cap scrollbar around
 void std_multi_handle_framecap_scroll(HWND ctrl)
 {
-   int pos;
-	char pos_text[10];
+	int pos;
+	wchar_t pos_text[10];
    
 	// determine where the slider now is
 	pos = SendMessage(ctrl,TBM_GETPOS,(WPARAM)0,(LPARAM)0);
 
 	// update the text display 
-	sprintf(pos_text,"%d",pos);
+	swprintf(pos_text,L"%d",pos);
 	SetWindowText(GetDlgItem(Page_handles[MULTIPLAYER_PAGE],(int)MAKEINTRESOURCE(IDC_FRAMECAP_STATIC)),pos_text);
 	
 	// set the framecap var
@@ -977,7 +981,7 @@ void std_multi_init_multi_controls(HWND hwndDlg)
 	ImageList_AddMasked(Goal_bitmaps,ref,mask);
 	
    // create the tree view control and associate its image list
-	Standalone_goals = CreateWindowEx(0, WC_TREEVIEW, XSTR("Tree View",921), 
+	Standalone_goals = CreateWindowEx(0, WC_TREEVIEW, util::charToWchar(XSTR("Tree View",921)).c_str(), 
         WS_VISIBLE | WS_CHILD | WS_BORDER | TVS_HASLINES, 
         GOALVIEW_X,GOALVIEW_Y,GOALVIEW_W,GOALVIEW_H,
         hwndDlg, NULL, GetModuleHandle(NULL), NULL); 
@@ -990,13 +994,15 @@ HTREEITEM std_multi_get_goal_item(char *goal_string,int type)
 	HTREEITEM ret,moveup;
 	TV_ITEM lookup;
 	int done;
-	char goal_name_text[NAME_LENGTH+1];
+	std::wstring goal_name_text;
 
 	// look under the correct root item
 	lookup.mask = TVIF_TEXT;
-	lookup.pszText = goal_name_text;
+
+	goal_name_text = util::charToWchar(goal_string);
+	lookup.pszText = const_cast<wchar_t*>(goal_name_text.c_str());
+
 	lookup.cchTextMax = NAME_LENGTH;
-	strcpy(lookup.pszText,goal_string);
 
 	// search through all the items
 	done=0;
@@ -1005,7 +1011,7 @@ HTREEITEM std_multi_get_goal_item(char *goal_string,int type)
 	while(!done && moveup!=NULL){
 		lookup.hItem = moveup;
 		TreeView_GetItem(Standalone_goals,&lookup);
-		if(strcmp(lookup.pszText,goal_string)==0){
+		if (goal_name_text.compare(lookup.pszText) == 0){
 			ret = moveup;
 			done=1;
 		}
@@ -1067,7 +1073,7 @@ static HWND Player_stats[MAX_PLAYER_STAT_FIELDS];		// text boxes for player allt
 static HWND Player_mstats[MAX_PLAYER_STAT_FIELDS];		// text boxes for player mission statistics info
 
 // sprintf and set window text to the passed int
-#define STD_ADDSTRING(hwnd,val) { sprintf(txt,"%d",(int)val); SetWindowText(hwnd,txt); }
+#define STD_ADDSTRING(hwnd,val) { swprintf(txt,L"%d",(int)val); SetWindowText(hwnd,txt); }
 
 // intialize all the controls in the player info tab
 void std_pinfo_init_player_info_controls(HWND hwndDlg);
@@ -1078,10 +1084,10 @@ int std_pinfo_player_is_active(net_player *p);
 // start displaying info for the passed player on this page
 void std_pinfo_display_player_info(net_player *p)
 {
-	char txt[40];		
+	wchar_t txt[40];		
 
 	// set his ship type
-	SetWindowText(Player_ship_type,Ship_info[p->p_info.ship_class].name);
+	SetWindowText(Player_ship_type, util::charToWchar(Ship_info[p->p_info.ship_class].name).c_str());
 
 	// display his ping time
 	std_pinfo_update_ping(p);
@@ -1173,19 +1179,19 @@ void std_pinfo_remove_player_list_item(net_player *p)
 // update the ping display for this player
 void std_pinfo_update_ping(net_player *p)
 {
-	char sml_ping[30];
+	std::wstringstream ping;
 	
 	// chop it off at pings greater than 1 second
 	if(p->s_info.ping.ping_avg > 1000){		
-		strcpy_s(sml_ping,XSTR("> 1 sec",914));
+		ping << XSTR("> 1 sec",914);
 	}
 	// use the ping itself
 	else {
-		sprintf(sml_ping,"%d",p->s_info.ping.ping_avg); 		
-		strcat_s(sml_ping,XSTR(" ms",915));
+		ping << p->s_info.ping.ping_avg;
+		ping << XSTR(" ms", 915);
 	}
 	
-	SetWindowText(Player_ping_time,sml_ping);
+	SetWindowText(Player_ping_time, ping.str().c_str());
 }
 
 // clear the player info page controls
@@ -1197,13 +1203,13 @@ void std_pinfo_clear_controls()
 	SendMessage(Player_name_list,CB_RESETCONTENT,(WPARAM)0,(LPARAM)0);
 	
 	// clear out misc items	
-	SetWindowText(Player_ship_type,"");
-	SetWindowText(Player_ping_time,"");
+	SetWindowText(Player_ship_type,L"");
+	SetWindowText(Player_ping_time,L"");
 
 	// clear out the player stats
 	for(idx=0;idx<MAX_PLAYER_STAT_FIELDS;idx++){
-		SetWindowText(Player_stats[idx],"");
-		SetWindowText(Player_mstats[idx],"");
+		SetWindowText(Player_stats[idx],L"");
+		SetWindowText(Player_mstats[idx],L"");
 	}
 }
 
@@ -1396,17 +1402,17 @@ void std_gs_send_godstuff_message()
 		std_add_chat_text(txt, MY_NET_PLAYER_NUM,1);		
 
 		// clear the text control
-		SetWindowText(Godstuff_broadcast_text, "");
+		SetWindowText(Godstuff_broadcast_text, L"");
 	}
 }
 
 // set the framerate text box for this page
 void std_gs_set_framerate(float f)
 {
-	char fr[10];
+	wchar_t fr[10];
 
 	// set the window text
-	sprintf(fr,"%.1f",f);
+	swprintf(fr,L"%.1f",f);
 	SetWindowText(Godstuff_fps,fr);
 }
 
@@ -1414,10 +1420,10 @@ void std_gs_set_framerate(float f)
 void std_gs_clear_controls()
 {		
 	// clear the framerate area
-	SetWindowText(Godstuff_fps, "0");
+	SetWindowText(Godstuff_fps, L"0");
 	
 	// clear the text area 
-	SetWindowText(Godstuff_broadcast_text,"");
+	SetWindowText(Godstuff_broadcast_text, L"");
 
 	// reset the combo box	
 	SendMessage(God_player_list, CB_RESETCONTENT, (WPARAM)0, (LPARAM)0);
@@ -1538,7 +1544,7 @@ void std_debug_init_debug_controls(HWND hwndDlg);
 void std_debug_set_standalone_state_string(char *str)
 {
    // set the text
-	SetWindowText(Standalone_state_string,str);
+	SetWindowText(Standalone_state_string,util::charToWchar(str).c_str());
 }
 
 void std_debug_multilog_add_line(const char *str)
@@ -1602,7 +1608,7 @@ void std_debug_init_debug_controls(HWND hwndDlg)
 	Standalone_state_string = GetDlgItem(hwndDlg,(int)MAKEINTRESOURCE(IDC_STANDALONE_STATE));
 	
 	// standalone state indicator
-	SetWindowText(Standalone_state_string,"");
+	SetWindowText(Standalone_state_string,L"");
 
 	// do the multi-log string too
 	Standalone_multilog_string = GetDlgItem(hwndDlg, (int)MAKEINTRESOURCE(IDC_MULTILOG));
@@ -1808,7 +1814,7 @@ void std_reset_timestamps()
 void std_add_chat_text(const char *text,int player_index,int add_id)
 {
 	int num_items,ret_val;
-	char format[512];
+	std::wstring format;
 	SIZE text_size = { 0, 0 };
 
 	// invalid player ?
@@ -1818,17 +1824,18 @@ void std_add_chat_text(const char *text,int player_index,int add_id)
 	// format the chat text nicely
 	if (add_id) {
 		if ( MULTI_STANDALONE(Net_players[player_index]) ) {
-			sprintf(format, XSTR("<SERVER> %s", 924), text);
-		} else {
-			sprintf(format, "%s: %s", Net_players[player_index].m_player->callsign, text);
+			format = (boost::wformat(util::charToWchar(XSTR("<SERVER> %s", 924))) % text).str();
+		}
+		else {
+			format = (boost::wformat(L"%s: %s") % Net_players[player_index].m_player->callsign % text).str();
 		}
 	} else {
-		strcpy_s(format, text);
+		format = util::charToWchar(text);
 	}
 
 	// this thing isn't all that accurate, it typically produces a longer line, but I don't really care :p
 	if (Godstuff_player_messages_HDC)
-		GetTextExtentPoint32(Godstuff_player_messages_HDC, format, strlen(format), &text_size);
+		GetTextExtentPoint32(Godstuff_player_messages_HDC, format.c_str(), format.length(), &text_size);
 
 	if (Godstuff_longest_message < text_size.cx)
 		Godstuff_longest_message = (int)text_size.cx;
@@ -1837,7 +1844,7 @@ void std_add_chat_text(const char *text,int player_index,int add_id)
 
 	// this thing isn't all that accurate, it typically produces a longer line, but I don't really care :p
 	if (Godstuff_player_messages_HDC)
-		GetTextExtentPoint32(Godstuff_player_messages_HDC, format, strlen(format), &text_size);
+		GetTextExtentPoint32(Godstuff_player_messages_HDC, format.c_str(), format.length(), &text_size);
 
 	if (Godstuff_longest_message < text_size.cx)
 		Godstuff_longest_message = (int)text_size.cx;
@@ -1845,7 +1852,7 @@ void std_add_chat_text(const char *text,int player_index,int add_id)
 	SendMessage(Godstuff_player_messages, LB_SETHORIZONTALEXTENT, (WPARAM)Godstuff_longest_message, (LPARAM)0);
 
 	// insert the text string into the godstuff chat box and scroll it down to the bottom
-	SendMessage(Godstuff_player_messages, LB_INSERTSTRING, (WPARAM)-1, (LPARAM)format);
+	SendMessage(Godstuff_player_messages, LB_INSERTSTRING, (WPARAM)-1, (LPARAM)format.c_str());
 
 	num_items = SendMessage(Godstuff_player_messages, LB_GETCOUNT, (WPARAM)0, (LPARAM)0);
 
@@ -1867,7 +1874,7 @@ void std_mutate_sheet()
 	HWND cancel_button = NULL;
 	HWND apply_button = NULL;
 	HWND help_button = NULL;	
-	char lookup[512];
+	TCHAR lookup[512];
 	
 	// get the buttons on the property sheet itself
 	HWND child = GetWindow(Psht,GW_CHILD);
@@ -1877,22 +1884,22 @@ void std_mutate_sheet()
 		GetWindowText(child,lookup,511);
 		
 		// if its the OK button
-		if(!stricmp(lookup,XSTR("ok",925))){
+		if(boost::iequals(lookup,XSTR("ok",925))){
 			ok_button = child;
 		} 
 
 		// if its the cancel button
-		if(!stricmp(lookup,XSTR("cancel",926))){
+		if (boost::iequals(lookup, XSTR("cancel", 926))){
 			cancel_button = child;
 		} 
 
 		// if its the apply button
-		if(!stricmp(lookup,XSTR("&apply",927))){
+		if (boost::iequals(lookup, XSTR("&apply", 927))){
 			apply_button = child;
 		} 
 
 		// if its the help button
-		if(!stricmp(lookup,XSTR("help",928))){
+		if (boost::iequals(lookup, XSTR("help", 928))){
 			help_button = child;
 		} 
 
@@ -1907,7 +1914,7 @@ void std_mutate_sheet()
 	// rename the shutdown button and move it over a bit
 	if(ok_button != NULL){				
 		// set the text
-		SetWindowText(ok_button,XSTR("Shutdown",929));
+		SetWindowText(ok_button, util::charToWchar(XSTR("Shutdown",929)).c_str());
 
 		// move it
 		SetWindowPos(ok_button,
@@ -1961,6 +1968,14 @@ void std_add_ban(const char *name)
 	strcpy_s(Standalone_ban_list[Standalone_ban_count++],name);
 }
 
+WCHAR* copyToWchar(const char* str)
+{
+	size_t len = strlen(str);
+	WCHAR* out = new WCHAR[len];
+	mbstowcs(out, str, len);
+
+	return out;
+}
 
 // -------------------------------------------------------------------------------
 // property sheet/page creation and handling 
@@ -1978,7 +1993,7 @@ void std_init_property_pages()
 	p->pszTemplate = MAKEINTRESOURCE(IDD_CONNECT);
 	p->pszIcon = NULL;
 	p->pfnDlgProc = (DLGPROC)connect_proc;
-	p->pszTitle = XSTR("Connections",930);
+	p->pszTitle = copyToWchar(XSTR("Connections", 930));
 	p->lParam = 0;
 	p->pfnCallback = NULL;
 
@@ -1990,7 +2005,7 @@ void std_init_property_pages()
 	p->pszTemplate = MAKEINTRESOURCE(IDD_MULTI);
 	p->pszIcon = NULL;
 	p->pfnDlgProc = (DLGPROC)multi_proc;
-	p->pszTitle = XSTR("Multi-Player",931);
+	p->pszTitle = copyToWchar(XSTR("Multi-Player", 931));
 	p->lParam = 0;
 	p->pfnCallback = NULL;
 
@@ -2002,7 +2017,7 @@ void std_init_property_pages()
 	p->pszTemplate = MAKEINTRESOURCE(IDD_PLAYER_DIALOG);
 	p->pszIcon = NULL;
 	p->pfnDlgProc = (DLGPROC)player_info_proc;
-	p->pszTitle = XSTR("Player info",932);
+	p->pszTitle = copyToWchar(XSTR("Player info", 932));
 	p->lParam = 0;
 	p->pfnCallback = NULL;
 
@@ -2014,7 +2029,7 @@ void std_init_property_pages()
 	p->pszTemplate = MAKEINTRESOURCE(IDD_GODSTUFF);
 	p->pszIcon = NULL;
 	p->pfnDlgProc = (DLGPROC)godstuff_proc;
-	p->pszTitle = XSTR("God Stuff",933);
+	p->pszTitle = copyToWchar(XSTR("God Stuff", 933));
 	p->lParam = 0;
 	p->pfnCallback = NULL;
 
@@ -2026,14 +2041,15 @@ void std_init_property_pages()
 	p->pszTemplate = MAKEINTRESOURCE(IDD_DEBUG_DIALOG);
 	p->pszIcon = NULL;
 	p->pfnDlgProc = (DLGPROC)debug_proc;
-	p->pszTitle = XSTR("Debug",934);
+	p->pszTitle = copyToWchar(XSTR("Debug", 934));
 	p->lParam = 0;
 	p->pfnCallback = NULL;
 }
 
 // build a title string
-void std_build_title_string(char *str)
+void std_build_title_string(TCHAR *str)
 {
+	std::wstringstream stream;
 	char temp[256];
 	char ver_str[15];
 
@@ -2051,10 +2067,10 @@ void std_build_title_string(char *str)
 	// now build the title
 	memset(temp, 0, 256);
 
-	snprintf(temp, sizeof(temp)-1, "%s %s", XSTR("FreeSpace Standalone", 935), ver_str);
+	stream << XSTR("FreeSpace Standalone", 935) << " " << ver_str;
 
 	// output first part
-	strcpy(str, temp);
+	wcscpy(str, stream.str().c_str());
 }
 
 // initialize the property sheet itself
@@ -2104,55 +2120,52 @@ HWND std_init_property_sheet(HWND hwndDlg)
 
 static HMENU std_create_systray_menu()
 {
-	char tstr[64];
-	memset(tstr, 0, sizeof(tstr));
-
 	HMENU stdPopup = CreatePopupMenu();
 
 	// Type of connection:
-	snprintf(tstr, sizeof(tstr)-1, "Connection Type: %s", MULTI_IS_TRACKER_GAME ? "FS2NetD" : "Local/IP");
-	AppendMenu(stdPopup, MF_STRING | MF_GRAYED, 0, tstr);
+	AppendMenu(stdPopup, MF_STRING | MF_GRAYED, 0,
+		(boost::wformat(L"Connection Type: %s") % (MULTI_IS_TRACKER_GAME ? L"FS2NetD" : L"Local/IP")).str().c_str());
 
 	// Status of FS2NetD connection:
 	if (MULTI_IS_TRACKER_GAME) {
-		snprintf(tstr, sizeof(tstr)-1, "FS2NetD Status: %s", fs2netd_is_online() ? "Online" : "Offline");
-		AppendMenu(stdPopup, MF_STRING | MF_GRAYED, 0, tstr);
+		AppendMenu(stdPopup, MF_STRING | MF_GRAYED, 0,
+			(boost::wformat(L"FS2NetD Status: %s") % (fs2netd_is_online() ? L"Online" : L"Offline")).str().c_str());
 	}
 
 	// ----------------------------------------------
 	AppendMenu(stdPopup, MF_SEPARATOR, 0, NULL);
 
 	// Game name:
-	snprintf(tstr, sizeof(tstr)-1, "Name: %s", Netgame.name);
-	AppendMenu(stdPopup, MF_STRING | MF_GRAYED, 0, tstr);
+	AppendMenu(stdPopup, MF_STRING | MF_GRAYED, 0,
+		(boost::wformat(L"Name: %s") % Netgame.name).str().c_str());
 
 	// Mission name:
-	snprintf(tstr, sizeof(tstr)-1, "Mission: %s", strlen(Netgame.mission_name) ? Netgame.mission_name : "<none>");
-	AppendMenu(stdPopup, MF_STRING | MF_GRAYED, 0, tstr);
+	AppendMenu(stdPopup, MF_STRING | MF_GRAYED, 0,
+		(boost::wformat(L"Mission: %s") % (strlen(Netgame.mission_name) ? Netgame.mission_name : "<none>")).str().c_str());
 
 	// Number of players:
-	snprintf(tstr, sizeof(tstr)-1, "Num Players: %d", multi_num_players());
-	AppendMenu(stdPopup, MF_STRING | MF_GRAYED, 0, tstr);
+	AppendMenu(stdPopup, MF_STRING | MF_GRAYED, 0,
+		(boost::wformat(L"Num Players: %d") % multi_num_players()).str().c_str());
 
 	// ----------------------------------------------
 	AppendMenu(stdPopup, MF_SEPARATOR, 0, NULL);
 
 	// Reset All (main window command):
-	AppendMenu(stdPopup, MF_STRING, STP_RESET_ALL, "Reset All");
+	AppendMenu(stdPopup, MF_STRING, STP_RESET_ALL, L"Reset All");
 
 	// Reset FS2NetD (not a main window command, yet):
 	if (MULTI_IS_TRACKER_GAME) {
-		AppendMenu(stdPopup, MF_STRING, STP_RESET_FS2NETD, "Reset FS2NetD");
+		AppendMenu(stdPopup, MF_STRING, STP_RESET_FS2NETD, L"Reset FS2NetD");
 	}
 
 	// Shutdown server (main window command):
-	AppendMenu(stdPopup, MF_STRING, STP_SHUTDOWN, "Shutdown");
+	AppendMenu(stdPopup, MF_STRING, STP_SHUTDOWN, L"Shutdown");
 
 	// ----------------------------------------------
 	AppendMenu(stdPopup, MF_SEPARATOR, 0, NULL);
 
 	// Show standalone window (set as default):
-	AppendMenu(stdPopup, MF_STRING, STP_SHOW, "Show Window");
+	AppendMenu(stdPopup, MF_STRING, STP_SHOW, L"Show Window");
 	SetMenuDefaultItem(stdPopup, STP_SHOW, FALSE);
 
 	return stdPopup;
@@ -2225,6 +2238,19 @@ BOOL CALLBACK std_message_handler_proc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
 	return FALSE;
 }
 
+void std_free_pages()
+{
+	for (int i = 0; i < MAX_STANDALONE_PAGES; ++i)
+	{
+		PROPSHEETPAGE& page = Pages[i];
+		if (page.pszTitle != nullptr)
+		{
+			delete[] page.pszTitle;
+			page.pszTitle = nullptr;
+		}
+	}
+}
+
 extern int Lighting_flag;
 
 BOOL std_create_standalone_window()
@@ -2236,7 +2262,7 @@ BOOL std_create_standalone_window()
 	memset( &wclass, 0, sizeof(WNDCLASSEX) );
 
 	wclass.hInstance 		= hInst;
-	wclass.lpszClassName	= "FS2StandaloneClass";
+	wclass.lpszClassName	= L"FS2StandaloneClass";
 	wclass.lpfnWndProc		= (WNDPROC)std_message_handler_proc;	  
 	wclass.style			= CS_OWNDC;
 	wclass.cbSize			= sizeof(WNDCLASSEX);
@@ -2251,7 +2277,7 @@ BOOL std_create_standalone_window()
 		return FALSE;
 	}
 
-	Standalone_hwnd = CreateWindowEx(0, "FS2StandaloneClass", "FreeSpace2 Standalone",
+	Standalone_hwnd = CreateWindowEx(0, L"FS2StandaloneClass", L"FreeSpace2 Standalone",
 						WS_POPUP, CW_USEDEFAULT, CW_USEDEFAULT, 10, 10,
 						NULL, NULL, hInst, NULL);
 
@@ -2269,6 +2295,8 @@ BOOL std_create_standalone_window()
 	for(idx=MAX_STANDALONE_PAGES-1;idx>=0;idx--){
 	   PropSheet_SetCurSel(Psht,(HPROPSHEETPAGE)&Pages[idx],idx);
 	}
+
+	std_free_pages();
 
 //   main_window_inited = 1;
 
@@ -2297,6 +2325,7 @@ static void standalone_do_systray(int mode)
 	NOTIFYICONDATA nid;
 	RECT stdRect;
 	RECT trayRect;
+	std::wstring name;
 
 	memset(&nid, 0, sizeof(nid));
 
@@ -2305,7 +2334,12 @@ static void standalone_do_systray(int mode)
 	nid.uID = 999;
 	nid.uCallbackMessage = MSG_SYSTRAYICON;
 	nid.hIcon = LoadIcon( GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_APP_ICON) );
-	strncpy(nid.szTip, Netgame.name, sizeof(nid.szTip));
+
+	name = util::charToWchar(Netgame.name);
+
+	Assertion(name.length() < sizeof(nid.szTip) / sizeof(WCHAR), "Netgame name length of '%s' is too long!", Netgame.name);
+	wcscpy(nid.szTip, name.c_str());
+
 	nid.uFlags = (NIF_MESSAGE | NIF_ICON | NIF_TIP);
 
 	if (mode == ST_MODE_CREATE) {

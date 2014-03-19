@@ -30,6 +30,7 @@
 #include "osapi/osapi.h"
 #include "globalincs/pstypes.h"
 #include "globalincs/systemvars.h"
+#include "globalincs/util.h"
 #include "cmdline/cmdline.h"
 #include "parse/lua.h"
 #include "parse/parselo.h"
@@ -940,7 +941,7 @@ void _cdecl WinAssert(char * text, char * filename, int linenum )
 
 	assertString += "\n[ This info is in the clipboard so you can paste it somewhere now ]\n";
 	assertString += "\n\nUse Ok to break into Debugger, Cancel to exit.\n";
-	val = MessageBox( NULL, assertString.c_str( ), "Assertion Failed!", MB_OKCANCEL | flags );
+	val = MessageBox( NULL, util::charToWchar(assertString.c_str()).c_str(), L"Assertion Failed!", MB_OKCANCEL | flags );
 
 #elif defined( SHOW_CALL_STACK )
 	dumpBuffer.Clear();
@@ -1014,7 +1015,7 @@ void _cdecl WinAssert(char * text, char * filename, int linenum, const char * fo
 
 	assertString += "\n[ This info is in the clipboard so you can paste it somewhere now ]\n";
 	assertString += "\n\nUse Ok to break into Debugger, Cancel to exit.\n";
-	val = MessageBox( NULL, assertString.c_str( ), "Assertion Failed!", MB_OKCANCEL | flags );
+	val = MessageBox( NULL, util::charToWchar(assertString.c_str()).c_str(), L"Assertion Failed!", MB_OKCANCEL | flags );
 
 #elif defined ( SHOW_CALL_STACK	)
 	dumpBuffer.Clear();
@@ -1172,7 +1173,7 @@ void LuaError(struct lua_State *L, char *format, ...)
 	dumpBuffer.Printf( "\r\n[ This info is in the clipboard so you can paste it somewhere now ]\r\n" );
 	dumpBuffer.Printf( "\r\n\r\nUse Yes to break into Debugger, No to continue.\r\nand Cancel to Quit");
 
-	val = MessageBox(NULL, dumpBuffer.buffer, "Error!", flags|MB_YESNOCANCEL );
+	val = MessageBox(NULL, util::charToWchar(dumpBuffer.buffer).c_str(), L"Error!", flags|MB_YESNOCANCEL );
 
 	if (val == IDCANCEL ) {
 		exit(1);
@@ -1222,7 +1223,7 @@ void _cdecl Error( const char * filename, int line, const char * format, ... )
 
 	assertString += "\n[ This info is in the clipboard so you can paste it somewhere now ]\n";
 	assertString += "\n\nUse Ok to break into Debugger, Cancel to exit.\n";
-	val = MessageBox( NULL, assertString.c_str( ), "Error!", flags | MB_DEFBUTTON2 | MB_OKCANCEL );
+	val = MessageBox( NULL, util::charToWchar(assertString.c_str()).c_str(), L"Error!", flags | MB_DEFBUTTON2 | MB_OKCANCEL );
 
 #elif defined( SHOW_CALL_STACK )
 	dumpBuffer.Clear();
@@ -1345,7 +1346,7 @@ void _cdecl Warning( char *filename, int line, const char *format, ... )
 
 	assertString += "\n[ This info is in the clipboard so you can paste it somewhere now ]\n";
 	assertString += "\n\nUse Yes to break into Debugger, No to continue.\nand Cancel to Quit\n";
-	result = MessageBox( NULL, assertString.c_str( ), "Warning!", MB_YESNOCANCEL | MB_DEFBUTTON2 | MB_ICONWARNING | flags );
+	result = MessageBox( NULL, util::charToWchar(assertString.c_str()).c_str(), L"Warning!", MB_YESNOCANCEL | MB_DEFBUTTON2 | MB_ICONWARNING | flags );
 
 #elif defined ( SHOW_CALL_STACK	)
 	//we don't want to dump the call stack for every single warning

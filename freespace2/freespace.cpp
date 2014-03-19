@@ -166,8 +166,12 @@
 #include "globalincs/pstypes.h"
 
 #include <stdexcept>
+#include <sstream>
+
 #include <SDL.h>
 #include <SDL_main.h>
+
+#include <boost/algorithm/string.hpp>
 
 extern int Om_tracker_flag; // needed for FS2OpenPXO config
 
@@ -500,7 +504,7 @@ static int Game_title_bitmap = -1;
 static int Game_title_logo = -1;
 
 // cdrom stuff
-char Game_CDROM_dir[MAX_PATH_LEN];
+std::wstring Game_CDROM_dir;
 int init_cdrom();
 
 // How much RAM is on this machine. Set in WinMain
@@ -1742,7 +1746,7 @@ void game_init()
 	//Initialize the libraries
 	s1 = timer_get_milliseconds();
 
-	if ( !cfile::init(strlen(Game_CDROM_dir) ? Game_CDROM_dir : NULL) ) {			// initialize before calling any cfopen stuff!!!
+	if (!cfile::init(Game_CDROM_dir)) {			// initialize before calling any cfopen stuff!!!
 		exit(1);
 	}
 
@@ -6736,85 +6740,6 @@ void game_do_state(GameState state)
    } // end switch(gs_current_state)
 }
 
-
-#ifdef _WIN32
-// return 0 if there is enough RAM to run FreeSpace, otherwise return -1
-int game_do_ram_check(uint ram_in_bytes)
-{
-	if ( ram_in_bytes < 30*1024*1024 )	{
-		int allowed_to_run = 1;
-		if ( ram_in_bytes < 25*1024*1024 ) {
-			allowed_to_run = 0;
-		}
-
-		char tmp[1024];
-		uint FreeSpace_total_ram_MB;
-		FreeSpace_total_ram_MB = (uint)(ram_in_bytes/(1024*1024));
-
-		if ( allowed_to_run ) {
-
-			sprintf( tmp, XSTR( "FreeSpace has detected that you only have %dMB of free memory.\n\nFreeSpace requires at least 32MB of memory to run.  If you think you have more than %dMB of physical memory, ensure that you aren't running SmartDrive (SMARTDRV.EXE).  Any memory allocated to SmartDrive is not usable by applications\n\nPress 'OK' to continue running with less than the minimum required memory\n", 193), FreeSpace_total_ram_MB, FreeSpace_total_ram_MB);
-
-			int msgbox_rval;
-			msgbox_rval = MessageBox( NULL, tmp, XSTR( "Not Enough RAM", 194), MB_OKCANCEL );
-			if ( msgbox_rval == IDCANCEL ) {
-				return -1;
-			}
-
-		} else {
-			sprintf( tmp, XSTR( "FreeSpace has detected that you only have %dMB of free memory.\n\nFreeSpace requires at least 32MB of memory to run.  If you think you have more than %dMB of physical memory, ensure that you aren't running SmartDrive (SMARTDRV.EXE).  Any memory allocated to SmartDrive is not usable by applications\n", 195), FreeSpace_total_ram_MB, FreeSpace_total_ram_MB);
-			MessageBox( NULL, tmp, XSTR( "Not Enough RAM", 194), MB_OK );
-			return -1;
-		}
-	}
-
-	return 0;
-}
-
-
-#if 0 // no updater for fs2
-// Check if there is a freespace.exe in the /update directory (relative to where fs.exe is installed).
-// If so, copy it over and remove the update directory.
-void game_maybe_update_launcher(char *exe_dir)
-{
-	char src_filename[MAX_PATH];
-	char dest_filename[MAX_PATH];
-
-	strcpy_s(src_filename, exe_dir);
-	strcat_s(src_filename, NOX("\\update\\freespace.exe"));
-
-	strcpy_s(dest_filename, exe_dir);
-	strcat_s(dest_filename, NOX("\\freespace.exe"));
-
-	// see if src_filename exists
-	FILE *fp;
-	fp = fopen(src_filename, "rb");
-	if ( !fp ) {
-		return;
-	}
-	fclose(fp);
-
-	SetFileAttributes(dest_filename, FILE_ATTRIBUTE_NORMAL);
-
-	// copy updated freespace.exe to freespace exe dir
-	if ( CopyFile(src_filename, dest_filename, 0) == 0 ) {
-		MessageBox( NULL, XSTR("Unable to copy freespace.exe from update directory to installed directory.  You should copy freespace.exe from the update directory (located in your FreeSpace install directory) to your install directory", 988), NULL, MB_OK|MB_TASKMODAL|MB_SETFOREGROUND );
-		return;
-	}
-
-	// delete the file in the update directory
-	DeleteFile(src_filename);
-
-	// safe to assume directory is empty, since freespace.exe should only be the file ever in the update dir
-	char update_dir[MAX_PATH];
-	strcpy_s(update_dir, exe_dir);
-	strcat_s(update_dir, NOX("\\update"));
-	RemoveDirectory(update_dir);
-}
-#endif // no launcher
-
-#endif // ifdef WIN32
-
 void game_spew_pof_info_sub(int model_num, polymodel *pm, int sm, cfile::FileHandle *out, int *out_total, int *out_destroyed_total)
 {
 	int i;
@@ -7713,19 +7638,19 @@ void game_stop_subspace_ambient_sound()
 
 #define CD_SIZE_72_MINUTE_MAX			(697000000)
 
-uint game_get_cd_used_space(char *path)
+uint game_get_cd_used_space(const std::wstring& path)
 {
 #ifdef _WIN32
 	uint total = 0;
-	char use_path[512] = "";
-	char sub_path[512] = "";
+	std::wstring use_path;
+	std::wstring sub_path;
 	WIN32_FIND_DATA	find;
 	HANDLE find_handle;
 
 	// recurse through all files and directories
-	strcpy_s(use_path, path);
-	strcat_s(use_path, "*.*");
-	find_handle = FindFirstFile(use_path, &find);
+	use_path.assign(path);
+	use_path.append(L"*.*");
+	find_handle = FindFirstFile(use_path.c_str(), &find);
 
 	// bogus
 	if(find_handle == INVALID_HANDLE_VALUE){
@@ -7735,11 +7660,11 @@ uint game_get_cd_used_space(char *path)
 	// whee
 	do {
 		// subdirectory. make sure to ignore . and ..
-		if((find.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && stricmp(find.cFileName, ".") && stricmp(find.cFileName, "..")){
+		if((find.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && !boost::iequals(find.cFileName, L".") && !boost::iequals(find.cFileName, "..")){
 			// subsearch
-			strcpy_s(sub_path, path);
-			strcat_s(sub_path, find.cFileName);
-			strcat_s(sub_path, DIR_SEPARATOR_STR);
+			sub_path.assign(path);
+			sub_path.append(find.cFileName);
+			sub_path.append(L"\\"); // We can hardcode this as we are on windows...
 			total += game_get_cd_used_space(sub_path);	
 		} else {
 			total += (uint)find.nFileSizeLow;
@@ -7752,12 +7677,6 @@ uint game_get_cd_used_space(char *path)
 	// total
 	return total;
 #else
-	if (path == NULL) {
-		// bail
-		mprintf(("NULL path passed to game_get_cd_used_space.\n"));
-		return 0;
-	}
-
 	STUB_FUNCTION;
 
 	return 0;
@@ -7769,12 +7688,12 @@ uint game_get_cd_used_space(char *path)
 int find_freespace_cd(char *volume_name)
 {
 #ifdef _WIN32
-	char oldpath[MAX_PATH];
-	char volume[256];
+	TCHAR oldpath[MAX_PATH];
+	TCHAR volume[256];
 	int i;
 	int cdrom_drive=-1;
 	int volume_match = 0;
-	_finddata_t find;
+	_wfinddata_t find;
 	int find_handle;
 
 	GetCurrentDirectory(MAX_PATH-1, oldpath);
@@ -7782,10 +7701,10 @@ int find_freespace_cd(char *volume_name)
 	for (i = 0; i < 26; i++) 
 	{
 //XSTR:OFF
-		char path[]="d:\\";
+		TCHAR path[] = L"d:\\";
 //XSTR:ON
 
-		path[0] = (char)('A'+i);
+		path[0] = static_cast<wchar_t>(L'A' + i);
 		if (GetDriveType(path) == DRIVE_CDROM) {
 			cdrom_drive = -3;
 			if ( GetVolumeInformation(path, volume, 256, NULL, NULL, NULL, NULL, 0) == TRUE ) {
@@ -7796,30 +7715,30 @@ int find_freespace_cd(char *volume_name)
 				int volume2_present = 0;
 				int volume3_present = 0;		
 
-				char full_check[512] = "";
+				std::wstring full_check;
 
 				// look for setup.exe
-				strcpy_s(full_check, path);
-				strcat_s(full_check, "setup.exe");				
-				find_handle = _findfirst(full_check, &find);
+				full_check.assign(path);
+				full_check.append(L"setup.exe");
+				find_handle = _wfindfirst(full_check.c_str(), &find);
 				if(find_handle != -1){
-					volume1_present = 1;				
+					volume1_present = 1;
 					_findclose(find_handle);				
 				}
 
 				// look for intro.mve
-				strcpy_s(full_check, path);
-				strcat_s(full_check, "intro.mve");				
-				find_handle = _findfirst(full_check, &find);
+				full_check.assign(path);
+				full_check.append(L"intro.mve");
+				find_handle = _wfindfirst(full_check.c_str(), &find);
 				if(find_handle != -1){
 					volume2_present = 1;
 					_findclose(find_handle);						
 				}				
 
 				// look for endpart1.mve
-				strcpy_s(full_check, path);
-				strcat_s(full_check, "endpart1.mve");				
-				find_handle = _findfirst(full_check, &find);
+				full_check.assign(path);
+				full_check.append(L"endpart1.mve");
+				find_handle = _wfindfirst(full_check.c_str(), &find);
 				if(find_handle != -1){
 					volume3_present = 1;
 					_findclose(find_handle);				
@@ -7891,11 +7810,14 @@ int set_cdrom_path(int drive_num)
 //		strcpy_s(CDROM_dir,"j:\\FreeSpaceCD\\");				//set directory
 //		rval = 1;
 //		#else
-		memset(Game_CDROM_dir, 0, sizeof(Game_CDROM_dir));
 		rval = 0;
 //		#endif
 	} else {
-		sprintf(Game_CDROM_dir,NOX("%c:\\"), 'a' + drive_num );			//set directory
+		std::wstringstream stream;
+		stream << static_cast<wchar_t>('a' + drive_num) << L":\\";
+
+		Game_CDROM_dir.assign(stream.str());
+
 		rval = 1;
 	}
 
@@ -7915,24 +7837,24 @@ int init_cdrom()
 }
 
 int Last_cd_label_found = 0;
-char Last_cd_label[256];
+std::wstring Last_cd_label;
 
 int game_cd_changed()
 {
 #ifdef _WIN32
-	char label[256];
+	TCHAR label[256];
 	int found;
 	int changed = 0;
 	
-	if ( strlen(Game_CDROM_dir) == 0 ) { //-V805
+	if (Game_CDROM_dir.empty()) { //-V805
 		init_cdrom();
 	}
 
-	if ( strlen(Game_CDROM_dir) == 0 ) { //-V805
+	if (Game_CDROM_dir.empty()) { //-V805
 		return 0;
 	}
 
-	found = GetVolumeInformation(Game_CDROM_dir, label, 256, NULL, NULL, NULL, NULL, 0);
+	found = GetVolumeInformation(Game_CDROM_dir.c_str(), label, 256, NULL, NULL, NULL, NULL, 0);
 
 	if ( found != Last_cd_label_found )	{
 		Last_cd_label_found = found;
@@ -7944,7 +7866,7 @@ int game_cd_changed()
         changed = 1;
 	} else {
 		if ( Last_cd_label_found )	{
-			if ( !stricmp( Last_cd_label, label ))	{
+			if (boost::iequals(Last_cd_label,label)) {
 				//mprintf(( "CD didn't change\n" ));
 			} else {
 				mprintf(( "CD was changed from '%s' to '%s'\n", Last_cd_label, label ));
@@ -7957,10 +7879,10 @@ int game_cd_changed()
 	}
 	
 	Last_cd_label_found = found;
-	if ( found )	{
-		strcpy_s( Last_cd_label, label );
+	if ( found ) {
+		Last_cd_label.assign(label);
 	} else {
-		strcpy_s( Last_cd_label, "" );
+		Last_cd_label.assign(L"");
 	}
 
 	return changed;
@@ -8497,7 +8419,7 @@ int actual_main(int argc, char *argv[])
 
 #ifdef WIN32
 	// Don't let more than one instance of FreeSpace run.
-	HWND hwnd = FindWindow(NOX("FreeSpaceClass"), NULL);
+	HWND hwnd = FindWindow(L"FreeSpaceClass", NULL);
 	if (hwnd)	{
 		SetForegroundWindow(hwnd);
 		return 0;
