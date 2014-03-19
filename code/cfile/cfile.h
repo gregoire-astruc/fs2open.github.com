@@ -146,7 +146,7 @@ namespace cfile
 
 	typedef bool(*ListFilterFunction)(const std::string&);
 
-	bool init(const char* cdromDir = NULL);
+	bool init(const std::wstring& cdromTime = L"");
 
 	void shutdown();
 

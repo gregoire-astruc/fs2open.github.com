@@ -72,15 +72,15 @@ void os_set_window_from_hwnd(HWND handle)
 }
 
 // go through all windows and try and find the one that matches the search string
-BOOL __stdcall os_enum_windows( HWND hwnd, char * search_string )
+BOOL __stdcall os_enum_windows( HWND hwnd, TCHAR * search_string )
 {
-	char tmp[128];
+	TCHAR tmp[128];
 	int len;
 
 	len = GetWindowText( hwnd, tmp, 127 );
 	 
 	if ( len )	{
-		if ( strstr( tmp, search_string ))	{
+		if ( wcsstr( tmp, search_string ))	{
 			Os_debugger_running = 1;		// found the search string!
 			return FALSE;	// stop enumerating windows
 		}
@@ -93,10 +93,10 @@ BOOL __stdcall os_enum_windows( HWND hwnd, char * search_string )
 void os_check_debugger()
 {
 	HMODULE hMod;
-	char search_string[256];
-	char myname[128];
+	TCHAR search_string[256];
+	TCHAR myname[128];
 	int namelen;
-	char * p;
+	TCHAR * p;
 
 	Os_debugger_running = 0;		// Assume its not
 
@@ -107,18 +107,18 @@ void os_check_debugger()
 	if ( namelen < 1 ) return;
 	
 	// Strip off the .EXE
-	p = strstr( myname, ".exe" );
+	p = wcsstr( myname, L".exe" );
 	if (!p) return;
 	*p = '\0';
 
 	// Move p to point to first letter of EXE filename
 	while( (*p!='\\') && (*p!='/') && (*p!=':') )
 		p--;
-	p++;	
-	if ( strlen(p) < 1 ) return;
+	p++;
+	if ( wcslen(p) < 1 ) return;
 
 	// Build what the debugger's window title would be if the debugger is running...
-	sprintf( search_string, "[run] - %s -", p );
+	swprintf( search_string, L"[run] - %s -", p );
 
 	// ... and then search for it.
 	EnumWindows( (int (__stdcall *)(struct HWND__ *,long))os_enum_windows, (long)&search_string );
@@ -177,11 +177,14 @@ char Cur_path[MAX_PATH_LEN];
 const char *detect_home(void)
 {
 #ifdef WIN32
-	if ( strlen(Cfile_root_dir) )
-		return Cfile_root_dir;
+	if ( !cfile::getRootDir().empty() )
+		return cfile::getRootDir().c_str();
 
-	memset( Cur_path, 0, MAX_PATH_LEN );
-	GetCurrentDirectory( MAX_PATH_LEN-1, Cur_path );
+	TCHAR path[MAX_PATH_LEN];
+	memset(path, 0, sizeof(path));
+	GetCurrentDirectory(MAX_PATH_LEN - 1, path);
+
+	wcstombs(Cur_path, path, MAX_PATH_LEN - 1);
 
 	return Cur_path;
 #else
@@ -195,11 +198,11 @@ const char *detect_home(void)
 // for the app name, which is where registry keys are stored.
 void os_init(const char * wclass, const char * title, const char *app_name, const char *version_string )
 {
+	os_init_registry_stuff(Osreg_company_name, title, version_string);
+
 	// create default ini entries for the user
 	if (os_config_read_string(NULL, NOX("VideocardFs2open"), NULL) == NULL)
 		os_config_write_string(NULL, NOX("VideocardFs2open"), NOX("OGL -(640x480)x16 bit"));
-
-	os_init_registry_stuff(Osreg_company_name, title, version_string);
 
 	strcpy_s( szWinTitle, title );
 	strcpy_s( szWinClass, wclass );	

@@ -20,6 +20,7 @@
 #include "graphics/2d.h"
 #include "cfile/cfile.h"
 #include "graphics/font.h"
+#include "globalincs/util.h"
 #include "palman/palman.h"
 #include "io/key.h"
 #include "bmpman/bmpman.h"
@@ -251,10 +252,10 @@ void gr_string_win(int x, int y, const char *s)
 
 void gr_get_string_size_win(int *w, int *h, const char *text)
 {
-	const char *ptr;
+	std::wstring wtext = util::charToWchar(text);
 	SIZE size;
 
-	ptr = strchr(text, '\n');
+	size_t newline = wtext.find(L'\n');
 
 	if (MyhFont==NULL)	{
 		if (w) *w = 0;
@@ -264,15 +265,15 @@ void gr_get_string_size_win(int *w, int *h, const char *text)
 
 	SelectObject( hDibDC, MyhFont );
 
-	if (!ptr)	{
-		GetTextExtentPoint32( hDibDC, text, strlen(text), &size);
+	if (newline == std::wstring::npos) {
+		GetTextExtentPoint32(hDibDC, wtext.c_str(), strlen(text), &size);
 		if (w) *w = size.cx;
 		if (h) *h = size.cy;
 		return;
 	}
 
-	GetTextExtentPoint32(hDibDC, text, ptr - text, &size);
-	gr_get_string_size_win(w, h, ptr+1);
+	GetTextExtentPoint32(hDibDC, wtext.c_str(), newline, &size);
+	gr_get_string_size_win(w, h, text + newline + 1);
 	if (w && (size.cx > *w) )
 		*w = size.cx;
 

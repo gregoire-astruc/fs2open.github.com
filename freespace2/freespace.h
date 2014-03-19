@@ -59,7 +59,7 @@ extern int Game_subspace_effect;
 extern char Game_current_mission_filename[MAX_FILENAME_LEN];
 
 // game's CDROM directory
-extern char Game_CDROM_dir[MAX_PATH_LEN];
+extern std::wstring Game_CDROM_dir;
 
 // if the ships.tbl the player has is valid
 extern int Game_ships_tbl_valid;

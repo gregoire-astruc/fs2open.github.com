@@ -148,7 +148,7 @@ namespace cfile
 		}
 	}
 
-	void searchRootDirectories(SCP_vector<fs::path>& rootDirs, const char* cdromDirStr)
+	void searchRootDirectories(SCP_vector<fs::path>& rootDirs, const std::wstring& cdromDirStr)
 	{
 		// First init root directory
 		rootDir = fs::current_path();
@@ -169,10 +169,12 @@ namespace cfile
 
 		rootDirs.push_back(rootDir);
 
-		if (cdromDirStr != NULL)
+#ifdef SCP_UNIX
+		if (!cdromDirStr.empty())
 		{
 			rootDirs.push_back(fs::path(cdromDirStr));
 		}
+#endif
 	}
 
 	void maybeAddPackSystem(fs::directory_entry entry, SCP_vector<IFileSystem*>& fileSystems)
@@ -286,7 +288,7 @@ namespace cfile
 		}
 	}
 
-	bool init(const char* cdromDirStr)
+	bool init(const std::wstring& cdromDirStr)
 	{
 		if (inited)
 		{

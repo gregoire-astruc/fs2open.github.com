@@ -34,6 +34,7 @@
 #include "freespaceresource.h"
 #include "globalincs/systemvars.h"
 #include "globalincs/globals.h"
+#include "globalincs/util.h"
 #include "parse/parselo.h"
 
 
@@ -55,7 +56,7 @@ HANDLE hOutputThread=NULL;
 DWORD OutputThreadID;
 
 HWND hOutputWnd;
-char szOutputClass[] = "OutputWindow";
+TCHAR szOutputClass[] = L"OutputWindow";
 char spaces[MAX_LINE_WIDTH + 1];
 ubyte outwnd_filter_loaded = 0;
 char find_text[85];
@@ -602,14 +603,14 @@ LRESULT CALLBACK outwnd_handler(HWND hwnd,UINT msg,WPARAM wParam, LPARAM lParam)
 				}
 
 				if (OutwndFilter[i].enabled)
-					AppendMenu(h_sub_menu, flags | MF_CHECKED, ID_FILTER + i, OutwndFilter[i].name);
+					AppendMenu(h_sub_menu, flags | MF_CHECKED, ID_FILTER + i, util::charToWchar(OutwndFilter[i].name).c_str());
 				else
-					AppendMenu(h_sub_menu, flags, ID_FILTER + i, OutwndFilter[i].name);
+					AppendMenu(h_sub_menu, flags, ID_FILTER + i, util::charToWchar(OutwndFilter[i].name).c_str());
 			}
 
-			AppendMenu(h_menu, MFT_STRING, ID_COPY, "&Copy\tEnter");
-			AppendMenu(h_menu, MFT_STRING, ID_FIND, "&Find Text");
-			AppendMenu(h_menu, MF_POPUP, (unsigned int) h_sub_menu, "Filter &Messages");
+			AppendMenu(h_menu, MFT_STRING, ID_COPY, L"&Copy\tEnter");
+			AppendMenu(h_menu, MFT_STRING, ID_FIND, L"&Find Text");
+			AppendMenu(h_menu, MF_POPUP, (unsigned int) h_sub_menu, L"Filter &Messages");
 			pt.x = LOWORD(lParam);
 			pt.y = HIWORD(lParam);
 			ClientToScreen(hwnd, &pt);
@@ -842,12 +843,12 @@ void outwnd_paint(HWND hwnd)
 		if (!scroll_pos)	{
 			char tmp[1024];
 			sprintf( tmp, "Debug Spew");
-			SetWindowText( hOutputWnd, tmp );
+			SetWindowText(hOutputWnd, util::charToWchar(tmp).c_str());
 
 		} else {
 			char tmp[1024];
 			sprintf( tmp, "Debug Spew [Scrolled back %d lines]", scroll_pos );
-			SetWindowText( hOutputWnd, tmp );
+			SetWindowText(hOutputWnd, util::charToWchar(tmp).c_str());
 		}
 
 		old_scroll_pos = scroll_pos;
@@ -868,59 +869,59 @@ void outwnd_paint(HWND hwnd)
 				if (n == marked_top && n == marked_bottom)  // special 1 line case
 				{
 					if (marked_left)
-						TextOut(hdc, 0, y, outtext[n], marked_left);
+						TextOut(hdc, 0, y, util::charToWchar(outtext[n]).c_str(), marked_left);
 
 					text_hilight(hdc);
 					x = marked_left * nTextWidth;
-					TextOut(hdc, x, y, outtext[n] + marked_left, marked_right -
+					TextOut(hdc, x, y, util::charToWchar(outtext[n]).c_str() + marked_left, marked_right -
 						marked_left);
 
 					text_normal(hdc);
 					x = marked_right * nTextWidth;
 					if (marked_right < len)
-						TextOut(hdc, x, y, outtext[n] + marked_right, len - marked_right);
+						TextOut(hdc, x, y, util::charToWchar(outtext[n]).c_str() + marked_right, len - marked_right);
 
 					x = len * nTextWidth;
-					TextOut(hdc, x, y, spaces, MAX_LINE_WIDTH - len);
+					TextOut(hdc, x, y, util::charToWchar(spaces).c_str(), MAX_LINE_WIDTH - len);
 
 				} else if (n == marked_top)	{  // start marked on this line
 					if (marked_left)
-						TextOut(hdc, 0, y, outtext[n], marked_left);
+						TextOut(hdc, 0, y, util::charToWchar(outtext[n]).c_str(), marked_left);
 
 					text_hilight(hdc);
 					x = marked_left * nTextWidth;
 
-					TextOut(hdc, x, y, outtext[n] + marked_left, len - marked_left);
+					TextOut(hdc, x, y, util::charToWchar(outtext[n]).c_str() + marked_left, len - marked_left);
 
 					x = len * nTextWidth;
 					if (marked_left < MAX_LINE_WIDTH)
-						TextOut(hdc, x, y, spaces, MAX_LINE_WIDTH - marked_left);
+						TextOut(hdc, x, y, util::charToWchar(spaces).c_str(), MAX_LINE_WIDTH - marked_left);
 
 				} else if (n == marked_bottom)	{  // end marked on this line
 					if (marked_right)
-						TextOut(hdc, 0, y, outtext[n], marked_right);
+						TextOut(hdc, 0, y, util::charToWchar(outtext[n]).c_str(), marked_right);
 
 					text_normal(hdc);
 					x = marked_right * nTextWidth;
 					if (marked_right < len)
-						TextOut(hdc, x, y, outtext[n] + marked_right, len - marked_right);
+						TextOut(hdc, x, y, util::charToWchar(outtext[n]).c_str() + marked_right, len - marked_right);
 
 					x = len * nTextWidth;
-					TextOut(hdc, x, y, spaces, MAX_LINE_WIDTH - len);
+					TextOut(hdc, x, y, util::charToWchar(spaces).c_str(), MAX_LINE_WIDTH - len);
 
 				} else	{  // whole line marked
-					TextOut(hdc, 0, y, outtext[n], len);
+					TextOut(hdc, 0, y, util::charToWchar(outtext[n]).c_str(), len);
 					x = len * nTextWidth;
-					TextOut(hdc, x, y, spaces, MAX_LINE_WIDTH - len);
+					TextOut(hdc, x, y, util::charToWchar(spaces).c_str(), MAX_LINE_WIDTH - len);
 				}
 
 			} else {
-				TextOut(hdc, 0, y, outtext[n], len);
+				TextOut(hdc, 0, y, util::charToWchar(outtext[n]).c_str(), len);
 				x = len * nTextWidth;
-				TextOut(hdc, x, y, spaces, MAX_LINE_WIDTH - len);
+				TextOut(hdc, x, y, util::charToWchar(spaces).c_str(), MAX_LINE_WIDTH - len);
 			}
 		} else
-			TextOut(hdc, 0, y, spaces, MAX_LINE_WIDTH);
+			TextOut(hdc, 0, y, util::charToWchar(spaces).c_str(), MAX_LINE_WIDTH);
 
 		y += nTextHeight;
 	}
@@ -1091,7 +1092,7 @@ BOOL outwnd_create(int display_under_freespace_window)
 	}
 	
 	//	Create Game Window
-	hOutputWnd = CreateWindow(szOutputClass, "Debug Spew", style, rect.left,
+	hOutputWnd = CreateWindow(szOutputClass, L"Debug Spew", style, rect.left,
 		rect.top, rect.right, rect.bottom, NULL, NULL, hInst, NULL);
 
 		// Show it, but don't activate it.  If you activate it, it cause problems
@@ -1224,7 +1225,7 @@ BOOL CALLBACK find_dlg_handler(HWND hwnd,UINT msg,WPARAM wParam, LPARAM lParam)
 		case WM_COMMAND:
 			switch (LOWORD(wParam)) {
 				case IDOK:
-					GetDlgItemText(hwnd, IDC_TEXT, find_text, 82);  // get the text to find
+					GetDlgItemText(hwnd, IDC_TEXT, const_cast<wchar_t*>(util::charToWchar(find_text).c_str()), 82);  // get the text to find
 					EndDialog(hwnd, IDOK);
 					return 1;
 

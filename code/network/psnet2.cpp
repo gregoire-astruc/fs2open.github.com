@@ -44,6 +44,8 @@
 #include "network/multi_rate.h"
 #include "cmdline/cmdline.h"
 
+#include <boost/algorithm/string.hpp>
+
 // -------------------------------------------------------------------------------------------------------
 // PSNET 2 DEFINES/VARS
 //
@@ -2288,7 +2290,7 @@ unsigned int psnet_ras_status()
 	Ras_connected = 0;
 
 	// first, call a LoadLibrary to load the RAS api
-	ras_handle = LoadLibrary( "rasapi32.dll" );
+	ras_handle = LoadLibrary( L"rasapi32.dll" );
 	if ( ras_handle == NULL ) {
 		return INADDR_ANY;
 	}
@@ -2333,16 +2335,16 @@ unsigned int psnet_ras_status()
 		unsigned long dummySize;
 
 		// don't count VPNs with the non-LAN connections
-		if ( !stricmp(rasbuffer[i].szDeviceType, "RASDT_Vpn") ) {
+		if (boost::iequals(rasbuffer[i].szDeviceType, L"RASDT_Vpn") ) {
 			continue;
 		} else {
 			valid_connections++;
 		}
 
 		ml_printf("Connection %d:", i);
-		ml_printf("Entry Name: %s", rasbuffer[i].szEntryName);
-		ml_printf("Device Type: %s", rasbuffer[i].szDeviceType);
-		ml_printf("Device Name: %s", rasbuffer[i].szDeviceName);
+		ml_printf("Entry Name: %ls", rasbuffer[i].szEntryName);
+		ml_printf("Device Type: %ls", rasbuffer[i].szDeviceType);
+		ml_printf("Device Name: %ls", rasbuffer[i].szDeviceName);
 
 		// get the connection status
 		status.dwSize = sizeof(RASCONNSTATUS);
@@ -2361,7 +2363,7 @@ unsigned int psnet_ras_status()
 			return INADDR_ANY;
 		}
 
-		ml_printf("IP Address: %s", projection.szIpAddress);
+		ml_printf("IP Address: %ls", projection.szIpAddress);
 	}
 
 	if (!valid_connections) {
@@ -2372,7 +2374,11 @@ unsigned int psnet_ras_status()
 	Ras_connected = 1;
 
 	FreeLibrary( ras_handle );
-	rasip = inet_addr(projection.szIpAddress);
+
+	char addr[16];
+	wcstombs(addr, projection.szIpAddress, 15);
+
+	rasip = inet_addr(addr);
 	if(rasip==INADDR_NONE){
 		return INADDR_ANY;
 	}
