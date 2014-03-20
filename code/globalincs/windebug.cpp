@@ -39,6 +39,8 @@
 #	include "globalincs/mspdb_callstack.h"
 #endif
 
+#include <boost/algorithm/string.hpp>
+
 extern void gr_activate(int active);
 
 bool Messagebox_active = false;
@@ -246,8 +248,8 @@ class PE_Debug
   private :
     // Report data
     enum { MAX_MODULENAME_LEN = 512, VA_MAX_FILENAME_LEN = 256 } ;
-    char latestModule[ MAX_MODULENAME_LEN ] ;
-    char latestFile[ VA_MAX_FILENAME_LEN ] ;
+	std::wstring latestModule;
+	std::wstring latestFile;
     // File mapping data
     HANDLE hFile ;
     HANDLE hFileMapping ;
@@ -261,7 +263,7 @@ class PE_Debug
 
     void ClearFileCache() ;
     void ClearDebugPtrs() ;
-    void MapFileInMemory( const char* module ) ;
+    void MapFileInMemory( const TCHAR* module ) ;
     void FindDebugInfo() ;
     void DumpSymbolInfo( DumpBuffer& dumpBuffer, DWORD relativeAddress ) ;
     void DumpLineNumber( DumpBuffer& dumpBuffer, DWORD relativeAddress ) ;
@@ -595,8 +597,8 @@ void PE_Debug::DumpSymbolInfo( DumpBuffer& dumpBuffer, DWORD relativeAddress )
 	if ( fileSymbol )	{
 		const char* auxSym = (const char*)(fileSymbol + 1) ;
 
-		if( strcmpi( latestFile, auxSym ) )	{
-			strcpy_s( latestFile, auxSym ) ;
+		if( !boost::iequals( latestFile, auxSym ) )	{
+			latestFile = util::charToWchar(auxSym);
 			//JAS      dumpBuffer.Printf( "  file: %s\r\n", auxSym ) ;    
 		}
 	} else {
@@ -718,10 +720,10 @@ void PE_Debug :: FindDebugInfo()
   }
 
 
-void PE_Debug :: MapFileInMemory( const char* module )
+void PE_Debug :: MapFileInMemory( const TCHAR* module )
   {
   ClearFileCache() ;
-  hFile = CreateFile( module, GENERIC_READ, FILE_SHARE_READ, NULL,
+  hFile = CreateFile(module, GENERIC_READ, FILE_SHARE_READ, NULL,
                              OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0 ) ;
   if( hFile != INVALID_HANDLE_VALUE )
     {
@@ -738,29 +740,29 @@ int PE_Debug::DumpDebugInfo( DumpBuffer& dumpBuffer, const BYTE* caller, HINSTAN
 	// Avoid to open, map and looking for debug header/symbol table
 	// by caching the latest and comparing the actual module with
 	// the latest one.
-	static char module[ MAX_MODULENAME_LEN ] ;
+	static TCHAR module[ MAX_MODULENAME_LEN ] ;
 	GetModuleFileName( hInstance, module, MAX_MODULENAME_LEN ) ;
 
 	// New module
-	if( strcmpi( latestModule, module ) )	{
-		strcpy_s( latestModule, module );
+	if(!boost::iequals( latestModule, module ) )	{
+		latestModule = module;
 		//JAS    dumpBuffer.Printf( "Module: %s\r\n", module );
 		MapFileInMemory( module );
 		FindDebugInfo();
 	}
 
-	char pretty_module[1024];
+	TCHAR pretty_module[1024];
 
-	strcpy_s( pretty_module, module );
-	char *p = pretty_module+strlen(pretty_module)-1;
+	wcscpy( pretty_module, module );
+	wchar_t *p = pretty_module+wcslen(pretty_module)-1;
 	// Move p to point to first letter of EXE filename
 	while( (*p!='\\') && (*p!='/') && (*p!=':') )
 		p--;
 	p++;	
-	if ( strlen(p) < 1 ) {
-		strcpy_s( pretty_module, "<unknown>" );
+	if ( wcslen(p) < 1 ) {
+		wcscpy( pretty_module, L"<unknown>" );
 	} else {
-		memmove( pretty_module, p, strlen(p)+1 );
+		memmove( pretty_module, p, wcslen(p)+1 );
 	}
 
 	if ( fileBase )	{
@@ -776,9 +778,9 @@ int PE_Debug::DumpDebugInfo( DumpBuffer& dumpBuffer, const BYTE* caller, HINSTAN
 			} else {
 				//dumpBuffer.Printf( "Call stack is unavailable, because there is\r\nno COFF debugging info in this module.\r\n" ) ;
 				//JAS dumpBuffer.Printf( "  no debug information\r\n" ) ;
-				dumpBuffer.Printf( "    %s %08x()\r\n", pretty_module, caller ) ;
+				dumpBuffer.Printf( "    %ls %08x()\r\n", pretty_module, caller ) ;
 				if (Dump_to_log) {
-					mprintf(("    %s %08x()\r\n", pretty_module, caller )) ;
+					mprintf(("    %ls %08x()\r\n", pretty_module, caller )) ;
 				}
 				return 0;
 			}
@@ -787,9 +789,9 @@ int PE_Debug::DumpDebugInfo( DumpBuffer& dumpBuffer, const BYTE* caller, HINSTAN
 			return 0;
       }
 	} else	{
-		dumpBuffer.Printf( "    %s %08x()\r\n", pretty_module, caller ) ;
+		dumpBuffer.Printf( "    %ls %08x()\r\n", pretty_module, caller ) ;
 		if (Dump_to_log) {
-			mprintf(( "    %s %08x()\r\n", pretty_module, caller )) ;
+			mprintf(( "    %ls %08x()\r\n", pretty_module, caller )) ;
 		}
 		//JAS dumpBuffer.Printf( "  module not accessible\r\n" ) ;
 		//JAS dumpBuffer.Printf( "    address: %8X\r\n", caller ) ;
@@ -956,7 +958,7 @@ void _cdecl WinAssert(char * text, char * filename, int linenum )
 	dumpBuffer.Printf( "\r\n[ This info is in the clipboard so you can paste it somewhere now ]\r\n" );
 	dumpBuffer.Printf( "\r\n\r\nUse Ok to break into Debugger, Cancel to exit.\r\n");
 
-	val = MessageBox(NULL, dumpBuffer.buffer, "Assertion Failed!", MB_OKCANCEL|flags );
+	val = MessageBox(NULL, util::charToWchar(dumpBuffer.buffer).c_str(), L"Assertion Failed!", MB_OKCANCEL|flags );
 #else
 	val = MessageBox(NULL, AssertText1, "Assertion Failed!", MB_OKCANCEL|flags );
 #endif
@@ -1030,7 +1032,7 @@ void _cdecl WinAssert(char * text, char * filename, int linenum, const char * fo
 	dumpBuffer.Printf( "\r\n[ This info is in the clipboard so you can paste it somewhere now ]\r\n" );
 	dumpBuffer.Printf( "\r\n\r\nUse Ok to break into Debugger, Cancel to exit.\r\n");
 
-	val = MessageBox(NULL, dumpBuffer.buffer, "Assertion Failed!", MB_OKCANCEL|flags );
+	val = MessageBox(NULL, util::charToWchar(dumpBuffer.buffer).c_str(), L"Assertion Failed!", MB_OKCANCEL|flags );
 #else
 	val = MessageBox(NULL, AssertText1, "Assertion Failed!", MB_OKCANCEL|flags );
 #endif
@@ -1238,7 +1240,7 @@ void _cdecl Error( const char * filename, int line, const char * format, ... )
 	dumpBuffer.Printf( "\r\n[ This info is in the clipboard so you can paste it somewhere now ]\r\n" );
 	dumpBuffer.Printf( "\r\n\r\nUse Ok to break into Debugger, Cancel exits.\r\n");
 
-	val = MessageBox(NULL, dumpBuffer.buffer, "Error!", flags | MB_DEFBUTTON2 | MB_OKCANCEL );
+	val = MessageBox(NULL, util::charToWchar(dumpBuffer.buffer).c_str(), L"Error!", flags | MB_DEFBUTTON2 | MB_OKCANCEL );
 #else
 	strcat_s(AssertText2,"\r\n\r\nUse Ok to break into Debugger, Cancel exits.\r\n");
 
