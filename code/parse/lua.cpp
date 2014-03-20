@@ -11696,7 +11696,7 @@ ADE_FUNC(__gc, l_Browser, NULL, "Cleans up the browser instance", NULL, NULL)
 
 	Browser* browser = handle->getBrowser();
 
-	browser->GetClient()->forceClose();
+	browser->Close();
 
 	delete handle;
 
@@ -11726,6 +11726,25 @@ ADE_FUNC(create, l_Browser, "string URL", "Actually creates the browser, call th
 	return ade_set_args(L, "b", success);
 }
 
+ADE_FUNC(close, l_Browser, NULL, "Closes the browser and frees its resources, handle is invalid after this function returns true", "boolean", "true if successfull, false otherwise")
+{
+	using namespace chromium;
+
+	browser_h *handle = NULL;
+
+	if (!ade_get_args(L, "o", l_Browser.Get(&handle)))
+		return ADE_RETURN_FALSE;
+
+	if (handle == NULL || !handle->isValid())
+		return ADE_RETURN_FALSE;
+
+	Browser* browser = handle->getBrowser();
+
+	browser->Close();
+
+	return ADE_RETURN_TRUE;
+}
+
 ADE_FUNC(getBrowserBitmap, l_Browser, NULL, "Gets the bitmap this browser draws to.", "texture", "The texture or invalid handle if bitmap is not yet valid")
 {
 	using namespace chromium;
@@ -11739,6 +11758,7 @@ ADE_FUNC(getBrowserBitmap, l_Browser, NULL, "Gets the bitmap this browser draws 
 		return ADE_RETURN_FALSE;
 
 	Browser* browser = handle->getBrowser();
+	handle->reset();
 	
 	return ade_set_args(L, "o", l_Texture.Set(browser->GetClient()->getBrowserBitmap()));
 }
