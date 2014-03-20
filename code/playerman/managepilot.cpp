@@ -174,7 +174,7 @@ void pilot_set_start_campaign(player* p)
 {
 	char wild_card[10];
 	int i, j, incr = 0;
-	SCP_string t = NULL;
+	SCP_string t;
 
 	memset(wild_card, 0, sizeof(wild_card));
 	strcpy_s(wild_card, NOX("*"));
