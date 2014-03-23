@@ -353,7 +353,10 @@ namespace chromium
 			SetParent(mBrowserAreaWindow, nullptr);
 		}
 
-		GetClient()->getMainBrowser()->GetHost()->CloseBrowser(true);
+		if (GetClient()->getMainBrowser() != nullptr)
+		{
+			GetClient()->getMainBrowser()->GetHost()->CloseBrowser(true);
+		}
 
 		if (mBrowserAreaWindow != nullptr)
 		{
