@@ -65,6 +65,7 @@ namespace lua
 
 					list->SetDictionary(index, dictionaryVal);
 				}
+				break;
 			}
 			case ValueType::NONE:
 			case ValueType::LIGHTUSERDATA:
