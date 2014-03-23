@@ -11758,7 +11758,6 @@ ADE_FUNC(getBrowserBitmap, l_Browser, NULL, "Gets the bitmap this browser draws 
 		return ADE_RETURN_FALSE;
 
 	Browser* browser = handle->getBrowser();
-	handle->reset();
 	
 	return ade_set_args(L, "o", l_Texture.Set(browser->GetClient()->getBrowserBitmap()));
 }
