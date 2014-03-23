@@ -1393,8 +1393,15 @@ void gr_opengl_update_texture(int bitmap_handle, int bpp, const void* data, int 
 	GLenum texFormat, glFormat;
 	int n = bm_get_cache_slot (bitmap_handle, 1);
 	tcache_slot_opengl *t = &Textures[n];
+
 	if(!t->texture_id)
-		return;
+	{
+		if (!opengl_create_texture(bitmap_handle, TCACHE_TYPE_XPARENT, t))
+		{
+			return;
+		}
+	}
+
 	int byte_mult = (bpp >> 3);
 	int true_byte_mult = (t->bpp >> 3);
 	ubyte* texmem = NULL;
