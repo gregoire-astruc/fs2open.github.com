@@ -165,14 +165,16 @@ namespace chromium
 	void ClientImpl::OnPaint(CefRefPtr<CefBrowser> browser, PaintElementType type,
 		const RectList &dirtyRects, const void *buffer, int width, int height)
 	{
-		if (mPaintingPopup) {
+		if (mPaintingPopup)
+		{
 			ActualPaint(type, dirtyRects, buffer, width, height);
 			return;
 		}
 
 		ActualPaint(type, dirtyRects, buffer, width, height);
 
-		if (type == PET_VIEW && !mPopupRect.IsEmpty()) {
+		if (type == PET_VIEW && !mPopupRect.IsEmpty())
+		{
 			mPaintingPopup = true;
 
 			CefRect client_popup_rect(0, 0, mPopupRect.width, mPopupRect.height);
