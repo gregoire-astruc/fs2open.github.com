@@ -15226,13 +15226,27 @@ static int ade_return_hack(lua_State *L)
 
 	return num;
 }
+
+static void *customAlloc(void *ud, void *ptr, size_t osize, size_t nsize)
+{
+	if (nsize == 0)
+	{
+		vm_free(ptr);
+		return nullptr;
+	}
+	else
+	{
+		return vm_realloc(ptr, nsize);
+	}
+}
+
 //Inits LUA
 //Note that "libraries" must end with a {NULL, NULL}
 //element
 int script_state::CreateLuaState()
 {
 	mprintf(("LUA: Opening LUA state...\n"));
-	lua_State *L = lua_open();
+	lua_State *L = lua_newstate(&customAlloc, nullptr);
 
 	if(L == NULL)
 	{
