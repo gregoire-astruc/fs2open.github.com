@@ -4,39 +4,27 @@ IF(FSO_USE_LUAJIT)
 
 	INCLUDE(ExternalProject)
 	INCLUDE(util)
-
-	IF(WIN32)
-		IF(MSVC)
-			SET(BUILD_COMMAND cd src && msvcbuild)
-		ELSEIF(MINGW)
-			SET(BUILD_COMMAND mingw32-make)
-		ELSEIF(CYGWIN)
-			SET(BUILD_COMMAND make)
-		ELSE(MSVC)
-			MESSAGE(ERROR "Unknown compiler! Cannot build luajit!")
-		ENDIF(MSVC)
-	ELSE(WIN32)
-		SET(BUILD_COMMAND make)
-	ENDIF(WIN32)
-
-	IF(WIN32)
-		EP_CHECK_FILE_EXISTS("src/luajit/src/lua51.dll" BUILD_COMMAND luajit test_compile.cmake "${BUILD_COMMAND}" "src/luajit")
-	ELSE(WIN32)
-		EP_CHECK_FILE_EXISTS("src/luajit/src/libluajit.a" BUILD_COMMAND luajit test_compile.cmake "${BUILD_COMMAND}" "src/luajit")
-	ENDIF(WIN32)
+	
+	IF(FSO_DEVELOPMENT_MODE)
+		SET(CONFIG Debug)
+	ELSE(FSO_DEVELOPMENT_MODE)
+		SET(CONFIG Release)
+	ENDIF(FSO_DEVELOPMENT_MODE)
 
 	ExternalProject_Add(luajit
 		PREFIX luajit
 		# Downloading
-		URL http://luajit.org/download/LuaJIT-2.0.2.tar.gz # Full path or URL of source
-		URL_MD5 112dfb82548b03377fbefbba2e0e3a5b               # MD5 checksum of file at URL
-		# Configuring
-		CONFIGURE_COMMAND ""
+		GIT_REPOSITORY https://github.com/LuaDist/luajit.git
+		GIT_TAG 2.0.3
+		
+		INSTALL_DIR
+		
 		# Building
-		BUILD_COMMAND ${BUILD_COMMAND}
-		BUILD_IN_SOURCE 1
-		# Installing
-		INSTALL_COMMAND ""
+		CMAKE_CACHE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> -DCMAKE_BUILD_TYPE:STRING=${CONFIG}
+		
+		BUILD_COMMAND "${CMAKE_COMMAND}" --build <BINARY_DIR> --config ${CONFIG}
+		
+		INSTALL_COMMAND "${CMAKE_COMMAND}" --build <BINARY_DIR> --config ${CONFIG} --target install
 	)
 
 	set_target_properties(luajit
@@ -44,7 +32,7 @@ IF(FSO_USE_LUAJIT)
 			FOLDER "3rdparty"
 	)
 
-	ExternalProject_Get_Property(luajit source_dir)
+	ExternalProject_Get_Property(luajit install_dir)
 
 	add_library(luajit_lib SHARED IMPORTED GLOBAL)
 	ADD_DEPENDENCIES(luajit_lib luajit)
@@ -52,19 +40,19 @@ IF(FSO_USE_LUAJIT)
 	IF(WIN32)
 		set_target_properties(luajit_lib
 			PROPERTIES
-				IMPORTED_LOCATION ${source_dir}/src/lua51.dll
-				IMPORTED_IMPLIB ${source_dir}/src/lua51.lib
+				IMPORTED_LOCATION ${install_dir}/bin/lua.dll
+				IMPORTED_IMPLIB ${install_dir}/lib/lua.lib
 		)
 		
-		INSTALL(FILES ${source_dir}/src/lua51.dll
+		INSTALL(FILES ${install_dir}/bin/lua.dll
 				DESTINATION ${BINARY_DESTINATION}
 		)
 			
-		SET(TARGET_COPY_FILES ${TARGET_COPY_FILES} "${source_dir}/src/lua51.dll" CACHE INTERNAL "")
+		SET(TARGET_COPY_FILES ${TARGET_COPY_FILES} "${install_dir}/bin/lua.dll" CACHE INTERNAL "")
 	ELSE(WIN32)
 		set_target_properties(luajit_lib
 			PROPERTIES
-				IMPORTED_LOCATION ${source_dir}/src/libluajit.a
+				IMPORTED_LOCATION ${install_dir}/lib/liblua.a
 		)
 	ENDIF(WIN32)
 	
@@ -72,10 +60,10 @@ IF(FSO_USE_LUAJIT)
 		PROPERTIES
 			FOLDER "3rdparty"
 			INTERFACE_COMPILE_DEFINITIONS LUA_BUILD_AS_DLL
-			INTERFACE_INCLUDE_DIRECTORIES "${source_dir}/src"
+			INTERFACE_INCLUDE_DIRECTORIES "${install_dir}/include"
 	)
 
-	FILE(MAKE_DIRECTORY "${source_dir}/src")
+	FILE(MAKE_DIRECTORY "${install_dir}/include")
 
 	SET(LUA_LIBS luajit_lib CACHE INTERNAL "LuaJIT library")
 ELSE(FSO_USE_LUAJIT)
@@ -150,6 +138,7 @@ ELSE(FSO_USE_LUAJIT)
 		set_target_properties(lua51
 			PROPERTIES
 				COMPILE_DEFINITIONS _CRT_SECURE_NO_WARNINGS
+				COMPILE_DEFINITIONS_DEBUG LUA_USE_APICHECK
 				DEFINE_SYMBOL LUA_BUILD_AS_DLL # This will only be defined if we are building a shared library
 				INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}
 		)
