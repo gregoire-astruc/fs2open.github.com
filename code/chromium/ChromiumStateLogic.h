@@ -21,7 +21,7 @@ namespace chromium
 
 		boost::shared_ptr<Browser> mBrowser;
 
-		std::clock_t mLastUpdate = 0;
+		std::clock_t mLastUpdate;
 
 	public:
 		ChromiumStateLogic(const SCP_string& url);

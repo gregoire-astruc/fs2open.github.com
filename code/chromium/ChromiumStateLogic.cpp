@@ -17,11 +17,18 @@
 
 namespace chromium
 {
-	ChromiumStateLogic::ChromiumStateLogic(const SCP_string& url) : mBrowser(nullptr)
+	ChromiumStateLogic::ChromiumStateLogic(const SCP_string& url) : mBrowser(nullptr), mLastUpdate(0)
 	{
 		mInitialUrl.FromString(url.c_str());
 
+#ifdef USE_FULLSCREEN_BORWSER
 		mBrowser = Browser::CreateFullScreenBrowser();
+#else
+		int width, height;
+		SDL_GetWindowSize(os_get_window(), &width, &height);
+
+		mBrowser = Browser::CreateOffScreenBrowser(width, height);
+#endif
 	}
 
 	void ChromiumStateLogic::enterState(GameState oldState)
@@ -31,6 +38,7 @@ namespace chromium
 			Error(LOCATION, "Failed to initialize browser!");
 		}
 
+#ifdef USE_FULLSCREEN_BORWSER
 		// UGH! HACK: Cef somehow doesn't draw fullscreen windows right at first
 		// We first go windowed and then back to fix this...
 		if (!Cmdline_window)
@@ -46,6 +54,9 @@ namespace chromium
 				SDL_SetWindowBordered(os_get_window(), SDL_FALSE);
 			}
 		}
+#else
+		mBrowser->RegisterEventHandlers();
+#endif
 
 		mLastUpdate = 0;
 	}
@@ -54,11 +65,44 @@ namespace chromium
 	{
 		io::mouse::CursorManager::get()->doFrame();
 
+#ifdef USE_FULLSCREEN_BORWSER
 		os_sleep(10);
+#else
+
+		std::clock_t now = std::clock();
+
+		if (mLastUpdate != 0 && ((float)(now - mLastUpdate) / CLOCKS_PER_SEC) <= 0.016666f)
+		{
+			os_sleep(5);
+			return;
+		}
+
+		gr_set_color(255, 255, 255);
+		gr_clear();
+
+		if (mBrowser)
+		{
+			if (bm_is_valid(mBrowser->GetClient()->getBrowserBitmap()))
+			{
+				gr_set_bitmap(mBrowser->GetClient()->getBrowserBitmap(), GR_ALPHABLEND_FILTER);
+				gr_bitmap(0, 0, false);
+			}
+
+			mBrowser->SetFocused(true);
+		}
+
+		gr_flip();
+
+		mLastUpdate = std::clock();
+#endif
 	}
 
 	void ChromiumStateLogic::leaveState(GameState newState)
 	{
+#ifndef USE_FULLSCREEN_BORWSER
+		mBrowser->RemoveEventHandlers();
+#endif
+
 		if (mBrowser)
 		{
 			mBrowser->Close();
