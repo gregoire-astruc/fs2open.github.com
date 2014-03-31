@@ -850,6 +850,11 @@ set (file_root_tgautils
 	tgautils/tgautils.h
 )
 
+set(file_root_threading
+	threading/threading.cpp
+	threading/threading.h
+)
+
 # Ui files
 set (file_root_ui
 	ui/button.cpp
@@ -977,6 +982,7 @@ source_group("Species_Defs"                       FILES ${file_root_species_defs
 source_group("Starfield"                          FILES ${file_root_starfield})
 source_group("Stats"                              FILES ${file_root_stats})
 source_group("TgaUtils"                           FILES ${file_root_tgautils})
+source_group("Threading"                          FILES ${file_root_threading})
 source_group("Ui"                                 FILES ${file_root_ui})
 source_group("Weapon"                             FILES ${file_root_weapon})
 source_group("Windows Stubs"                      FILES ${file_root_windows_stubs})
@@ -1049,6 +1055,7 @@ set (file_root
 	${file_root_species_defs}
 	${file_root_starfield}
 	${file_root_stats}
+	${file_root_threading}
 	${file_root_tgautils}
 	${file_root_ui}
 	${file_root_weapon}

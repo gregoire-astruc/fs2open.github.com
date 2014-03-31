@@ -151,6 +151,7 @@
 #include "starfield/supernova.h"
 #include "stats/medals.h"
 #include "stats/stats.h"
+#include "threading/threading.h"
 #include "weapon/beam.h"
 #include "weapon/emp.h"
 #include "weapon/flak.h"
@@ -2009,6 +2010,8 @@ void game_init()
 	if (Cmdline_env) {
 		ENVMAP = Default_env_map = bm_load("cubemap");
 	}
+
+	threading::init();
 
 	Viewer_mode = 0;
 	Game_paused = 0;
@@ -7074,6 +7077,8 @@ void game_launch_launcher_on_exit()
 //
 void game_shutdown(void)
 {
+	threading::shutdown();
+
 	gTirDll_TrackIR.Close( );
 	profile_deinit();
 
