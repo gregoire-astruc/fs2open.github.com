@@ -17,8 +17,7 @@
 #include "weapon/beam.h"
 #include "weapon/weapon.h"
 #include "object/objectdock.h"
-
-
+#include "threading/threading.h"
 
 //#define MAX_PAIRS 10000	//	Bumped back to 10,000 by WMC
 			//	Reduced from 10,000 to 6,000 by MK on 4/1/98.
@@ -26,46 +25,87 @@
 #define MIN_PAIRS	2500	// start out with this many pairs
 #define PAIRS_BUMP	1000		// increase by this many avialable pairs when more are needed
 
-// the next 3 variables are used for pair statistics
-// also in weapon.cpp there is Weapons_created.
-int Pairs_created = 0;
 int Num_pairs = 0;
-int Num_pairs_allocated = 0;
 int Num_pairs_checked = 0;
-int pairs_not_created = 0;
-
-int Num_pairs_hwm = 0;
-
-obj_pair *Obj_pairs = NULL;
 
 obj_pair pair_used_list;
 obj_pair pair_free_list;
 
-SCP_vector<int> Collision_sort_list;
-
-class collider_pair
+namespace
 {
-public:
-	object *a;
-	object *b;
-	int signature_a;
-	int signature_b;
-	int next_check_time;
-	bool initialized;
+	// the next 3 variables are used for pair statistics
+	// also in weapon.cpp there is Weapons_created.
+	int Pairs_created = 0;
+	int Num_pairs_allocated = 0;
+	int pairs_not_created = 0;
 
-	// we need to define a constructor because the hash map can
-	// implicitly insert an object when we use the [] operator
-	collider_pair()
-		: a(NULL), b(NULL), signature_a(-1), signature_b(-1), next_check_time(-1), initialized(false)
-	{}
-};
+	int Num_pairs_hwm = 0;
 
-SCP_hash_map<uint, collider_pair> Collision_cached_pairs;
+	obj_pair *Obj_pairs = NULL;
+
+	SCP_vector<int> Collision_sort_list;
+
+	class collider_pair
+	{
+	public:
+		object *a;
+		object *b;
+		int signature_a;
+		int signature_b;
+		int next_check_time;
+		bool initialized;
+
+		// we need to define a constructor because the hash map can
+		// implicitly insert an object when we use the [] operator
+		collider_pair()
+			: a(NULL), b(NULL), signature_a(-1), signature_b(-1), next_check_time(-1), initialized(false)
+		{}
+	};
+
+	SCP_hash_map<uint, collider_pair> Collision_cached_pairs;
+}
 
 struct checkobject;
 extern checkobject CheckObjects[MAX_OBJECTS];
 
 extern int Cmdline_old_collision_sys;
+
+void obj_reset_pairs()
+{
+	int i;
+
+	//	mprintf(( "Resetting object pairs...\n" ));
+
+	pair_used_list.a = pair_used_list.b = NULL;
+	pair_used_list.next = NULL;
+	pair_free_list.a = pair_free_list.b = NULL;
+
+	Num_pairs = 0;
+
+	if (Obj_pairs != NULL) {
+		vm_free(Obj_pairs);
+		Obj_pairs = NULL;
+	}
+
+	Obj_pairs = (obj_pair*)vm_malloc_q(sizeof(obj_pair)* MIN_PAIRS);
+
+	if (Obj_pairs == NULL) {
+		mprintf(("Unable to create space for collision pairs!!\n"));
+		return;
+	}
+
+	Num_pairs_allocated = MIN_PAIRS;
+
+	memset(Obj_pairs, 0, sizeof(obj_pair)* MIN_PAIRS);
+
+	for (i = 0; i < MIN_PAIRS; i++) {
+		Obj_pairs[i].next = &Obj_pairs[i + 1];
+	}
+
+	Obj_pairs[MIN_PAIRS - 1].next = NULL;
+
+	pair_free_list.next = &Obj_pairs[0];
+}
 
 void obj_pairs_close()
 {
@@ -92,44 +132,6 @@ void obj_all_collisions_retime(int checkdly)
 		tmp->next_check_time = timestamp(checkdly);
 		tmp = tmp->next;
 	}
-}
-
-
-void obj_reset_pairs()
-{
-	int i;
-	
-//	mprintf(( "Resetting object pairs...\n" ));
-
-	pair_used_list.a = pair_used_list.b = NULL;		
-	pair_used_list.next = NULL;
-	pair_free_list.a = pair_free_list.b = NULL;
-
-	Num_pairs = 0;
-
-	if (Obj_pairs != NULL) {
-		vm_free(Obj_pairs);
-		Obj_pairs = NULL;
-	}
-
-	Obj_pairs = (obj_pair*) vm_malloc_q( sizeof(obj_pair) * MIN_PAIRS );
-
-	if ( Obj_pairs == NULL ) {
-		mprintf(("Unable to create space for collision pairs!!\n"));
-		return;
-	}
-
-	Num_pairs_allocated = MIN_PAIRS;
-
-	memset( Obj_pairs, 0, sizeof(obj_pair) * MIN_PAIRS );
-
-	for (i = 0; i < MIN_PAIRS; i++) {
-		Obj_pairs[i].next = &Obj_pairs[i+1];
-	}
-
-	Obj_pairs[MIN_PAIRS-1].next = NULL;
-
-	pair_free_list.next = &Obj_pairs[0];
 }
 
 // returns true if we should reject object pair if one is child of other.
@@ -1267,6 +1269,20 @@ void obj_find_overlap_colliders(SCP_vector<int> *overlap_list_out, SCP_vector<in
 	overlapped = true;
 }
 
+struct collide_callable
+{
+private:
+	std::pair<object*, object*> mObjects;
+
+public:
+	collide_callable(const std::pair<object*, object*>& pair) : mObjects(pair) {}
+
+	void operator()(void)
+	{
+		obj_collide_pair(mObjects.first, mObjects.second);
+	}
+};
+
 void obj_sort_and_collide()
 {
 	if (Cmdline_dis_collisions)
@@ -1292,10 +1308,15 @@ void obj_sort_and_collide()
 	obj_quicksort_colliders(&sort_list_z, 0, sort_list_z.size() - 1, 2);
 	obj_find_overlap_colliders(&sort_list_y, &sort_list_z, 2, true, &collision_pairs);
 
+	auto& workGroup = threading::manager()->getGroup(threading::WorkType::COLLISION);
+	// Now schedule all pairs for checking
 	for (auto& pair : collision_pairs)
 	{
-		obj_collide_pair(pair.first, pair.second);
+		workGroup.submitTask(collide_callable(pair));
 	}
+
+	// Wait for the threads to stop working
+	workGroup.waitForTasks();
 }
 
 float obj_get_collider_endpoint(int obj_num, int axis, bool min)
