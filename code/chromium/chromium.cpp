@@ -70,7 +70,7 @@ namespace chromium
 		
 		application = new ApplicationImpl();
 
-		CefInitialize(main_args, settings, application.get());
+		CefInitialize(main_args, settings, application.get(), nullptr);
 
 		mainloop::addMainloopFunction(doChromiumWork);
 

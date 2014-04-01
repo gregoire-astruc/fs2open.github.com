@@ -15,7 +15,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInst, _In_opt_ HINSTANCE hPrev, _In_ LPSTR sz
 	CefRefPtr<Application> myApplication(new Application());
 
 	// Execute the sub-process logic. This will block until the sub-process should exit.
-	return CefExecuteProcess(main_args, myApplication.get());
+	return CefExecuteProcess(main_args, myApplication.get(), nullptr);
 }
 
 #else
@@ -27,7 +27,7 @@ int main(int argc, char* argv[])
 	CefRefPtr<Application> myApplication(new Application());
 
 	// Execute the sub-process logic. This will block until the sub-process should exit.
-	return CefExecuteProcess(main_args, myApplication.get());
+	return CefExecuteProcess(main_args, myApplication.get(), nullptr);
 }
 
 #endif

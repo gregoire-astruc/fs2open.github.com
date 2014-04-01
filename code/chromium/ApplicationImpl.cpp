@@ -1015,6 +1015,11 @@ namespace chromium
 		{
 			return cfile::eof(handle) ? 1 : 0;
 		}
+		
+		virtual bool MayBlock()
+		{
+			return true;
+		}
 
 		IMPLEMENT_REFCOUNTING(CFileHandler);
 	};
