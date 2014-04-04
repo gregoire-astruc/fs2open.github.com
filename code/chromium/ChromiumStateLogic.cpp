@@ -27,7 +27,7 @@ namespace chromium
 		int width, height;
 		SDL_GetWindowSize(os_get_window(), &width, &height);
 
-		mBrowser = Browser::CreateOffScreenBrowser(width, height);
+		mBrowser = Browser::CreateOffScreenBrowser(width, height, true);
 #endif
 	}
 
@@ -39,21 +39,17 @@ namespace chromium
 		}
 
 #ifdef USE_FULLSCREEN_BORWSER
-		// UGH! HACK: Cef somehow doesn't draw fullscreen windows right at first
-		// We first go windowed and then back to fix this...
-		if (!Cmdline_window)
+		SDL_SysWMinfo wmInfo;
+		SDL_VERSION(&wmInfo.version); // initialize info structure with SDL version info
+
+		if (!SDL_GetWindowWMInfo(os_get_window(), &wmInfo))
 		{
-			if (!Cmdline_fullscreen_window)
-			{
-				SDL_SetWindowFullscreen(os_get_window(), 0);
-				SDL_SetWindowFullscreen(os_get_window(), SDL_WINDOW_FULLSCREEN_DESKTOP);
-			}
-			else
-			{
-				SDL_SetWindowBordered(os_get_window(), SDL_TRUE);
-				SDL_SetWindowBordered(os_get_window(), SDL_FALSE);
-			}
+			// call failed
+			mprintf(("Couldn't get window information: %s\n", SDL_GetError()));
+			return;
 		}
+
+		UpdateWindow(wmInfo.info.win.window);
 #else
 		mBrowser->RegisterEventHandlers();
 #endif
@@ -63,11 +59,10 @@ namespace chromium
 
 	void ChromiumStateLogic::doFrame()
 	{
-		io::mouse::CursorManager::get()->doFrame();
-
 #ifdef USE_FULLSCREEN_BORWSER
-		os_sleep(10);
+		os_sleep(5);
 #else
+		io::mouse::CursorManager::get()->doFrame();
 
 		std::clock_t now = std::clock();
 
