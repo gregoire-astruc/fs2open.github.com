@@ -39,17 +39,8 @@ namespace chromium
 		}
 
 #ifdef USE_FULLSCREEN_BORWSER
-		SDL_SysWMinfo wmInfo;
-		SDL_VERSION(&wmInfo.version); // initialize info structure with SDL version info
-
-		if (!SDL_GetWindowWMInfo(os_get_window(), &wmInfo))
-		{
-			// call failed
-			mprintf(("Couldn't get window information: %s\n", SDL_GetError()));
-			return;
-		}
-
-		UpdateWindow(wmInfo.info.win.window);
+		SDL_HideWindow(os_get_window());
+		SDL_ShowWindow(os_get_window());
 #else
 		mBrowser->RegisterEventHandlers();
 #endif
@@ -94,7 +85,11 @@ namespace chromium
 
 	void ChromiumStateLogic::leaveState(GameState newState)
 	{
-#ifndef USE_FULLSCREEN_BORWSER
+#ifdef USE_FULLSCREEN_BORWSER
+		gr_set_color(0, 0, 0);
+		gr_clear();
+		gr_flip();
+#else
 		mBrowser->RemoveEventHandlers();
 #endif
 
