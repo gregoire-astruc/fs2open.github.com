@@ -10,8 +10,9 @@
 namespace chromium
 {
 	class ClientImpl : public CefClient,
-							CefLifeSpanHandler,
-							CefRenderHandler
+						public CefLifeSpanHandler,
+						public CefRenderHandler,
+						public CefRequestHandler
 	{
 	private:
 		CefRefPtr<CefBrowser> mainBrowser;
@@ -56,6 +57,8 @@ namespace chromium
 
 		virtual CefRefPtr<CefLifeSpanHandler> GetLifeSpanHandler() override { return this; }
 
+		virtual CefRefPtr<CefRequestHandler> GetRequestHandler() override { return this; }
+
 		virtual bool OnProcessMessageReceived(CefRefPtr<CefBrowser> browser, CefProcessId source_process, CefRefPtr<CefProcessMessage> message) override;
 
 		// CefLifeSpanHandler interface
@@ -91,6 +94,13 @@ namespace chromium
 		CefRect GetPopupRectInWebView(const CefRect& original_rect);
 
 		void ClearPopupRects();
+
+		// CefRequestHandler interface
+	public:
+		virtual CefRefPtr<CefResourceHandler> GetResourceHandler(
+			CefRefPtr<CefBrowser> browser,
+			CefRefPtr<CefFrame> frame,
+			CefRefPtr<CefRequest> request);
 
 		IMPLEMENT_REFCOUNTING(ClientImpl);
 	};

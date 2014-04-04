@@ -2,8 +2,45 @@
 #include "bmpman/bmpman.h"
 #include "chromium/ClientImpl.h"
 #include "chromium/jsapi/jsapi.h"
+#include "cmdline/cmdline.h"
 #include "graphics/2d.h"
 #include "osapi/osapi.h"
+
+#include "include/cef_url.h"
+
+#include <SDL_syswm.h>
+
+namespace
+{
+	class ForbidEverythingHandler : public CefResourceHandler
+	{
+	public:
+		virtual bool ProcessRequest(CefRefPtr<CefRequest> request, CefRefPtr<CefCallback> callback)
+		{
+			callback->Continue();
+			return true;
+		}
+
+		virtual void GetResponseHeaders(CefRefPtr<CefResponse> response, int64& response_length, CefString& redirectUrl)
+		{
+			// Use forbidden HTTP code
+			response->SetStatus(403);
+			response_length = 0;
+		}
+
+		virtual bool ReadResponse(void* data_out, int bytes_to_read, int& bytes_read, CefRefPtr<CefCallback> callback)
+		{
+			bytes_read = 0;
+			return false;
+		}
+
+		virtual void Cancel()
+		{
+		}
+
+		IMPLEMENT_REFCOUNTING(ForbidEverythingHandler);
+	};
+}
 
 namespace chromium
 {
@@ -245,5 +282,29 @@ namespace chromium
 	{
 		mPopupRect.Set(0, 0, 0, 0);
 		mOriginalPopupRect.Set(0, 0, 0, 0);
+	}
+
+	CefRefPtr<CefResourceHandler> ClientImpl::GetResourceHandler(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFrame> frame,
+		CefRefPtr<CefRequest> request)
+	{
+		// If this arg is set, allow network access
+		if (Cmdline_chromium_network)
+		{
+			return nullptr;
+		}
+
+		CefURLParts parts;
+		CefParseURL(request->GetURL(), parts);
+
+		if (CefString(&parts.scheme) == "http" || CefString(&parts.scheme) == "https")
+		{
+			if (CefString(&parts.host) == "fso")
+			{
+				// Only allow http|s://fso/... URLs, block everything else
+				return nullptr;
+			}
+		}
+
+		return new ForbidEverythingHandler();
 	}
 }

@@ -416,6 +416,7 @@ cmdline_parm reparse_mainhall_arg("-reparse_mainhall", NULL); //Cmdline_reparse_
 cmdline_parm frame_profile_arg("-profile_frame_time", NULL); //Cmdline_frame_profile
 cmdline_parm frame_profile_write_file("-profile_write_file", NULL); // Cmdline_profile_write_file
 cmdline_parm no_unfocused_pause_arg("-no_unfocused_pause", NULL); //Cmdline_no_unfocus_pause
+cmdline_parm allow_network_arg("-allow_network", NULL); //Cmdline_no_unfocus_pause
 
 char *Cmdline_start_mission = NULL;
 int Cmdline_old_collision_sys = 0;
@@ -440,6 +441,7 @@ int Cmdline_reparse_mainhall = 0;
 bool Cmdline_frame_profile = false;
 bool Cmdline_profile_write_file = false;
 bool Cmdline_no_unfocus_pause = false;
+bool Cmdline_chromium_network = false;
 
 // Other
 cmdline_parm get_flags_arg("-get_flags", NULL);
@@ -1585,6 +1587,11 @@ bool SetCmdlineParams()
 	if (no_unfocused_pause_arg.found())
 	{
 		Cmdline_no_unfocus_pause = true;
+	}
+
+	if (allow_network_arg.found())
+	{
+		Cmdline_chromium_network = true;
 	}
 
 	//Deprecated flags - CommanderDJ

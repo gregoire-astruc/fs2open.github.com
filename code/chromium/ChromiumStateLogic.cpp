@@ -27,7 +27,7 @@ namespace chromium
 		int width, height;
 		SDL_GetWindowSize(os_get_window(), &width, &height);
 
-		mBrowser = Browser::CreateOffScreenBrowser(width, height, true);
+		mBrowser = Browser::CreateOffScreenBrowser(width, height, false);
 #endif
 	}
 
@@ -62,7 +62,7 @@ namespace chromium
 #ifdef USE_FULLSCREEN_BORWSER
 		os_sleep(5);
 #else
-		io::mouse::CursorManager::get()->doFrame();
+		io::mouse::CursorManager::doFrame();
 
 		std::clock_t now = std::clock();
 
