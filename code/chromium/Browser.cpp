@@ -259,25 +259,24 @@ namespace chromium
 	{
 		Assertion(mClient != nullptr, "Can't create browser from default constructed object!");
 
-		SDL_SysWMinfo wmInfo;
-		SDL_VERSION(&wmInfo.version); // initialize info structure with SDL version info
-
-		if (!SDL_GetWindowWMInfo(os_get_window(), &wmInfo))
-		{
-			// call failed
-			mprintf(("Couldn't get window information: %s\n", SDL_GetError()));
-			return false;
-		}
-
 		CefWindowInfo info;
 
 		if (mOffscreen)
 		{
-			info.SetAsOffScreen(wmInfo.info.win.window);
-			info.SetTransparentPainting(TRUE);
+			info.SetAsOffScreen(nullptr);
 		}
 		else
 		{
+			SDL_SysWMinfo wmInfo;
+			SDL_VERSION(&wmInfo.version); // initialize info structure with SDL version info
+
+			if (!SDL_GetWindowWMInfo(os_get_window(), &wmInfo))
+			{
+				// call failed
+				mprintf(("Couldn't get window information: %s\n", SDL_GetError()));
+				return false;
+			}
+
 			CreateBrowserWindow(wmInfo.info.win.window);
 
 			RECT rect;
@@ -285,6 +284,8 @@ namespace chromium
 
 			info.SetAsChild(mBrowserAreaWindow, rect);
 		}
+
+		info.SetTransparentPainting(mTransparent);
 
 		CefBrowserSettings settings;
 		settings.java = STATE_DISABLED;
@@ -365,7 +366,15 @@ namespace chromium
 		}
 	}
 
-	shared_ptr<Browser> Browser::CreateOffScreenBrowser(size_t width, size_t height)
+	void Browser::LoadURL(const CefString& string)
+	{
+		if (GetClient()->getMainBrowser().get())
+		{
+			GetClient()->getMainBrowser()->GetMainFrame()->LoadURL(string);
+		}
+	}
+
+	shared_ptr<Browser> Browser::CreateOffScreenBrowser(size_t width, size_t height, bool transparent)
 	{
 		if (!chromium::isInited())
 		{
@@ -375,6 +384,7 @@ namespace chromium
 
 		shared_ptr<Browser> browser = shared_ptr<Browser>(new Browser());
 		browser->mOffscreen = true;
+		browser->mTransparent = transparent;
 
 		browser->mClient = new ClientImpl(static_cast<int>(width), static_cast<int>(height));
 
@@ -392,6 +402,7 @@ namespace chromium
 
 		shared_ptr<Browser> browser = shared_ptr<Browser>(new Browser());
 		browser->mOffscreen = false;
+		browser->mTransparent = true;
 
 		browser->mClient = new ClientImpl();
 
