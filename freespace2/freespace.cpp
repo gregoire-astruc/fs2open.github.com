@@ -5511,11 +5511,6 @@ void game_leave_state(GameState old_state, GameState new_state)
 	}
 	*/
 
-	if(Script_system.IsConditionOverride(CHA_ONSTATEEND)) {
-		Script_system.RunCondition(CHA_ONSTATEEND);
-		return;
-	}
-
 	//WMC - Clear scripting bitmaps
 	Script_system.UnloadImages();
 
@@ -5876,9 +5871,6 @@ void game_leave_state(GameState old_state, GameState new_state)
 			scripting_state_close();
 			break;
 	}
-
-	//WMC - Now run scripting stuff
-	Script_system.RunCondition(CHA_ONSTATEEND);
 }
 
 // variable used for automatic netgame starting/joining
@@ -5899,10 +5891,6 @@ void game_enter_state(GameState old_state, GameState new_state)
 		return;
 	}
 	*/
-	if(Script_system.IsConditionOverride(CHA_ONSTATESTART)) {
-		Script_system.RunCondition(CHA_ONSTATESTART);
-		return;
-	}
 
 	switch (new_state) {
 		case GS_STATE_MAIN_MENU:				
@@ -6403,9 +6391,6 @@ void mouse_force_pos(int x, int y);
 			scripting_state_init();
 			break;
 	} // end switch
-
-	//WMC - now do user scripting stuff
-	Script_system.RunCondition(CHA_ONSTATESTART);
 }
 
 // do stuff that may need to be done regardless of state

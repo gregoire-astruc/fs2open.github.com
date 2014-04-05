@@ -11762,25 +11762,6 @@ ADE_FUNC(getBrowserBitmap, l_Browser, NULL, "Gets the bitmap this browser draws 
 	return ade_set_args(L, "o", l_Texture.Set(browser->GetClient()->getBrowserBitmap()));
 }
 
-ADE_FUNC(addCallback, l_Browser, "string name", "Adds a callback name which can be usedto execute javascript, see the wiki for more informations.<br>"
-	"Must be called before create()", "boolean", "true if successful, false otherwise")
-{
-	using namespace chromium;
-
-	browser_h *handle = NULL;
-	char* name = NULL;
-
-	if (!ade_get_args(L, "os", l_Browser.Get(&handle), &name))
-		return ADE_RETURN_FALSE;
-
-	if (handle == NULL || !handle->isValid() || name == NULL)
-		return ADE_RETURN_FALSE;
-
-	addCallback(name);
-
-	return ADE_RETURN_TRUE;
-}
-
 ADE_FUNC(executeCallback, l_Browser, "string callback[, table argument]", "Executes a javascript callback and sends the given data with it.", "boolean", "true if successfull, false otherwise")
 {
 	using namespace chromium;
@@ -11801,23 +11782,45 @@ ADE_FUNC(executeCallback, l_Browser, "string callback[, table argument]", "Execu
 	return ADE_RETURN_TRUE;
 }
 
-ADE_FUNC(addAPIFunction, l_Browser, "string name, function callback", "Adds a function that can be called from JavaScript.<br>"
-	"Must be called before create()", "boolean", "true if successful, false otherwise")
+ADE_FUNC(loadURL, l_Browser, "string url", "Loads the specfied URL.", "boolean", "true if successful, false otherwise")
 {
 	using namespace chromium;
-	using namespace luacpp;
 
 	browser_h *handle = NULL;
-	char* name = NULL;
-	LuaFunction func;
+	char* url = NULL;
 
-	if (!ade_get_args(L, "osv", l_Browser.Get(&handle), &name, &func))
+	if (!ade_get_args(L, "os", l_Browser.Get(&handle), &url))
 		return ADE_RETURN_FALSE;
 
-	if (handle == NULL || !handle->isValid() || name == NULL)
+	if (handle == NULL || !handle->isValid() || url == NULL)
 		return ADE_RETURN_FALSE;
 
-	lua::util::addApiFunction(name, func);
+	handle->getBrowser()->LoadURL(url);
+
+	return ADE_RETURN_TRUE;
+}
+
+ADE_FUNC(registerEventHandlers, l_Browser, "boolean reagister = true", "Registers event handlers for handling mouse and keyboad input", "boolean", "true if successful, false otherwise")
+{
+	using namespace chromium;
+
+	browser_h *handle = NULL;
+	bool reg = true;
+
+	if (!ade_get_args(L, "ob", l_Browser.Get(&handle), &reg))
+		return ADE_RETURN_FALSE;
+
+	if (handle == NULL || !handle->isValid())
+		return ADE_RETURN_FALSE;
+
+	if (reg)
+	{
+		handle->getBrowser()->RegisterEventHandlers();
+	}
+	else
+	{
+		handle->getBrowser()->RemoveEventHandlers();
+	}
 
 	return ADE_RETURN_TRUE;
 }
@@ -12187,19 +12190,6 @@ ADE_FUNC(setTips, l_Base, "True or false", "Sets whether to display tips of the 
 		Player->tips = 0;
 
 	return ADE_RETURN_NIL;
-}
-
-ADE_FUNC(createBrowser, l_Base, "number width, number height", "Creates a new browser", "browser", "browser handle or invalid handle on failure")
-{
-	int width;
-	int height;
-
-	if (!ade_get_args(L, "ii", &width, &height))
-		return ade_set_error(L, "o", l_Browser.Set(new browser_h()));
-
-	boost::shared_ptr<chromium::Browser> browser = chromium::Browser::CreateOffScreenBrowser(width, height);
-
-	return ade_set_error(L, "o", l_Browser.Set(new browser_h(browser)));
 }
 
 ADE_FUNC(postGameEvent, l_Base, "gameevent Event", "Sets current game event. Note that you can crash FreeSpace 2 by posting an event at an improper time, so test extensively if you use it.", "boolean", "True if event was posted, false if passed event was invalid")
@@ -14918,6 +14908,61 @@ ADE_FUNC(addBit, l_BitOps, "number, number (bit)", "Performs inclusive or (OR) o
 	return ade_set_args(L, "i", c);
 }
 
+//**********LIBRARY: Chromium
+ade_lib l_Chromium("chromium", NULL, "ch", "Chromium interface");
+
+ADE_FUNC(createBrowser, l_Chromium, "number width, number height[, boolean tranparent = true]", "Creates a new browser. If <tt>transparent</tt> is <b>true</b> the browser will render"
+	" transparent colors, if it's <b>false</b> the background is white.", "browser", "browser handle or invalid handle on failure")
+{
+	int width;
+	int height;
+	bool transparent = true;
+
+	if (!ade_get_args(L, "ii|b", &width, &height, &transparent))
+		return ade_set_error(L, "o", l_Browser.Set(new browser_h()));
+
+	boost::shared_ptr<chromium::Browser> browser = chromium::Browser::CreateOffScreenBrowser(width, height, transparent);
+
+	return ade_set_error(L, "o", l_Browser.Set(new browser_h(browser)));
+}
+
+ADE_FUNC(addCallback, l_Chromium, "string name", "Adds a callback name which can be used to execute javascript, see the wiki for more informations.<br>"
+	"Must be called before creating the browser which wants to use it.", "boolean", "true if successful, false otherwise")
+{
+	using namespace chromium;
+
+	char* name = NULL;
+
+	if (!ade_get_args(L, "s", &name))
+		return ADE_RETURN_FALSE;
+
+	if (name == NULL)
+		return ADE_RETURN_FALSE;
+
+	addCallback(name);
+
+	return ADE_RETURN_TRUE;
+}
+
+ADE_FUNC(addAPIFunction, l_Chromium, "string name, function callback", "Adds a function that can be called from JavaScript.<br>"
+	"Must be called before creating the browser which wants to use it.", "boolean", "true if successful, false otherwise")
+{
+	using namespace chromium;
+	using namespace luacpp;
+
+	char* name = NULL;
+	LuaFunction func;
+
+	if (!ade_get_args(L, "sv", &name, &func))
+		return ADE_RETURN_FALSE;
+
+	if (name == NULL)
+		return ADE_RETURN_FALSE;
+
+	lua::util::addApiFunction(name, func);
+
+	return ADE_RETURN_TRUE;
+}
 
 //**********LIBRARY: Tables
 ade_lib l_Tables("Tables", NULL, "tb", "Tables library");

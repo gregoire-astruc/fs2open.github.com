@@ -198,6 +198,14 @@ namespace lua
 
 				LuaValueList returnVals = mFunction({ argument });
 
+				if (returnVals.size() < 1)
+				{
+					LuaError(mFunction.luaState, "Callback function must return at least one boolean value!.");
+
+					returnArgs->SetString(returnIndex, "Lua callback error!");
+					return false;
+				}
+
 				if (!returnVals[0].is(ValueType::BOOLEAN))
 				{
 					LuaError(mFunction.luaState, "Callback function must return a boolean as first return value! Got type '%s'.",
@@ -209,7 +217,14 @@ namespace lua
 
 				bool success = returnVals[0].getValue<bool>();
 
-				fromLuaValue(mFunction.luaState, returnIndex, returnArgs, returnVals[1]);
+				if (returnVals.size() < 2)
+				{
+					returnArgs->SetNull(returnIndex);
+				}
+				else
+				{
+					fromLuaValue(mFunction.luaState, returnIndex, returnArgs, returnVals[1]);
+				}
 
 				return success;
 			}

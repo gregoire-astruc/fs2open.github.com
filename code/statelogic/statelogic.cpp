@@ -3,6 +3,7 @@
 
 #include "freespace.h"
 #include "parse/parselo.h"
+#include "parse/scripting.h"
 
 #include <boost/unordered_map.hpp>
 
@@ -91,6 +92,12 @@ namespace statelogic
 
 	void enterState(GameState old_state, GameState new_state)
 	{
+		if (Script_system.IsConditionOverride(CHA_ONSTATESTART))
+		{
+			Script_system.RunCondition(CHA_ONSTATESTART);
+			return;
+		}
+
 		if (hasCustomLogic(new_state))
 		{
 			gameLogicObjects[new_state]->enterState(old_state);
@@ -99,6 +106,9 @@ namespace statelogic
 		{
 			game_enter_state(old_state, new_state);
 		}
+
+		//WMC - now do user scripting stuff
+		Script_system.RunCondition(CHA_ONSTATESTART);
 	}
 
 	void doFrame(GameState state)
@@ -115,6 +125,12 @@ namespace statelogic
 
 	void leaveState(GameState old_state, GameState new_state)
 	{
+		if (Script_system.IsConditionOverride(CHA_ONSTATEEND))
+		{
+			Script_system.RunCondition(CHA_ONSTATEEND);
+			return;
+		}
+
 		if (hasCustomLogic(old_state))
 		{
 			gameLogicObjects[old_state]->leaveState(new_state);
@@ -123,6 +139,9 @@ namespace statelogic
 		{
 			game_leave_state(old_state, new_state);
 		}
+
+		//WMC - Now run scripting stuff
+		Script_system.RunCondition(CHA_ONSTATEEND);
 	}
 
 	void setStateLogic(GameState state, StateLogic* logic)
