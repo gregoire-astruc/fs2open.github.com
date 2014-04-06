@@ -45,6 +45,8 @@ namespace chromium
 
 		void executeCallback(const CefString& callbackName, CefRefPtr<CefDictionaryValue> values);
 
+		void resize(int width, int height);
+
 		bool forceClose();
 
 		void setFocused(bool focused);

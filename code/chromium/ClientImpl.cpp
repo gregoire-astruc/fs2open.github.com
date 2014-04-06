@@ -54,11 +54,7 @@ namespace chromium
 		: width(widthIn), height(heightIn), bitmapData(nullptr), browserBitmapHandle(-1),
 		mPaintingPopup(false)
 	{
-		// 32-bit per pixel ==> 4 Bytes for each pixel
-		bitmapData = vm_malloc(width * height * 4);
-		memset(bitmapData, 0, width * height * 4);
-
-		browserBitmapHandle = bm_create(32, width, height, bitmapData, BMP_TEX_XPARENT);
+		resize(widthIn, heightIn);
 	}
 
 	ClientImpl::~ClientImpl()
@@ -98,6 +94,29 @@ namespace chromium
 		argumentList->SetDictionary(1, values);
 
 		mainBrowser->SendProcessMessage(PID_RENDERER, message);
+	}
+
+	void ClientImpl::resize(int width, int height)
+	{
+		if (browserBitmapHandle >= 0)
+		{
+			bm_release(browserBitmapHandle);
+			browserBitmapHandle = -1;
+		}
+
+		if (bitmapData != nullptr)
+		{
+			vm_free(bitmapData);
+			bitmapData = nullptr;
+		}
+
+		// 32-bit per pixel ==> 4 Bytes for each pixel
+		bitmapData = vm_malloc(width * height * 4);
+		memset(bitmapData, 0, width * height * 4);
+
+		browserBitmapHandle = bm_create(32, width, height, bitmapData, BMP_TEX_XPARENT);
+
+		getMainBrowser()->GetHost()->WasResized();
 	}
 
 	bool ClientImpl::forceClose()

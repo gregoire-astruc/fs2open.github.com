@@ -54,6 +54,8 @@ namespace chromium
 
 		void LoadURL(const CefString& string);
 
+		void Resize(size_t width, size_t height);
+
 	public:
 		static boost::shared_ptr<Browser> CreateOffScreenBrowser(size_t width, size_t height, bool transparent = true);
 

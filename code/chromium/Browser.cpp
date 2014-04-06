@@ -374,6 +374,11 @@ namespace chromium
 		}
 	}
 
+	void Browser::Resize(size_t width, size_t height)
+	{
+		GetClient()->resize(static_cast<int>(width), static_cast<int>(height));
+	}
+
 	shared_ptr<Browser> Browser::CreateOffScreenBrowser(size_t width, size_t height, bool transparent)
 	{
 		if (!chromium::isInited())
