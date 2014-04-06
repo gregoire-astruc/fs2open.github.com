@@ -6930,6 +6930,8 @@ int game_main(int argc, char *argv[])
 
 	game_shutdown();
 
+	game_shutdown();
+
 	return 0;
 }
 
