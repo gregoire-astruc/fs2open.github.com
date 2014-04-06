@@ -116,7 +116,10 @@ namespace chromium
 
 		browserBitmapHandle = bm_create(32, width, height, bitmapData, BMP_TEX_XPARENT);
 
-		getMainBrowser()->GetHost()->WasResized();
+		if (getMainBrowser() != nullptr)
+		{
+			getMainBrowser()->GetHost()->WasResized();
+		}
 	}
 
 	bool ClientImpl::forceClose()
