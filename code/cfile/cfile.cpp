@@ -892,6 +892,9 @@ namespace cfile
 			dir = std::ios::beg;
 		}
 
+		// Clear error bits as the following operation can fail if we don't do that
+		fp->stream.clear();
+
 		if (fp->mode & MODE_WRITE)
 			fp->stream.seekg(offset, dir);
 
