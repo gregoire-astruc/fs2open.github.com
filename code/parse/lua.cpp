@@ -60,6 +60,8 @@
 #include <LuaCpp/LuaFunction.hpp>
 #include <LuaCpp/LuaTable.hpp>
 
+#include <boost/algorithm/string.hpp>
+
 //*************************Lua globals*************************
 SCP_vector<ade_table_entry> Ade_table_entries;
 
@@ -12391,6 +12393,59 @@ ADE_FUNC(renameFile, l_CFile, "string CurrentFilename, string NewFilename, strin
 		return ade_set_error(L, "b", false);
 
 	return ade_set_args(L, "b", cfile::rename(n_filename, n_new_filename, type) != 0);
+}
+
+ADE_FUNC(listFiles, l_CFile, "string directory[, string sortMode = name]", "Lists the files in the given directory, does not include sub-directries. sortMode can be 'name', 'time', 'none' or 'reverse'.", "table", "A list of file names")
+{
+	using namespace luacpp;
+	using namespace cfile;
+
+	const char* directory = NULL;
+	const char* sortMode = "name";
+
+	LuaTable table = LuaTable::create(L);
+
+	if (!ade_get_args(L, "s|s", &directory, &sortMode))
+		return ade_set_error(L, "t", &table);
+
+	if (directory == NULL || sortMode == NULL)
+		return ade_set_error(L, "t", &table);
+
+	SortMode mode = SORT_NAME;
+
+	if (boost::iequals(sortMode, "name"))
+	{
+		mode = SORT_NAME;
+	}
+	else if (boost::iequals(sortMode, "time"))
+	{
+		mode = SORT_TIME;
+	}
+	else if (boost::iequals(sortMode, "none"))
+	{
+		mode = SORT_NONE;
+	}
+	else if (boost::iequals(sortMode, "reverse"))
+	{
+		mode = SORT_REVERSE;
+	}
+	else
+	{
+		LuaError(L, "Unrecognized sort mode '%s', defaulting to name.", &sortMode);
+		mode = SORT_NAME;
+	}
+
+	SCP_vector<SCP_string> fileNames;
+	listFiles(fileNames, directory, "", mode);
+
+	size_t index = 1;
+	for (auto& name : fileNames)
+	{
+		table.addValue(index, name.c_str());
+		++index;
+	}
+
+	return ade_set_args(L, "t", &table);
 }
 
 //**********LIBRARY: Controls library
