@@ -293,48 +293,6 @@ namespace cfile
 		}
 	}
 
-	void initJavaScriptAPI()
-	{
-		chromium::jsapi::addFunction("cfile_listFiles", [](const CefString&, CefRefPtr<CefListValue> args, int index, CefRefPtr<CefListValue> outArgs)
-		{
-			CefRefPtr<CefDictionaryValue> argumentDict = args->GetDictionary(0);
-
-			CefString dir = argumentDict->GetString("dir");
-			SortMode sortMode = SORT_NONE;
-
-			if (argumentDict->HasKey("sort"))
-			{
-				CefString sort = argumentDict->GetString("sort");
-
-				if (iequals(sort.c_str(), "time"))
-				{
-					sortMode = SORT_TIME;
-				}
-				else if (iequals(sort.c_str(), "name"))
-				{
-					sortMode = SORT_NAME;
-				}
-			}
-
-			SCP_vector<SCP_string> fileNames;
-			listFiles(fileNames, dir.ToString().c_str(), "", sortMode);
-
-			CefRefPtr<CefListValue> list = CefListValue::Create();
-
-			size_t size = fileNames.size();
-			list->SetSize(size);
-
-			for (size_t i = 0; i < size; ++i)
-			{
-				list->SetString(i, fileNames[i].c_str());
-			}
-
-			outArgs->SetList(index, list);
-
-			return true;
-		});
-	}
-
 	bool init(const std::wstring& cdromDirStr)
 	{
 		if (inited)
@@ -375,8 +333,6 @@ namespace cfile
 		cfilePool.reset(new boost::object_pool<FileHandle>());
 
 		checksum::crc::init();
-
-		initJavaScriptAPI();
 
 		return true;
 	}
