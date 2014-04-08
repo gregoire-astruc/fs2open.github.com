@@ -219,6 +219,13 @@ namespace cfile
 
 	namespace checksum
 	{
+		SCP_string packfile(const SCP_string& path);
+
+		namespace md5
+		{
+			SCP_string packfile(const SCP_string& path);
+		}
+
 		namespace crc
 		{
 			// get the 2 byte checksum of the passed filename - return 0 if operation failed, 1 if succeeded

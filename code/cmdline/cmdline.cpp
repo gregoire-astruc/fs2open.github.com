@@ -168,6 +168,7 @@ Flag exe_params[] =
 	{ "-mipmap",			"Enable mipmapping",						true,	0,					EASY_DEFAULT_MEM,	"Troubleshoot",	"http://www.hard-light.net/wiki/index.php/Command-Line_Reference#-mipmap", },
 	{ "-use_gldrawelements","Don't use glDrawRangeElements",			true,	0,					EASY_DEFAULT,		"Troubleshoot",	"", },
 	{ "-old_collision",		"Use old collision detection system",		true,	0,					EASY_DEFAULT,		"Troubleshoot",	"", },
+	{ "-use_md5",			"Use MD5 instead of CRC (slower!)",			true,	0,					EASY_DEFAULT,		"Troubleshoot", "", },
 
 	{ "-ingame_join",		"Allow in-game joining",					true,	0,					EASY_DEFAULT,		"Experimental",	"http://www.hard-light.net/wiki/index.php/Command-Line_Reference#-ingame_join", },
 	{ "-voicer",			"Enable voice recognition",					true,	0,					EASY_DEFAULT,		"Experimental",	"http://www.hard-light.net/wiki/index.php/Command-Line_Reference#-voicer", },
@@ -375,6 +376,7 @@ cmdline_parm no3dsound_arg("-no_3d_sound", NULL);		// Cmdline_no_3d_sound - Disa
 cmdline_parm no_glsl_models_arg("-disable_glsl_model", NULL); // Cmdline_no_glsl_model_rendering -- switches model rendering to fixed pipeline
 cmdline_parm no_drawrangeelements("-use_gldrawelements", NULL); // Cmdline_drawelements -- Uses glDrawElements instead of glDrawRangeElements
 cmdline_parm keyboard_layout("-keyboard_layout", NULL);
+cmdline_parm use_md5_param("-use_md5", NULL);
 
 int Cmdline_load_all_weapons = 0;
 int Cmdline_nohtl = 0;
@@ -390,6 +392,7 @@ int Cmdline_no_3d_sound = 0;
 int Cmdline_no_glsl_model_rendering = 0;
 int Cmdline_drawelements = 0;
 char* Cmdline_keyboard_layout = NULL;
+bool Cmdline_use_md5 = false;
 
 // Developer/Testing related
 cmdline_parm start_mission_arg("-start_mission", NULL);	// Cmdline_start_mission
@@ -1467,6 +1470,11 @@ bool SetCmdlineParams()
 	if( keyboard_layout.found())
 	{
 		Cmdline_keyboard_layout = keyboard_layout.str();
+	}
+
+	if (use_md5_param.found())
+	{
+		Cmdline_use_md5 = true;
 	}
 
 	if ( snd_preload_arg.found() )

@@ -5,7 +5,10 @@
  * or otherwise commercially exploit the source or things you created based on the 
  * source.
  *
-*/ 
+*/
+
+#include <iomanip>
+#include <numeric>
 
 #include "globalincs/pstypes.h"
 
@@ -38,6 +41,8 @@
 #include <boost/ref.hpp>
 
 #include <unzip.h>
+
+#include <md5.h>
 
 namespace cfile
 {
@@ -184,7 +189,8 @@ namespace cfile
 				// Standard VPs
 				try
 				{
-					mprintf(("Found root pack '%s' ... \n", entry.path().string().c_str()));
+					mprintf(("Found root pack '%s' ... with a checksum of %s\n", 
+						entry.path().string().c_str(), checksum::packfile(entry.path().string().c_str()).c_str() ));
 
 					VPFileSystem* system = new VPFileSystem(entry.path(), "");
 					fileSystems.push_back(system);
@@ -199,7 +205,8 @@ namespace cfile
 				// 7-zip archive
 				try
 				{
-					mprintf(("Found root pack '%s' ... \n", entry.path().string().c_str()));
+					mprintf(("Found root pack '%s' ... with a checksum of %s\n",
+						entry.path().string().c_str(), checksum::packfile(entry.path().string().c_str())));
 
 					sevenzip::SevenZipFileSystem* system = new sevenzip::SevenZipFileSystem(entry.path());
 					fileSystems.push_back(system);
@@ -214,7 +221,8 @@ namespace cfile
 				// Zip-archive
 				try
 				{
-					mprintf(("Found root pack '%s' ... \n", entry.path().string().c_str()));
+					mprintf(("Found root pack '%s' ... with a checksum of %s\n",
+						entry.path().string().c_str(), checksum::packfile(entry.path().string().c_str())));
 
 					ZipFileSystem* system = new ZipFileSystem(entry.path());
 					fileSystems.push_back(system);
@@ -286,6 +294,40 @@ namespace cfile
 		}
 	}
 
+	size_t countFiles(IFileSystem* fs)
+	{
+		std::vector<FileEntryPointer> entries;
+
+		size_t count = 0;
+
+		// Start with 2 here to skip the root path
+		for (int i = 2; i < MAX_PATH_TYPES; ++i)
+		{
+			const char* path = Pathtypes[i];
+
+			FileEntryPointer pointer = fs->getRootEntry()->getChild(path);
+
+			if (pointer)
+			{
+				entries.clear();
+				pointer->listChildren(entries);
+
+				count += std::count_if(entries.begin(), entries.end(), [](FileEntryPointer p) { return p->getType() == vfspp::FILE; });
+			}
+		}
+
+		return count;
+	}
+
+	void printFilesCount(const SCP_vector<IFileSystem*>& fileSystems)
+	{
+		for (auto fs : fileSystems)
+		{
+			auto count = countFiles(fs);
+			mprintf(("Searching root %s ... %d files\n", fs->getName().c_str(), count));
+		}
+	}
+
 	bool init(const char* cdromDirStr)
 	{
 		if (inited)
@@ -294,6 +336,8 @@ namespace cfile
 		}
 
 		inited = true;
+
+		checksum::crc::init();
 
 		SCP_vector<fs::path> rootDirs;
 		searchRootDirectories(rootDirs, cdromDirStr);
@@ -308,6 +352,10 @@ namespace cfile
 
 		SCP_vector<IFileSystem*> fileSystems;
 		initializeFileSystems(fileSystems, rootDirs);
+
+#ifndef NDEBUG
+		printFilesCount(fileSystems);
+#endif
 
 		// initialize encryption
 		encrypt_init();
@@ -324,8 +372,6 @@ namespace cfile
 		fileSystem->populateEntries(1);
 
 		cfilePool.reset(new boost::object_pool<FileHandle>());
-
-		checksum::crc::init();
 
 		return true;
 	}
@@ -1264,6 +1310,69 @@ namespace cfile
 
 	namespace checksum
 	{
+		SCP_string packfile(const SCP_string& path)
+		{
+			if (Cmdline_use_md5)
+			{
+				return md5::packfile(path);
+			}
+			else
+			{
+				uint chksum = 0;
+				cfile::checksum::crc::pack(path.c_str(), &chksum);
+
+				SCP_stringstream stream;
+				stream << "0x" << std::setw(8) << std::hex << chksum;
+
+				return stream.str();
+			}
+		}
+
+		namespace md5
+		{
+			SCP_string packfile(const SCP_string& path)
+			{
+				fs::path filePath(path.c_str());
+
+				fs::ifstream stream(filePath, std::ios::binary);
+
+				if (!stream.good())
+				{
+					mprintf(("Failed to open file for checksum generation: %s\n", path.c_str()));
+					return "";
+				}
+
+				MD5 md5;
+
+				const size_t BUFFER_SIZE = 4096;
+				char buffer[BUFFER_SIZE];
+
+				std::streamsize readCount;
+
+				do
+				{
+					stream.read(buffer, BUFFER_SIZE);
+
+					if (stream.fail() && !stream.eof())
+					{
+						mprintf(("Failed to read from file for checksum generation: %s\n", path.c_str()));
+						return "";
+					}
+
+					readCount = stream.gcount();
+
+					if (readCount > 0)
+					{
+						md5.update(buffer, static_cast<MD5::size_type>(readCount));
+					}
+
+				} while (readCount > 0 && !stream.eof());
+
+				md5.finalize();
+				return md5.hexdigest().c_str();
+			}
+		}
+
 		namespace crc
 		{
 			// 16 and 32 bit checksum stuff ----------------------------------------------------------
@@ -1387,7 +1496,7 @@ namespace cfile
 			}
 
 			// get the chksum of a pack file (VP)
-			int cf_chksum_pack(const char *filename, uint *chk_long, bool full)
+			int pack(const char *filename, uint *chk_long, bool full)
 			{
 				const int safe_size = 2097152; // 2 Meg
 				const int header_offset = 32;  // skip 32bytes for header (header is currently smaller than this though)
