@@ -185,7 +185,7 @@ namespace cfile
 	{
 		if (entry.path().has_extension())
 		{
-			if (boost::iequals(entry.path().extension().string(), ".vp"))
+			if (boost::iequals(entry.path().extension().c_str(), ".vp"))
 			{
 				// Standard VPs
 				try
@@ -201,7 +201,7 @@ namespace cfile
 					Error(LOCATION, "Error while reading file %s: %s\n", entry.path().filename().string().c_str(), e.what());
 				}
 			}
-			else if (boost::iequals(entry.path().extension().string(), ".vp7"))
+			else if (boost::iequals(entry.path().extension().c_str(), ".vp7"))
 			{
 				// 7-zip archive
 				try
@@ -217,7 +217,7 @@ namespace cfile
 					Error(LOCATION, "Error while reading file %s: %s\n", entry.path().filename().string().c_str(), e.what());
 				}
 			}
-			else if (boost::iequals(entry.path().extension().string(), ".vpz"))
+			else if (boost::iequals(entry.path().extension().c_str(), ".vpz"))
 			{
 				// Zip-archive
 				try
