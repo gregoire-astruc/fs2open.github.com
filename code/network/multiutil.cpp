@@ -22,6 +22,8 @@
 #endif
 #include <ctype.h>
 
+#include <iostream>
+
 #include "globalincs/pstypes.h"
 #include "network/multiutil.h"
 #include "globalincs/linklist.h"

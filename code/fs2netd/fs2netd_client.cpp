@@ -7,7 +7,8 @@
  *
 */
 
-
+#include <iostream>
+#include <algorithm>
 
 #include "globalincs/pstypes.h"
 #include "fs2netd/fs2netd_client.h"
@@ -1695,7 +1696,7 @@ void fs2netd_spew_table_checksums(char *outfile)
 		return;
 	}
 
-	std::ostream& stream = cfile::getStream(handle);
+	std::iostream& stream = cfile::getStream(handle);
 
 	p = Cmdline_spew_table_crcs;
 

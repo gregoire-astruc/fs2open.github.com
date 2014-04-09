@@ -22,6 +22,8 @@
 #define IAM_64BIT 1
 #endif
 
+#include "globalincs/scp_defines.h"
+
 #include "windows_stub/config.h"
 
 #include "SDL.h"

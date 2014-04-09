@@ -10,6 +10,19 @@
 #include <iomanip>
 #include <numeric>
 
+#include <boost/filesystem.hpp>
+
+#include <boost/smart_ptr.hpp>
+#include <boost/pool/object_pool.hpp>
+#include <boost/iostreams/stream_buffer.hpp>
+#include <boost/iostreams/device/mapped_file.hpp>
+
+#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string_regex.hpp>
+
+#include <boost/bind.hpp>
+#include <boost/ref.hpp>
+
 #include "globalincs/pstypes.h"
 
 #include "cfile/cfile.h"
@@ -26,19 +39,6 @@
 #include <VFSPP/merged.hpp>
 #include <VFSPP/system.hpp>
 #include <VFSPP/7zip.hpp>
-
-#include <boost/filesystem.hpp>
-
-#include <boost/smart_ptr.hpp>
-#include <boost/pool/object_pool.hpp>
-#include <boost/iostreams/stream_buffer.hpp>
-#include <boost/iostreams/device/mapped_file.hpp>
-
-#include <boost/algorithm/string.hpp>
-#include <boost/algorithm/string_regex.hpp>
-
-#include <boost/bind.hpp>
-#include <boost/ref.hpp>
 
 #include <unzip.h>
 
@@ -57,11 +57,11 @@ namespace cfile
 	{
 		boost::shared_ptr<std::streambuf> buffer;
 
+		std::iostream stream;
+
 		FileEntryPointer entry;
 
 		int mode;
-
-		std::iostream stream;
 
 		size_t maxReadLength;
 		std::streampos readLengthStart;
@@ -93,49 +93,49 @@ namespace cfile
 	//
 	const char* Pathtypes[MAX_PATH_TYPES]  = {
 		//Path
-		{ NULL },
+		NULL,
 		// Root must be index 1!!
-		{ "" },
-		{ "data" },
-		{ "data/maps" },
-		{ "data/text" },
-		{ "data/models" },
-		{ "data/tables" },
-		{ "data/sounds" },
-		{ "data/sounds/8b22k" },
-		{ "data/sounds/16b11k" },
-		{ "data/voice" },
-		{ "data/voice/briefing" },
-		{ "data/voice/command_briefings" },
-		{ "data/voice/debriefing" },
-		{ "data/voice/personas" },
-		{ "data/voice/special" },
-		{ "data/voice/training" },
-		{ "data/music" },
-		{ "data/movies" },
-		{ "data/interface" },
-		{ "data/fonts" },
-		{ "data/effects" },
-		{ "data/hud" },
-		{ "data/players" },
-		{ "data/players/images" },
-		{ "data/players/squads" },
-		{ "data/players/single" },
-		{ "data/players/single/inferno" },
-		{ "data/players/multi" },
-		{ "data/players/multi/inferno" },
-		{ "data/cache" },
-		{ "data/multidata" },
-		{ "data/missions" },
-		{ "data/config" },
-		{ "data/demos" },
-		{ "data/cbanims" },
-		{ "data/intelanims" },
-		{ "data/scripts" },
-		{ "data/fiction" },
+		"",
+		"data",
+		"data/maps",
+		"data/text",
+		"data/models",
+		"data/tables",
+		"data/sounds",
+		"data/sounds/8b22k",
+		"data/sounds/16b11k",
+		"data/voice",
+		"data/voice/briefing",
+		"data/voice/command_briefings",
+		"data/voice/debriefing",
+		"data/voice/personas",
+		"data/voice/special",
+		"data/voice/training",
+		"data/music",
+		"data/movies",
+		"data/interface",
+		"data/fonts",
+		"data/effects",
+		"data/hud",
+		"data/players",
+		"data/players/images",
+		"data/players/squads",
+		"data/players/single",
+		"data/players/single/inferno",
+		"data/players/multi",
+		"data/players/multi/inferno",
+		"data/cache",
+		"data/multidata",
+		"data/missions",
+		"data/config",
+		"data/demos",
+		"data/cbanims",
+		"data/intelanims",
+		"data/scripts",
+		"data/fiction",
 	};
 
-	void addModDirs(SCP_vector<fs::path>& rootDirs, const fs::path& rootDir)
+	void addModDirs(SCP_vector<fs::path>& rootDirs, const fs::path& searchPath)
 	{
 		if (Cmdline_mod) {
 			const char* cur_pos;
@@ -143,7 +143,7 @@ namespace cfile
 			// stackable Mod support -- Kazan
 			for (cur_pos = Cmdline_mod; *cur_pos != '\0'; cur_pos += (strlen(cur_pos) + 1))
 			{
-				fs::path modRoot = rootDir / cur_pos;
+				fs::path modRoot = searchPath / cur_pos;
 
 				if (fs::exists(modRoot))
 				{
@@ -159,7 +159,7 @@ namespace cfile
 		rootDir = fs::current_path();
 
 #ifdef SCP_UNIX
-		userDir.assign(detect_home());
+		userDir = detect_home();
 		userDir /= Osreg_user_dir;
 #endif
 
@@ -205,8 +205,8 @@ namespace cfile
 				// 7-zip archive
 				try
 				{
-					mprintf(("Found root pack '%s' ... with a checksum of %s\n",
-						entry.path().string().c_str(), checksum::packfile(entry.path().string().c_str())));
+					mprintf(("Found root pack '%s' ... with a checksum of %s\n", 
+						entry.path().string().c_str(), checksum::packfile(entry.path().string().c_str()).c_str() ));
 
 					sevenzip::SevenZipFileSystem* system = new sevenzip::SevenZipFileSystem(entry.path());
 					fileSystems.push_back(system);
@@ -221,8 +221,8 @@ namespace cfile
 				// Zip-archive
 				try
 				{
-					mprintf(("Found root pack '%s' ... with a checksum of %s\n",
-						entry.path().string().c_str(), checksum::packfile(entry.path().string().c_str())));
+					mprintf(("Found root pack '%s' ... with a checksum of %s\n", 
+						entry.path().string().c_str(), checksum::packfile(entry.path().string().c_str()).c_str() ));
 
 					ZipFileSystem* system = new ZipFileSystem(entry.path());
 					fileSystems.push_back(system);
@@ -319,15 +319,6 @@ namespace cfile
 		return count;
 	}
 
-	void printFilesCount(const SCP_vector<IFileSystem*>& fileSystems)
-	{
-		for (auto fs : fileSystems)
-		{
-			auto count = countFiles(fs);
-			mprintf(("Searching root %s ... %d files\n", fs->getName().c_str(), count));
-		}
-	}
-
 	bool init(const char* cdromDirStr)
 	{
 		if (inited)
@@ -342,19 +333,14 @@ namespace cfile
 		SCP_vector<fs::path> rootDirs;
 		searchRootDirectories(rootDirs, cdromDirStr);
 
-#ifndef NDEBUG
-		// Print the roots we use in debug mode
-		for (const fs::path& path : rootDirs)
-		{
-			mprintf(("Found root %s... \n", path.string().c_str()));
-		}
-#endif
-
 		SCP_vector<IFileSystem*> fileSystems;
 		initializeFileSystems(fileSystems, rootDirs);
 
 #ifndef NDEBUG
-		printFilesCount(fileSystems);
+		for (auto fs : fileSystems)
+		{
+			mprintf(("Searching root %s ... %d files\n", fs->getName().c_str(), countFiles(fs)));
+		}
 #endif
 
 		// initialize encryption
@@ -1138,7 +1124,7 @@ namespace cfile
 			{
 				std::ostringstream os;
 
-				os << "Attempted to read " << (diff.seekpos() - handle->maxReadLength) << "-byte(s) beyond length limit";
+				os << "Attempted to read " << (diff - static_cast<std::streampos>(handle->maxReadLength)) << "-byte(s) beyond length limit";
 
 				throw MaxReadLengthException(os.str());
 			}

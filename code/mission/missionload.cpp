@@ -7,7 +7,7 @@
  *
 */ 
 
-
+#include <algorithm>
 
 #include "mission/missionload.h"
 #include "mission/missionparse.h"    

@@ -1,4 +1,6 @@
 
+
+#include "globalincs/fsmemory.h"
 #include "globalincs/pstypes.h"
 
 

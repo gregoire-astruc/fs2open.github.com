@@ -227,6 +227,7 @@ set (file_root_globalincs
 	globalincs/safe_strings.cpp
 	globalincs/safe_strings.h
 	globalincs/safe_strings_test.cpp
+	globalincs/scp_defines.h
 	globalincs/systemvars.cpp
 	globalincs/systemvars.h
 	globalincs/version.cpp
@@ -605,7 +606,6 @@ set (file_root_network
 	network/multiutil.h
 	network/psnet2.cpp
 	network/psnet2.h
-	network/stand_gui.cpp
 	network/stand_gui.h
 )
 

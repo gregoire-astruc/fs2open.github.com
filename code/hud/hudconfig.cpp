@@ -7,7 +7,7 @@
  *
 */ 
 
-
+#include <algorithm>
 
 
 #include "hud/hudconfig.h"

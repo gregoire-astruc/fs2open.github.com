@@ -8,6 +8,8 @@
 
 namespace cfile
 {
+	namespace fs = boost::filesystem;
+
 	struct VP_FILE_HEADER
 	{
 		char id[4];
@@ -24,7 +26,7 @@ namespace cfile
 		_fs_time_t write_time;
 	};
 
-	VPFileSystem::VPFileSystem(const boost::filesystem::path& filePathIn, const std::string& rootPathIn)
+	VPFileSystem::VPFileSystem(const fs::path& filePathIn, const std::string& rootPathIn)
 		: ArchiveFileSystem(filePathIn), rootPath(rootPathIn), vpStream(filePathIn, std::ios::binary)
 	{
 		VP_FILE_HEADER header;

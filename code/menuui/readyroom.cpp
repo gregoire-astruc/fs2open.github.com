@@ -11,6 +11,8 @@
 
 #include <ctype.h>
 
+#include <algorithm>
+
 #include "menuui/readyroom.h"
 #include "graphics/font.h"
 #include "ui/ui.h"

@@ -18,11 +18,14 @@ FUNCTION(ADD_IMPORTED_LIB NAME INCLUDES LIBS LIB_TYPE)
 		)
 	
 		math(EXPR LIBS_SIZE "${LIBS_SIZE} - 1")
-		foreach(i RANGE 1 ${LIBS_SIZE})
-			LIST(GET LIBS ${i} LIB)
+		
+		if(${LIBS_SIZE} GREATER 0)
+			foreach(i RANGE 1 ${LIBS_SIZE})
+				LIST(GET LIBS ${i} LIB)
 
-			SET(INTERFACE_LIBS ${INTERFACE_LIBS} "${LIB}")
-		endforeach(i)
+				SET(INTERFACE_LIBS ${INTERFACE_LIBS} "${LIB}")
+			endforeach(i)
+		endif(${LIBS_SIZE} GREATER 0)
 	endif(${LIBS_SIZE} GREATER 0)
 
 	set_target_properties(${NAME}

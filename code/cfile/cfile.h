@@ -278,7 +278,7 @@ namespace cfile
 		template<class String>
 		void removeExtension(String& string)
 		{
-			String::size_type dot = string.find_last_of(".");
+			typename String::size_type dot = string.find_last_of(".");
 
 			if (dot != String::npos)
 			{

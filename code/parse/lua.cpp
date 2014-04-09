@@ -1,3 +1,7 @@
+
+#include <iostream>
+#include <algorithm>
+
 #include "ai/ai.h"
 #include "ai/aigoals.h"
 #include "asteroid/asteroid.h"

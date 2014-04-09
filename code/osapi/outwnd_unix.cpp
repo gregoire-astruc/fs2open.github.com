@@ -21,7 +21,6 @@
 #include "osapi/outwnd.h"
 #include "osapi/osapi.h"
 #include "osapi/osregistry.h"
-#include "cfile/cfilesystem.h"
 #include "globalincs/systemvars.h"
 #include "globalincs/globals.h"
 #include "parse/parselo.h"
@@ -68,7 +67,7 @@ void load_filter_info(void)
 
 	outwnd_filter_loaded = 1;
 
-	snprintf( pathname, MAX_PATH_LEN, "%s/%s/%s/%s", detect_home(), Osreg_user_dir, Pathtypes[CF_TYPE_DATA].path, NOX("debug_filter.cfg") );
+	snprintf( pathname, MAX_PATH_LEN, "%s/%s/%s/%s", detect_home(), Osreg_user_dir, "data", NOX("debug_filter.cfg") );
 
 	fp = fopen(pathname, "rt");
 
@@ -144,7 +143,7 @@ void save_filter_info(void)
 		return;	// No file, don't save
 
 
-	snprintf( pathname, MAX_PATH_LEN, "%s/%s/%s/%s", detect_home(), Osreg_user_dir, Pathtypes[CF_TYPE_DATA].path, NOX("debug_filter.cfg") );
+	snprintf( pathname, MAX_PATH_LEN, "%s/%s/%s/%s", detect_home(), Osreg_user_dir, "data", NOX("debug_filter.cfg") );
 
 	fp = fopen(pathname, "wt");
 
@@ -265,7 +264,7 @@ void outwnd_init(int display_under_freespace_window)
         FreeSpace_logfilename = "fs2_open.log";
     }
 
-	snprintf(pathname, MAX_PATH_LEN, "%s/%s/%s/%s", detect_home(), Osreg_user_dir, Pathtypes[CF_TYPE_DATA].path, FreeSpace_logfilename);
+	snprintf(pathname, MAX_PATH_LEN, "%s/%s/%s/%s", detect_home(), Osreg_user_dir, "data", FreeSpace_logfilename);
 
 	if (Log_fp == NULL) {
 		Log_fp = fopen(pathname, "wb");

@@ -4,11 +4,7 @@
 
 #include <new>
 
-#ifdef HAS_CXX11_NOEXCEPT
-#define SCP_NOEXCEPT noexcept
-#else
-#define SCP_NOEXCEPT
-#endif
+#include "globalincs/scp_defines.h"
 
 // throw
 extern void * operator new (size_t size);

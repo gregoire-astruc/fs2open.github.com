@@ -24,6 +24,8 @@
 #include <glob.h>
 #endif
 
+#include <algorithm>
+
 #include "mission/missioncampaign.h"
 #include "ui/ui.h"
 #include "gamesequence/gamesequence.h"
