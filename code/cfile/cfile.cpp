@@ -34,6 +34,7 @@
 
 #include "parse/encrypt.h"
 #include "osapi/osapi.h"
+#include "localization/localize.h"
 
 #include <VFSPP/core.hpp>
 #include <VFSPP/merged.hpp>
@@ -394,7 +395,14 @@ namespace cfile
 
 	FileEntryPointer getEntry(const SCP_string& path, int mode, bool localize)
 	{
-		FileEntryPointer entry = fileSystem->getRootEntry()->getChild(path.c_str());
+		SCP_string realPath = path;
+
+		if (localize)
+		{
+			lcl_add_dir_to_path_with_filename(realPath);
+		}
+
+		FileEntryPointer entry = fileSystem->getRootEntry()->getChild(realPath.c_str());
 
 		if (entry && entry->getType() == DIRECTORY)
 		{
@@ -404,7 +412,7 @@ namespace cfile
 		{
 			if (!entry && mode & MODE_WRITE)
 			{
-				entry = fileSystem->getRootEntry()->createEntry(vfspp::FILE, path.c_str());
+				entry = fileSystem->getRootEntry()->createEntry(vfspp::FILE, realPath.c_str());
 			}
 
 			return entry;

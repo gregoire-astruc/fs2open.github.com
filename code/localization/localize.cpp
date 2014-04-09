@@ -521,38 +521,31 @@ void lcl_add_dir(char *current_path)
 }
 
 // maybe add localized directory to full path with file name when opening a localized file
-int lcl_add_dir_to_path_with_filename(char *current_path, size_t path_max)
+bool lcl_add_dir_to_path_with_filename(SCP_string& current_path)
 {
 	// if the disk extension is 0 length, don't add anything
 	if (strlen(Lcl_languages[Lcl_current_lang].lang_ext) <= 0) {
-		return 1;
+		return false;
 	}
 
-	size_t str_size = path_max + 1;
+	size_t lastSlash = current_path.find_last_of("/");
 
-	char *temp = new char[str_size];
-	memset(temp, 0, str_size * sizeof(char));
+	SCP_string fileName;
 
-	// find position of last slash and copy rest of filename (not counting slash) to temp
-	// mark end of current path with '\0', so strcat will work
-	char *last_slash = strrchr(current_path, DIR_SEPARATOR_CHAR);
-	if (last_slash == NULL) {
-		strncpy(temp, current_path, path_max);
-		current_path[0] = '\0';
-	} else {
-		strncpy(temp, last_slash+1, path_max);
-		last_slash[1] = '\0';
+	if (lastSlash != SCP_string::npos)
+	{
+		fileName = current_path.substr(0, lastSlash);
+		current_path.resize(lastSlash + 1);
+	}
+	else
+	{
+		fileName = current_path;
+		current_path.resize(0);
 	}
 
-	// add extension
-	strcat_s(current_path, path_max, Lcl_languages[Lcl_current_lang].lang_ext);
-	strcat_s(current_path, path_max, DIR_SEPARATOR_STR );
+	current_path.append(Lcl_languages[Lcl_current_lang].lang_ext).append("/").append(fileName);
 
-	// copy rest of filename from temp
-	strcat_s(current_path, path_max, temp);
-
-	delete [] temp;
-	return 1;
+	return true;
 }
 
 

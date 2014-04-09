@@ -85,7 +85,7 @@ ubyte lcl_get_font_index(int font_num);
 void lcl_add_dir(char *current_path);
 
 // maybe add localized directory to full path with file name when opening a localized file
-int lcl_add_dir_to_path_with_filename(char *current_path, size_t path_max);
+bool lcl_add_dir_to_path_with_filename(SCP_string& path);
 
 // open the externalization file for use during parsing (call before parsing a given file)
 void lcl_ext_open();
