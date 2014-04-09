@@ -20,7 +20,9 @@ namespace cfile
 {
 	struct FileHandle;
 
-	// exceptions and other errors
+	/**
+	 * @brief General CFile exception
+	 */
 	class Exception : public std::exception
 	{
 	public:
@@ -45,6 +47,9 @@ namespace cfile
 		std::string m_excuse;
 	};
 
+	/**
+	 * @brief Exception thrown when the maximum read length is exceeded
+	 */
 	class MaxReadLengthException : public Exception
 	{
 	public:
@@ -57,6 +62,10 @@ namespace cfile
 		}
 	};
 
+	/**
+	 * @brief Exception thrown when the end of the file is reached
+	 * 
+	 */
 	class EOFException : public Exception
 	{
 	public:
@@ -69,16 +78,24 @@ namespace cfile
 		}
 	};
 
+	/**
+	 * @brief Controls how files are opened
+	 * 
+	 */
 	enum OpenType
 	{
-		OPEN_NORMAL = 0,			// open file normally
-		OPEN_MEMORY_MAPPED = (1<<0)	//	open file as a memory-mapped file
+		OPEN_NORMAL = 0,			//!< open file normally
+		OPEN_MEMORY_MAPPED = (1<<0)	//!<	open file as a memory-mapped file
 	};
 
+	/**
+	 * @brief Controls the open mode of a file
+	 * 
+	 */
 	enum OpenMode
 	{
-		MODE_READ = 1 << 0,
-		MODE_WRITE = 1 << 1
+		MODE_READ = 1 << 0, //!< Open the file for reading
+		MODE_WRITE = 1 << 1 //!< Open the file for writing
 	};
 
 	enum DirType
@@ -129,31 +146,77 @@ namespace cfile
 		TYPE_ANY				= -1,		// Used to check in any directory
 	};
 
+	/**
+	 * @brief Controls the seek origin
+	 * 
+	 */
 	enum SeekMode
 	{
-		SEEK_MODE_SET = 0,
-		SEEK_MODE_CUR = 1,
-		SEEK_MODE_END = 2,
+		SEEK_MODE_SET = 0, //!< Seek from the beginning of the file
+		SEEK_MODE_CUR = 1, //!< Seek from the current position
+		SEEK_MODE_END = 2, //!< Seek from the end of the file
 	};
 
+	/**
+	 * @brief Controls how files should be sorted
+	 * 
+	 */
 	enum SortMode
 	{
-		SORT_NONE = 0,
-		SORT_NAME = 1,
-		SORT_TIME = 2,
-		SORT_REVERSE = 3,
+		SORT_NONE = 0, //!< Don't sort at all
+		SORT_NAME = 1, //!< Sort alphabetically
+		SORT_TIME = 2, //!< Sort for time
+		SORT_REVERSE = 3, //!< Reverse the direction
 	};
 
+	/**
+	 * @brief Function for filtering files when listing the contents of a directory
+	 */
 	typedef bool(*ListFilterFunction)(const std::string&);
 
+	/**
+	 * @brief Initializes the CFile system
+	 * 
+	 * @param cdromDir Directory of the CD-ROM Defaults to NULL.
+	 * @return bool
+	 */
 	bool init(const char* cdromDir = NULL);
 
+	/**
+	 * @brief Frees resources of the CFile system
+	 * 
+	 * @return void
+	 */
 	void shutdown();
 
+	/**
+	 * @brief Gets the root directory of the CFile system
+	 * 
+	 * @return SCP_string
+	 */
 	SCP_string getRootDir();
 
-	void listFiles(SCP_vector<SCP_string>& names, DirType pathType, const SCP_string& filter = "", SortMode sortMode = SORT_NONE, ListFilterFunction = NULL, bool returnFullPath = false);
+	/**
+	 * @brief Lists all file names in the specified directory
+	 * 
+	 * @param names Vector for storing the file names
+	 * @param pathType The directory type to search in
+	 * @param filter Glob filter, an empty filter does accept all files. Defaults to "".
+	 * @param sortMode Specifies the mode for searching. Defaults to SORT_NONE.
+	 * @param filterFunction Function for filtering files. Defaults to none.
+	 * @param returnFullPath If set to true, the file names will be full paths. Defaults to false.
+	 * @return void
+	 */
+	void listFiles(SCP_vector<SCP_string>& names, DirType pathType, const SCP_string& filter = "", SortMode sortMode = SORT_NONE, ListFilterFunction filterFunction = NULL, bool returnFullPath = false);
 
+	/**
+	 * @brief Checks if the specified file exists
+	 * 
+	 * @param path The name or the path of the file to check
+	 * @param type The directory type of the file. Defaults to TYPE_ANY.
+	 * @param localize Set to true to check localized files. Defaults to false.
+	 * @return bool
+	 */
 	bool exists(const SCP_string& path, DirType type = TYPE_ANY, bool localize = false);
 
 	bool findFile(const SCP_string& name, SCP_string& outName, DirType type = TYPE_ANY, const char** exts = NULL, size_t numExts = 0, size_t* out_extIndex = NULL, bool localize = false);
