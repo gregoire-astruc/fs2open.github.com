@@ -245,7 +245,7 @@ namespace cfile
 		{
 			if (!fs::exists(path))
 			{
-				mprintf(("Was prompted to add root '%s' but it doesn't exist, skiping...", path.string().c_str()));
+				mprintf(("Was prompted to add root '%s' but it doesn't exist, skipping...", path.string().c_str()));
 				continue;
 			}
 
