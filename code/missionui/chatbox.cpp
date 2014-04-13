@@ -865,8 +865,8 @@ void chatbox_add_line(const char *msg, int pid, int add_id)
 			
 	// COMMAND LINE OPTION
 	if(Cmdline_multi_stream_chat_to_file && Multi_chat_stream!=NULL && msg[0] != '\0'){ // stream to the file if we're supposed to
-		cfile::write<const char*>(msg,Multi_chat_stream);
-		cfile::write<char>('\n',Multi_chat_stream);
+		cfile::io::write<const char*>(msg,Multi_chat_stream);
+		cfile::io::write<char>('\n',Multi_chat_stream);
 	}	
 
 	// if this line of text is from the player himself, automatically go to the bottom of

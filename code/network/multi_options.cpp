@@ -71,16 +71,16 @@ void multi_options_read_config()
 
 
 	// read in the config file
-	in = cfile::open(MULTI_CFG_FILE, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_DATA);
+	in = cfile::io::open(MULTI_CFG_FILE, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_DATA);
 	
 	// if we failed to open the config file, user default settings
 	if (in == NULL) {
 		nprintf(("Network","Failed to open network config file, using default settings\n"));		
 	} else {
-		while ( !cfile::eof(in) ) {
+		while ( !cfile::io::eof(in) ) {
 			// read in the game info
 			memset(str, 0, 512);
-			cfile::readLine(str, 512, in);
+			cfile::io::readLine(str, 512, in);
 
 			// parse the first line
 			tok = strtok(str, " \t");
@@ -305,7 +305,7 @@ void multi_options_read_config()
 		}
 
 		// close the config file
-		cfile::close(in);
+		cfile::io::close(in);
 		in = NULL;
 	}
 

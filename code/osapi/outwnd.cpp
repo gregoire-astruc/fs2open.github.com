@@ -241,17 +241,17 @@ void save_filter_info(void)
 	if (Outwnd_no_filter_file)
 		return;	// No file, don't save
 
-	fp = cfile::open("debug_filter.cfg", cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_DATA);
+	fp = cfile::io::open("debug_filter.cfg", cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_DATA);
 
 	if (fp) {
-		std::iostream& stream = cfile::getStream(fp);
+		std::iostream& stream = cfile::io::getStream(fp);
 
 		for (uint i = 0; i < OutwndFilter.size(); i++)
 		{
 			stream << (OutwndFilter[i].enabled ? '+' : '-') << OutwndFilter[i].name << std::endl;
 		}
 
-		cfile::close(fp);
+		cfile::io::close(fp);
 	}
 }
 

@@ -131,7 +131,7 @@ static int dbg_print_ogg_error(const char *filename, int rc)
 
 static int audiostr_read_uint(cfile::FileHandle *rw, uint *i)
 {
-	int rc = cfile::read((void *)i, sizeof(uint), 1, rw);
+	int rc = cfile::io::read((void *)i, sizeof(uint), 1, rw);
 
 	if (rc != 1)
 		return 0;
@@ -143,7 +143,7 @@ static int audiostr_read_uint(cfile::FileHandle *rw, uint *i)
 
 static int audiostr_read_word(cfile::FileHandle *rw, WORD *i)
 {
-	int rc = cfile::read((void *)i, sizeof(WORD), 1, rw);
+	int rc = cfile::io::read((void *)i, sizeof(WORD), 1, rw);
 
 	if (rc != 1)
 		return 0;
@@ -155,7 +155,7 @@ static int audiostr_read_word(cfile::FileHandle *rw, WORD *i)
 
 static int audiostr_read_dword(cfile::FileHandle *rw, DWORD *i)
 {
-	int rc = cfile::read((void *)i, sizeof(DWORD), 1, rw);
+	int rc = cfile::io::read((void *)i, sizeof(DWORD), 1, rw);
 
 	if (rc != 1)
 		return 0;
@@ -391,7 +391,7 @@ void WaveFile::Close(void)
 		if (m_wave_format == OGG_FORMAT_VORBIS)
 			ov_clear(&m_snd_info.vorbis_file);
 
-		cfile::close(m_snd_info.cfp);
+		cfile::io::close(m_snd_info.cfp);
 		m_snd_info.cfp = NULL;
 	}
 }
@@ -454,7 +454,7 @@ bool WaveFile::Open(char *pszFilename, bool keep_ext)
 		strcat_s( filename, audio_ext[rc] );
 	}
 
-	m_snd_info.cfp = cfile::open(fullName, cfile::MODE_READ, cfile::OPEN_NORMAL);
+	m_snd_info.cfp = cfile::io::open(fullName, cfile::MODE_READ, cfile::OPEN_NORMAL);
 
 	if (m_snd_info.cfp == NULL)
 		goto OPEN_ERROR;
@@ -511,7 +511,7 @@ bool WaveFile::Open(char *pszFilename, bool keep_ext)
 
 		// Skip the "RIFF" tag and file size (8 bytes)
 		// Skip the "WAVE" tag (4 bytes)
-		cfile::seek(m_snd_info.cfp, 12, cfile::SEEK_MODE_SET);
+		cfile::io::seek(m_snd_info.cfp, 12, cfile::SEEK_MODE_SET);
 
 		// Now read RIFF tags until the end of file
 		uint tag, size, next_chunk;
@@ -523,7 +523,7 @@ bool WaveFile::Open(char *pszFilename, bool keep_ext)
 			if ( !audiostr_read_uint(m_snd_info.cfp, &size) )
 				break;
 
-			next_chunk = cfile::tell(m_snd_info.cfp);
+			next_chunk = cfile::io::tell(m_snd_info.cfp);
 			next_chunk += size;
 
 			switch (tag)
@@ -549,7 +549,7 @@ bool WaveFile::Open(char *pszFilename, bool keep_ext)
 
 						// Read those extra bytes, append to WAVEFORMATEX structure
 						if (cbExtra != 0)
-							cfile::read(((char *)(m_pwfmt_original)+sizeof(WAVEFORMATEX)), 1, (int)cbExtra, m_snd_info.cfp);
+							cfile::io::read(((char *)(m_pwfmt_original)+sizeof(WAVEFORMATEX)), 1, (int)cbExtra, m_snd_info.cfp);
 					} else {
 						Int3();		// malloc failed
 						goto OPEN_ERROR;
@@ -562,7 +562,7 @@ bool WaveFile::Open(char *pszFilename, bool keep_ext)
 				{
 					m_nDataSize = size;	// This is size of data chunk.  Compressed if ADPCM.
 					m_data_bytes_left = size;
-					m_data_offset = cfile::tell(m_snd_info.cfp);
+					m_data_offset = cfile::io::tell(m_snd_info.cfp);
 					done = true;
 
 					break;
@@ -572,7 +572,7 @@ bool WaveFile::Open(char *pszFilename, bool keep_ext)
 					break;
 			}	// end switch
 
-			cfile::seek(m_snd_info.cfp, next_chunk, cfile::SEEK_MODE_SET);
+			cfile::io::seek(m_snd_info.cfp, next_chunk, cfile::SEEK_MODE_SET);
 		}
 
 		// make sure that we did good
@@ -657,7 +657,7 @@ OPEN_ERROR:
 
 	if (m_snd_info.cfp != NULL) {
 		// Close file
-		cfile::close(m_snd_info.cfp);
+		cfile::io::close(m_snd_info.cfp);
 		m_snd_info.cfp = NULL;
 	}
 
@@ -691,8 +691,8 @@ bool WaveFile::Cue (void)
 	if (m_wave_format == OGG_FORMAT_VORBIS) {
 		rval = (int)ov_raw_seek(&m_snd_info.vorbis_file, m_data_offset);
 	} else {
-		cfile::seek(m_snd_info.cfp, m_data_offset, cfile::SEEK_MODE_SET);
-		rval = cfile::tell(m_snd_info.cfp);
+		cfile::io::seek(m_snd_info.cfp, m_data_offset, cfile::SEEK_MODE_SET);
+		rval = cfile::io::tell(m_snd_info.cfp);
 	}
 
 	if ( rval == -1 ) {
@@ -866,7 +866,7 @@ int WaveFile::Read(ubyte *pbDest, uint cbSize, int service)
 		// IEEE FLOAT is special too, downsampling can give short buffers
 		else if (m_wave_format == WAVE_FORMAT_IEEE_FLOAT) {
 			while ( !m_abort_next_read && ((uint)actual_read < num_bytes_read) ) {
-				rc = cfile::read((char *)dest_buf, 1, num_bytes_read, m_snd_info.cfp);
+				rc = cfile::io::read((char *)dest_buf, 1, num_bytes_read, m_snd_info.cfp);
 
 				if (rc <= 0) {
 					break;
@@ -919,7 +919,7 @@ int WaveFile::Read(ubyte *pbDest, uint cbSize, int service)
 		}
 		// standard WAVE reading
 		else {
-			actual_read = cfile::read((char *)dest_buf, 1, num_bytes_read, m_snd_info.cfp);
+			actual_read = cfile::io::read((char *)dest_buf, 1, num_bytes_read, m_snd_info.cfp);
 		}
 
 		if ( (actual_read <= 0) || (m_abort_next_read) ) {
@@ -954,7 +954,7 @@ int WaveFile::Read(ubyte *pbDest, uint cbSize, int service)
 		Assert(src_bytes_used <= num_bytes_read);
 		if ( src_bytes_used < num_bytes_read ) {
 			// seek back file pointer to reposition before unused source data
-			cfile::seek(m_snd_info.cfp, src_bytes_used - num_bytes_read, cfile::SEEK_MODE_CUR);
+			cfile::io::seek(m_snd_info.cfp, src_bytes_used - num_bytes_read, cfile::SEEK_MODE_CUR);
 		}
 
 		// Adjust number of bytes left

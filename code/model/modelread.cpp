@@ -749,11 +749,11 @@ void create_vertex_buffer(polymodel *pm)
 		if ( pb ) *pb = 0;
 		strcat_s( ibuffer_info.name, NOX(".bx") );
 
-		ibuffer_info.read = cfile::open( ibuffer_info.name, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_CACHE );
+		ibuffer_info.read = cfile::io::open( ibuffer_info.name, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_CACHE );
 
 		// check if it's a zero size file and if so bail out to create a new one
-		if ( (ibuffer_info.read != NULL) && !cfile::fileLength(ibuffer_info.read) ) {
-			cfile::close( ibuffer_info.read );
+		if ( (ibuffer_info.read != NULL) && !cfile::io::fileLength(ibuffer_info.read) ) {
+			cfile::io::close( ibuffer_info.read );
 			ibuffer_info.read = NULL;
 		}
 
@@ -762,13 +762,13 @@ void create_vertex_buffer(polymodel *pm)
 
 			// grab a checksum of the IBX, for debugging purposes
 			uint ibx_checksum = 0;
-			cfile::seek(ibuffer_info.read, 0, cfile::SEEK_MODE_SET);
+			cfile::io::seek(ibuffer_info.read, 0, cfile::SEEK_MODE_SET);
 			cfile::checksum::crc::doLong(ibuffer_info.read, &ibx_checksum);
-			cfile::seek(ibuffer_info.read, 0, cfile::SEEK_MODE_SET);
+			cfile::io::seek(ibuffer_info.read, 0, cfile::SEEK_MODE_SET);
 
 			// get the file size that we use to safety check with.
 			// be sure to subtract from this when we read something out
-			ibuffer_info.size = cfile::fileLength( ibuffer_info.read );
+			ibuffer_info.size = cfile::io::fileLength( ibuffer_info.read );
 
 			// file id
 			int ibx = cfile::read<int>( ibuffer_info.read );
@@ -797,7 +797,7 @@ void create_vertex_buffer(polymodel *pm)
 
 
 			if ( !ibx_valid ) {
-				cfile::close( ibuffer_info.read );
+				cfile::io::close( ibuffer_info.read );
 				ibuffer_info.read = NULL;
 				ibuffer_info.size = 0;
 			} else {
@@ -808,7 +808,7 @@ void create_vertex_buffer(polymodel *pm)
 
 		// if the read file is absent or invalid then write out the new info
 		if (ibuffer_info.read == NULL) {
-			ibuffer_info.write = cfile::open( ibuffer_info.name, cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_CACHE );
+			ibuffer_info.write = cfile::io::open( ibuffer_info.name, cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_CACHE );
 
 			if (ibuffer_info.write != NULL) {
 				mprintf(("IBX: Starting a new IBX for '%s'.\n", pm->filename));
@@ -829,11 +829,11 @@ void create_vertex_buffer(polymodel *pm)
 
 	// these must be reset to NULL for the tests to work correctly later
 	if (ibuffer_info.read != NULL) {
-		cfile::close( ibuffer_info.read );
+		cfile::io::close( ibuffer_info.read );
 	}
 
 	if (ibuffer_info.write != NULL) {
-		cfile::close( ibuffer_info.write );
+		cfile::io::close( ibuffer_info.write );
 	}
 
 	memset( &ibuffer_info, 0, sizeof(IBX) );
@@ -962,7 +962,7 @@ int read_model_file(polymodel * pm, const char *filename, int n_subsystems, mode
 	//char pwd[128];
 	//getcwd(pwd, 128);
 
-	fp = cfile::open(filename);
+	fp = cfile::io::open(filename);
 
 	if (!fp) {
 		if (ferror == 1) {
@@ -975,9 +975,9 @@ int read_model_file(polymodel * pm, const char *filename, int n_subsystems, mode
 	}		
 
 	// generate checksum for the POF
-	cfile::seek(fp, 0, cfile::SEEK_MODE_SET);
+	cfile::io::seek(fp, 0, cfile::SEEK_MODE_SET);
 	cfile::checksum::crc::doLong(fp, &Global_checksum);
-	cfile::seek(fp, 0, cfile::SEEK_MODE_SET);
+	cfile::io::seek(fp, 0, cfile::SEEK_MODE_SET);
 
 	id = cfile::read<int>(fp);
 
@@ -1014,9 +1014,9 @@ int read_model_file(polymodel * pm, const char *filename, int n_subsystems, mode
 
 	id = cfile::read<int>(fp);
 	len = cfile::read<int>(fp);
-	next_chunk = cfile::tell(fp) + len;
+	next_chunk = cfile::io::tell(fp) + len;
 
-	while (!cfile::eof(fp)) {
+	while (!cfile::io::eof(fp)) {
 
 //		mprintf(("Processing chunk <%c%c%c%c>, len = %d\n",id,id>>8,id>>16,id>>24,len));
 //		key_getch();
@@ -1207,8 +1207,8 @@ int read_model_file(polymodel * pm, const char *filename, int n_subsystems, mode
 
 				pm->submodel[n].name[0] = '\0';
 
-				cfile::readStringLen(pm->submodel[n].name, MAX_NAME_LEN, fp);		// get the name
-				cfile::readStringLen(props, MAX_PROP_LEN, fp);			// and the user properties
+				cfile::io::readStringLen(pm->submodel[n].name, MAX_NAME_LEN, fp);		// get the name
+				cfile::io::readStringLen(props, MAX_PROP_LEN, fp);			// and the user properties
 
 				// Check for unrealistic radii
 				if ( pm->submodel[n].rad <= 0.1f )
@@ -1680,7 +1680,7 @@ int read_model_file(polymodel * pm, const char *filename, int n_subsystems, mode
 						char *p;
 						dock_bay *bay = &pm->docking_bays[i];
 
-						cfile::readStringLen( props, MAX_PROP_LEN, fp );
+						cfile::io::readStringLen( props, MAX_PROP_LEN, fp );
 						if ( (p = strstr(props, "$name"))!= NULL ) {
 							get_user_prop_value(p+5, bay->name);
 
@@ -1789,7 +1789,7 @@ int read_model_file(polymodel * pm, const char *filename, int n_subsystems, mode
 					if((bank->off_time > 0) && (bank->disp_time > 0))
 						bank->is_on = 0;
 	
-					cfile::readStringLen(props, MAX_PROP_LEN, fp);
+					cfile::io::readStringLen(props, MAX_PROP_LEN, fp);
 					// look for $glow_texture=xxx
 					int length = strlen(props);
 
@@ -1876,7 +1876,7 @@ int read_model_file(polymodel * pm, const char *filename, int n_subsystems, mode
 						if (pm->version < 2117) {
 							bank->wash_info_pointer = NULL;
 						} else {
-							cfile::readStringLen( props, MAX_PROP_LEN, fp );
+							cfile::io::readStringLen( props, MAX_PROP_LEN, fp );
 							// look for $engine_subsystem=xxx
 							int length = strlen(props);
 							if (length > 0) {
@@ -2013,9 +2013,9 @@ int read_model_file(polymodel * pm, const char *filename, int n_subsystems, mode
 
 					// get the next free object of the subobject list.  Flag error if no more room
 
-					cfile::readStringLen(name, MAX_NAME_LEN, fp);			// get the name of this special polygon
+					cfile::io::readStringLen(name, MAX_NAME_LEN, fp);			// get the name of this special polygon
 
-					cfile::readStringLen(props_spcl, MAX_PROP_LEN, fp);		// will definately have properties as well!
+					cfile::io::readStringLen(props_spcl, MAX_PROP_LEN, fp);		// will definately have properties as well!
 					pnt = cfile::read<vec3d>(fp);
 					radius = cfile::read<float>( fp );
 
@@ -2058,7 +2058,7 @@ int read_model_file(polymodel * pm, const char *filename, int n_subsystems, mode
 				for (i=0; i<n; i++ )
 				{
 					char tmp_name[256];
-					cfile::readStringLen(tmp_name,127,fp);
+					cfile::io::readStringLen(tmp_name,127,fp);
 					model_load_texture(pm, i, tmp_name);
 					//mprintf(0,"<%s>\n",name_buf);
 				}
@@ -2106,10 +2106,10 @@ int read_model_file(polymodel * pm, const char *filename, int n_subsystems, mode
 				memset( pm->paths, 0, sizeof(model_path) * pm->n_paths );
 					
 				for (i=0; i<pm->n_paths; i++ )	{
-					cfile::readStringLen(pm->paths[i].name , MAX_NAME_LEN-1, fp);
+					cfile::io::readStringLen(pm->paths[i].name , MAX_NAME_LEN-1, fp);
 					if ( pm->version >= 2002 ) {
 						// store the sub_model name number of the parent
-						cfile::readStringLen(pm->paths[i].parent_name , MAX_NAME_LEN-1, fp);
+						cfile::io::readStringLen(pm->paths[i].parent_name , MAX_NAME_LEN-1, fp);
 						// get rid of leading '$' char in name
 						if ( pm->paths[i].parent_name[0] == '$' ) {
 							char tmpbuf[MAX_NAME_LEN];
@@ -2241,15 +2241,15 @@ int read_model_file(polymodel * pm, const char *filename, int n_subsystems, mode
 
 			default:
 				mprintf(("Unknown chunk <%c%c%c%c>, len = %d\n",id,id>>8,id>>16,id>>24,len));
-				cfile::seek(fp, len, cfile::SEEK_MODE_CUR);
+				cfile::io::seek(fp, len, cfile::SEEK_MODE_CUR);
 				break;
 
 		}
-		cfile::seek(fp, next_chunk, cfile::SEEK_MODE_SET);
+		cfile::io::seek(fp, next_chunk, cfile::SEEK_MODE_SET);
 
 		id = cfile::read<int>(fp);
 		len = cfile::read<int>(fp);
-		next_chunk = cfile::tell(fp) + len;
+		next_chunk = cfile::io::tell(fp) + len;
 
 	}
 
@@ -2257,11 +2257,11 @@ int read_model_file(polymodel * pm, const char *filename, int n_subsystems, mode
 	if ( ss_fp) {
 		int size;
 		
-		cfile::close(ss_fp);
-		ss_fp = cfile::open(debug_name);
+		cfile::io::close(ss_fp);
+		ss_fp = cfile::io::open(debug_name);
 		if ( ss_fp )	{
-			size = cfile::fileLength(ss_fp);
-			cfile::close(ss_fp);
+			size = cfile::io::fileLength(ss_fp);
+			cfile::io::close(ss_fp);
 			if ( size <= 0 )	{
 				_unlink(debug_name);
 			}
@@ -2269,7 +2269,7 @@ int read_model_file(polymodel * pm, const char *filename, int n_subsystems, mode
 	}
 #endif
 
-	cfile::close(fp);
+	cfile::io::close(fp);
 
 	// mprintf(("Done processing chunks\n"));
 	return 1;

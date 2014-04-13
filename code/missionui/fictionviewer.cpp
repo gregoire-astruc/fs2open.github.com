@@ -486,7 +486,7 @@ void fiction_viewer_load(char *filename, char *font_filename)
 		return;
 
 	// load up the text
-	cfile::FileHandle *fp = cfile::open(filename, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_FICTION);
+	cfile::FileHandle *fp = cfile::io::open(filename, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_FICTION);
 	if (fp == NULL)
 	{
 		Warning(LOCATION, "Unable to load fiction file '%s'.", filename);
@@ -497,14 +497,14 @@ void fiction_viewer_load(char *filename, char *font_filename)
 	if (!Fred_running)
 	{
 		// allocate space
-		file_length = cfile::fileLength(fp);
+		file_length = cfile::io::fileLength(fp);
 		Fiction_viewer_text = (char *) vm_malloc(file_length + 1);
 		Fiction_viewer_text[file_length] = '\0';
 
 		// copy all the text
-		cfile::read(Fiction_viewer_text, file_length, 1, fp);
+		cfile::io::read(Fiction_viewer_text, file_length, 1, fp);
 	}
 
 	// we're done, close it out
-	cfile::close(fp);
+	cfile::io::close(fp);
 }

@@ -231,54 +231,57 @@ namespace cfile
 
 	bool rename(const SCP_string& oldName, const SCP_string& newName, DirType type = TYPE_ANY, bool localize = false);
 
-	FileHandle* open(const SCP_string& file_path, int mode = MODE_READ, OpenType type = OPEN_NORMAL, DirType dir_type = TYPE_ANY, bool localize = false);
+	namespace io
+	{
+		FileHandle* open(const SCP_string& file_path, int mode = MODE_READ, OpenType type = OPEN_NORMAL, DirType dir_type = TYPE_ANY, bool localize = false);
 
-	bool close(FileHandle* handle);
+		bool close(FileHandle* handle);
 
-	std::iostream& getStream(FileHandle* handle);
+		std::iostream& getStream(FileHandle* handle);
 
-	void setMaxReadLength(FileHandle* handle, size_t size);
+		void setMaxReadLength(FileHandle* handle, size_t size);
 
-	const std::string& getFilePath(FileHandle* handle);
+		const std::string& getFilePath(FileHandle* handle);
 
-	bool flush(FileHandle* handle);
+		bool flush(FileHandle* handle);
 
-	int seek(FileHandle *fp, int offset, cfile::SeekMode where);
+		int seek(FileHandle *fp, int offset, cfile::SeekMode where);
 
-	int tell(FileHandle* fp);
+		int tell(FileHandle* fp);
 
-	bool eof(FileHandle* fp);
+		bool eof(FileHandle* fp);
 
-	int fileLength(FileHandle* handle);
+		int fileLength(FileHandle* handle);
 
-	template<class T>
-	T read(FileHandle* handle);
+		template<class T>
+		T read(FileHandle* handle);
 
-	int read(void* buf, int elsize, int nelem, FileHandle* handle);
+		int read(void* buf, int elsize, int nelem, FileHandle* handle);
 
-	void readString(char* buf, int n, FileHandle* handle);
+		void readString(char* buf, int n, FileHandle* handle);
 
-	bool readLine(char* buf, int n, FileHandle* handle);
+		bool readLine(char* buf, int n, FileHandle* handle);
 
-	/**
-	* @brief Read a fixed length string that is not null-terminated, with the length stored in file
-	*
-	* @param buf Pre-allocated array to store string
-	* @param n Size of pre-allocated array
-	* @param file File to read from
-	*
-	* @note Appends NULL character to string (buf)
-	*/
-	void readStringLen(char* buf, int n, FileHandle* handle);
+		/**
+		* @brief Read a fixed length string that is not null-terminated, with the length stored in file
+		*
+		* @param buf Pre-allocated array to store string
+		* @param n Size of pre-allocated array
+		* @param file File to read from
+		*
+		* @note Appends NULL character to string (buf)
+		*/
+		void readStringLen(char* buf, int n, FileHandle* handle);
 
-	template<class T>
-	bool write(typename boost::call_traits<T>::param_type val, FileHandle* handle);
+		template<class T>
+		bool write(typename boost::call_traits<T>::param_type val, FileHandle* handle);
 
-	int write(const void* buf, int elsize, int nelem, FileHandle* handle);
+		int write(const void* buf, int elsize, int nelem, FileHandle* handle);
 
-	void writeStringLen(const char* buf, FileHandle* handle);
+		void writeStringLen(const char* buf, FileHandle* handle);
 
-	void* returndata(FileHandle* handle);
+		void* returndata(FileHandle* handle);
+	}
 
 	namespace checksum
 	{

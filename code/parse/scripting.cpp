@@ -1164,20 +1164,20 @@ void script_state::ParseChunkSub(int *out_lang, int *out_index, char* debug_str)
 		char *filename = alloc_block("[[", "]]");
 
 		//Load from file
-		cfile::FileHandle *cfp = cfile::open(filename, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_SCRIPTS );
+		cfile::FileHandle *cfp = cfile::io::open(filename, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_SCRIPTS );
 		if(cfp == NULL)
 		{
 			Warning(LOCATION, "Could not load lua script file '%s'", filename);
 		}
 		else
 		{
-			int len = cfile::fileLength(cfp);
+			int len = cfile::io::fileLength(cfp);
 
 			char *raw_lua = (char*)vm_malloc(len+1);
 			raw_lua[len] = '\0';
 
 			cfile::read(raw_lua, len, 1, cfp);
-			cfile::close(cfp);
+			cfile::io::close(cfp);
 
 			//WMC - use filename instead of debug_str so that the filename
 			//gets passed.

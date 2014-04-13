@@ -908,7 +908,7 @@ static void opengl_flush_frame_dump()
 		sprintf(filename, NOX("frm%04d.tga"), GL_dump_frame_number );
 		GL_dump_frame_number++;
 
-		cfile::FileHandle *f = cfile::open(filename, cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_DATA);
+		cfile::FileHandle *f = cfile::io::open(filename, cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_DATA);
 
 		// Write the TGA header
 		cfile::write<ubyte>( 0, f );	//	IDLength;
@@ -930,7 +930,7 @@ static void opengl_flush_frame_dump()
 		// save the data out
 		cfile::write( GL_dump_buffer, GL_dump_frame_size, 1, f );
 
-		cfile::close(f);
+		cfile::io::close(f);
 
 	}
 

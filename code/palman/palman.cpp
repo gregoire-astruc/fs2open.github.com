@@ -143,14 +143,14 @@ void palette_load_table( const char * filename )
 		// Read the old .256 file
 		cfile::FileHandle *fp;
 		int fsize;
-		fp = cfile::open(palette_base_filename);
+		fp = cfile::io::open(palette_base_filename);
 		if ( fp==NULL)
 			Error( LOCATION, "Can't open palette file <%s>",palette_base_filename);
 
-		fsize	= cfile::fileLength( fp );
+		fsize	= cfile::io::fileLength( fp );
 		Assert( fsize == 9472 );
 		cfile::read( palette_org, 256*3, 1, fp );
-		cfile::close(fp);
+		cfile::io::close(fp);
 
 		for (i=0; i<768; i++ )	{	
 			palette_org[i] = ubyte((palette_org[i]*255)/63);
@@ -290,7 +290,7 @@ int palette_read_cached( char *name )
 
 //	mprintf(( "Reading palette '%s'\n", name ));
 	
-	fp = cfile::open(new_name, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_CACHE);
+	fp = cfile::io::open(new_name, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_CACHE);
 
 	// Couldn't find file
 	if ( !fp ) {
@@ -301,27 +301,27 @@ int palette_read_cached( char *name )
 	id  = cfile::read<uint>( fp );
 	if ( id != PAL_ID )	{
 		mprintf(( "Cached palette file has incorrect ID\n" ));
-		cfile::close(fp);
+		cfile::io::close(fp);
 		return 0;
 	}
 	version = cfile::read<int>( fp );
 	if ( version < PAL_LAST_COMPATIBLE_VERSION ) {
 		mprintf(( "Cached palette file is an older incompatible version\n" ));
-		cfile::close(fp);
+		cfile::io::close(fp);
 		return 0;
 	}
 	
 	cfile::read( &new_checksum, 4, 1, fp );
 	if ( gr_palette_checksum != new_checksum )	{
 		mprintf(( "Cached palette file is out of date (Checksum)\n" ));
-		cfile::close(fp);
+		cfile::io::close(fp);
 		return 0;
 	}
 
 	cfile::legacy::read_compressed( &new_palette, 256*3, 1, fp );
 	if ( memcmp( new_palette, gr_palette, 768 ) )	{
 		mprintf(( "Cached palette file is out of date (Contents)\n" ));
-		cfile::close(fp);
+		cfile::io::close(fp);
 		return 0;
 	}
 
@@ -350,7 +350,7 @@ int palette_read_cached( char *name )
 		palette_blend_table_calculated = 0;
 	}
 
-	cfile::close(fp);
+	cfile::io::close(fp);
 
 //	mprintf(( "Done.\n" ));
 

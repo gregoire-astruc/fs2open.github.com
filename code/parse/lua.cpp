@@ -1128,7 +1128,7 @@ ADE_FUNC(close, l_File, NULL, "Instantly closes file and invalidates all file ha
 
 	cfp->valid = false;
 
-	bool rval = cfile::close(cfp->handle);
+	bool rval = cfile::io::close(cfp->handle);
 	if(!rval)
 	{
 		LuaError(L, "Attempt to close file resulted in error!");
@@ -1147,7 +1147,7 @@ ADE_FUNC(flush, l_File, NULL, "Flushes file buffer to disk.", "boolean", "True f
 		return ADE_RETURN_FALSE;
 
 	//WMC - this looks reversed, yes, it's right. Look at cflush.
-	bool cf_result = cfile::flush(cfp->handle);
+	bool cf_result = cfile::io::flush(cfp->handle);
 	return ade_set_args(L, "b", cf_result);
 }
 
@@ -1160,7 +1160,7 @@ ADE_FUNC(getPath, l_File, NULL, "Determines path of the given file", "string", "
 	if(!cfp->isValid())
 		return ade_set_error(L, "s", "");
 
-	const std::string& path = cfile::getFilePath(cfp->handle);
+	const std::string& path = cfile::io::getFilePath(cfp->handle);
 
 	size_t slash = path.find_last_of('/');
 
@@ -1214,7 +1214,7 @@ ADE_FUNC(read, l_File, "number or string, ...",
 				{
 					double d;
 					
-					cfile::getStream(cfp->handle) >> d;
+					cfile::io::getStream(cfp->handle) >> d;
 
 					lua_pushnumber(L, d);
 					num_returned++;
@@ -1226,15 +1226,15 @@ ADE_FUNC(read, l_File, "number or string, ...",
 			}
 			else if(!stricmp(fmt, "*a"))
 			{
-				int tell_res = cfile::tell(cfp->handle);
+				int tell_res = cfile::io::tell(cfp->handle);
 				if(tell_res < 0)
 				{
 					Error(LOCATION, "Critical error reading Lua file; could not cftell.");
 				}
-				int read_len = cfile::fileLength(cfp->handle) - tell_res;
+				int read_len = cfile::io::fileLength(cfp->handle) - tell_res;
 
 				char *buf = (char *)vm_malloc(read_len + 1);
-				int final_len = cfile::read(buf, 1, read_len, cfp->handle);
+				int final_len = cfile::io::read(buf, 1, read_len, cfp->handle);
 				buf[final_len] = '\0';
 
 				lua_pushstring(L, buf);
@@ -1245,7 +1245,7 @@ ADE_FUNC(read, l_File, "number or string, ...",
 			{
 				char buf[10240];
 				size_t idx;
-				if (cfile::readLine(buf, (int)(sizeof(buf) / sizeof(char)), cfp->handle) == NULL)
+				if (cfile::io::readLine(buf, (int)(sizeof(buf) / sizeof(char)), cfp->handle) == NULL)
 				{
 					lua_pushnil(L);
 				}
@@ -1275,14 +1275,14 @@ ADE_FUNC(read, l_File, "number or string, ...",
 
 			if(num < 1)
 			{
-				if (cfile::eof(cfp->handle))
+				if (cfile::io::eof(cfp->handle))
 					lua_pushstring(L, "");
 				else
 					lua_pushnil(L);
 			}
 
 			char *buf = (char*)vm_malloc(num+1);
-			int total_read = cfile::read(buf, 1, num, cfp->handle);
+			int total_read = cfile::io::read(buf, 1, num, cfp->handle);
 			if(total_read)
 			{
 				buf[total_read] = '\0';
@@ -1333,11 +1333,11 @@ ADE_FUNC(seek, l_File, "[string Whence=\"cur\", number Offset=0]",
 		else
 			LuaError(L, "Invalid where argument passed to seek() - '%s'", w);
 
-		if (cfile::seek(cfp->handle, o, seek_type))
+		if (cfile::io::seek(cfp->handle, o, seek_type))
 			return ADE_RETURN_FALSE;
 	}
 
-	int res = cfile::tell(cfp->handle);
+	int res = cfile::io::tell(cfp->handle);
 	if(res >= 0)
 		return ade_set_args(L, "i", res);
 	else
@@ -12184,7 +12184,7 @@ ADE_FUNC(openFile, l_CFile, "string Filename, [string Mode=\"r\", string Path = 
 
 	SCP_string filename = constructFilePath(n_filename, n_path);
 
-	cfile::FileHandle *cfp = cfile::open(filename, mode);
+	cfile::FileHandle *cfp = cfile::io::open(filename, mode);
 
 	return ade_set_args(L, "o", l_File.Set(cfp));
 }

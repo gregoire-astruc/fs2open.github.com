@@ -76,16 +76,16 @@ void pilotfile::plr_read_info()
 	}
 
 	// pilot image
-	cfile::readStringLen(p->image_filename, MAX_FILENAME_LEN, cfp);
+	cfile::io::readStringLen(p->image_filename, MAX_FILENAME_LEN, cfp);
 
 	// multi squad name
-	cfile::readStringLen(p->m_squad_name, NAME_LENGTH, cfp);
+	cfile::io::readStringLen(p->m_squad_name, NAME_LENGTH, cfp);
 
 	// squad image
-	cfile::readStringLen(p->m_squad_filename, MAX_FILENAME_LEN, cfp);
+	cfile::io::readStringLen(p->m_squad_filename, MAX_FILENAME_LEN, cfp);
 
 	// active campaign
-	cfile::readStringLen(p->current_campaign, MAX_FILENAME_LEN, cfp);
+	cfile::io::readStringLen(p->current_campaign, MAX_FILENAME_LEN, cfp);
 }
 
 void pilotfile::plr_write_info()
@@ -93,16 +93,16 @@ void pilotfile::plr_write_info()
 	startSection(Section::Info);
 
 	// pilot image
-	cfile::writeStringLen(p->image_filename, cfp);
+	cfile::io::writeStringLen(p->image_filename, cfp);
 
 	// multi squad name
-	cfile::writeStringLen(p->m_squad_name, cfp);
+	cfile::io::writeStringLen(p->m_squad_name, cfp);
 
 	// squad image
-	cfile::writeStringLen(p->m_squad_filename, cfp);
+	cfile::io::writeStringLen(p->m_squad_filename, cfp);
 
 	// active campaign
-	cfile::writeStringLen(p->current_campaign, cfp);
+	cfile::io::writeStringLen(p->current_campaign, cfp);
 
 	endSection();
 }
@@ -206,8 +206,8 @@ void pilotfile::plr_read_variables()
 
 	for (idx = 0; idx < list_size; idx++) {
 		n_var.type = cfile::read<int>(cfp);
-		cfile::readStringLen(n_var.text, TOKEN_LENGTH, cfp);
-		cfile::readStringLen(n_var.variable_name, TOKEN_LENGTH, cfp);
+		cfile::io::readStringLen(n_var.text, TOKEN_LENGTH, cfp);
+		cfile::io::readStringLen(n_var.variable_name, TOKEN_LENGTH, cfp);
 
 		p->variables.push_back( n_var );
 	}
@@ -226,8 +226,8 @@ void pilotfile::plr_write_variables()
 
 	for (idx = 0; idx < list_size; idx++) {
 		cfile::write<int>(p->variables[idx].type, cfp);
-		cfile::writeStringLen(p->variables[idx].text, cfp);
-		cfile::writeStringLen(p->variables[idx].variable_name, cfp);
+		cfile::io::writeStringLen(p->variables[idx].text, cfp);
+		cfile::io::writeStringLen(p->variables[idx].variable_name, cfp);
 	}
 
 	endSection();
@@ -321,7 +321,7 @@ void pilotfile::plr_read_stats()
 	all_time_stats.ship_kills.reserve(list_size);
 
 	for (idx = 0; idx < list_size; idx++) {
-		cfile::readStringLen(t_string, NAME_LENGTH, cfp);
+		cfile::io::readStringLen(t_string, NAME_LENGTH, cfp);
 
 		ilist.name = t_string;
 		ilist.index = ship_info_lookup(t_string);
@@ -335,7 +335,7 @@ void pilotfile::plr_read_stats()
 	all_time_stats.medals_earned.reserve(list_size);
 
 	for (idx = 0; idx < list_size; idx++) {
-		cfile::readStringLen(t_string, NAME_LENGTH,cfp);
+		cfile::io::readStringLen(t_string, NAME_LENGTH,cfp);
 
 		ilist.name = t_string;
 		ilist.index = medals_info_lookup(t_string);
@@ -420,7 +420,7 @@ void pilotfile::plr_write_stats()
 	cfile::write<int>(list_size, cfp);
 
 	for (idx = 0; idx < list_size; idx++) {
-		cfile::writeStringLen(all_time_stats.ship_kills[idx].name.c_str(), cfp);
+		cfile::io::writeStringLen(all_time_stats.ship_kills[idx].name.c_str(), cfp);
 		cfile::write<int>(all_time_stats.ship_kills[idx].val, cfp);
 	}
 
@@ -429,7 +429,7 @@ void pilotfile::plr_write_stats()
 	cfile::write<int>(list_size, cfp);
 
 	for (idx = 0; idx < list_size; idx++) {
-		cfile::writeStringLen(all_time_stats.medals_earned[idx].name.c_str(), cfp);
+		cfile::io::writeStringLen(all_time_stats.medals_earned[idx].name.c_str(), cfp);
 		cfile::write<int>(all_time_stats.medals_earned[idx].val, cfp);
 	}
 
@@ -468,7 +468,7 @@ void pilotfile::plr_read_stats_multi()
 	multi_stats.ship_kills.reserve(list_size);
 
 	for (idx = 0; idx < list_size; idx++) {
-		cfile::readStringLen(t_string, NAME_LENGTH, cfp);
+		cfile::io::readStringLen(t_string, NAME_LENGTH, cfp);
 
 		ilist.name = t_string;
 		ilist.index = ship_info_lookup(t_string);
@@ -482,7 +482,7 @@ void pilotfile::plr_read_stats_multi()
 	multi_stats.medals_earned.reserve(list_size);
 
 	for (idx = 0; idx < list_size; idx++) {
-		cfile::readStringLen(t_string, NAME_LENGTH,cfp);
+		cfile::io::readStringLen(t_string, NAME_LENGTH,cfp);
 
 		ilist.name = t_string;
 		ilist.index = medals_info_lookup(t_string);
@@ -567,7 +567,7 @@ void pilotfile::plr_write_stats_multi()
 	cfile::write<int>(list_size, cfp);
 
 	for (idx = 0; idx < list_size; idx++) {
-		cfile::writeStringLen(multi_stats.ship_kills[idx].name.c_str(), cfp);
+		cfile::io::writeStringLen(multi_stats.ship_kills[idx].name.c_str(), cfp);
 		cfile::write<int>(multi_stats.ship_kills[idx].val, cfp);
 	}
 
@@ -576,7 +576,7 @@ void pilotfile::plr_write_stats_multi()
 	cfile::write<int>(list_size, cfp);
 
 	for (idx = 0; idx < list_size; idx++) {
-		cfile::writeStringLen(multi_stats.medals_earned[idx].name.c_str(), cfp);
+		cfile::io::writeStringLen(multi_stats.medals_earned[idx].name.c_str(), cfp);
 		cfile::write<int>(multi_stats.medals_earned[idx].val, cfp);
 	}
 
@@ -748,7 +748,7 @@ void pilotfile::plr_reset_data()
 void pilotfile::plr_close()
 {
 	if (cfp) {
-		cfile::close(cfp);
+		cfile::io::close(cfp);
 		cfp = NULL;
 	}
 
@@ -792,7 +792,7 @@ bool pilotfile::load_player(const char *callsign, player *_p)
 		return false;
 	}
 
-	cfp = cfile::open(filename, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_PLAYERS);
+	cfp = cfile::io::open(filename, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_PLAYERS);
 
 	if ( !cfp ) {
 		mprintf(("PLR => Unable to open '%s' for reading!\n", filename.c_str()));
@@ -815,14 +815,14 @@ bool pilotfile::load_player(const char *callsign, player *_p)
 	plr_reset_data();
 
 	// the point of all this: read in the PLR contents
-	while ( !cfile::eof(cfp) ) {
+	while ( !cfile::io::eof(cfp) ) {
 		ushort section_id = cfile::read<ushort>(cfp);
 		uint section_size = cfile::read<uint>(cfp);
 
-		size_t start_pos = cfile::tell(cfp);
+		size_t start_pos = cfile::io::tell(cfp);
 
 		// safety, to help protect against long reads
-		cfile::setMaxReadLength(cfp, section_size);
+		cfile::io::setMaxReadLength(cfp, section_size);
 
 		try {
 			switch (section_id) {
@@ -888,13 +888,13 @@ bool pilotfile::load_player(const char *callsign, player *_p)
 		}
 
 		// reset safety catch
-		cfile::setMaxReadLength(cfp, 0);
+		cfile::io::setMaxReadLength(cfp, 0);
 
 		// skip to next section (if not already there)
-		size_t offset_pos = (start_pos + section_size) - cfile::tell(cfp);
+		size_t offset_pos = (start_pos + section_size) - cfile::io::tell(cfp);
 
 		if (offset_pos) {
-			cfile::seek(cfp, offset_pos, cfile::SEEK_MODE_CUR);
+			cfile::io::seek(cfp, offset_pos, cfile::SEEK_MODE_CUR);
 			mprintf(("PLR => WARNING: Advancing to the next section. %i bytes were skipped!\n", offset_pos));
 		}
 	}
@@ -948,7 +948,7 @@ bool pilotfile::save_player(player *_p)
 	}
 
 	// open it, hopefully...
-	cfp = cfile::open(filename, cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_PLAYERS);
+	cfp = cfile::io::open(filename, cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_PLAYERS);
 
 	if ( !cfp ) {
 		mprintf(("PLR => Unable to open '%s' for saving!\n", filename.c_str()));
@@ -1005,7 +1005,7 @@ bool pilotfile::verify(const char *fname, int *rank)
 		return false;
 	}
 
-	cfp = cfile::open((char*)filename.c_str(), cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_PLAYERS);
+	cfp = cfile::io::open((char*)filename.c_str(), cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_PLAYERS);
 
 	if ( !cfp ) {
 		mprintf(("PLR => Unable to open '%s'!\n", filename.c_str()));
@@ -1026,14 +1026,14 @@ bool pilotfile::verify(const char *fname, int *rank)
 	mprintf(("PLR => Verifying '%s' with version %d...\n", filename.c_str(), (int)plr_ver));
 
 	// the point of all this: read in the PLR contents
-	while ( !m_have_flags && !cfile::eof(cfp) ) {
+	while ( !m_have_flags && !cfile::io::eof(cfp) ) {
 		ushort section_id = cfile::read<ushort>(cfp);
 		uint section_size = cfile::read<uint>(cfp);
 
-		size_t start_pos = cfile::tell(cfp);
+		size_t start_pos = cfile::io::tell(cfp);
 
 		// safety, to help protect against long reads
-		cfile::setMaxReadLength(cfp, section_size);
+		cfile::io::setMaxReadLength(cfp, section_size);
 
 		try {
 			switch (section_id) {
@@ -1057,14 +1057,14 @@ bool pilotfile::verify(const char *fname, int *rank)
 		}
 
 		// reset safety catch
-		cfile::setMaxReadLength(cfp, 0);
+		cfile::io::setMaxReadLength(cfp, 0);
 
 		// skip to next section (if not already there)
-		size_t offset_pos = (start_pos + section_size) - cfile::tell(cfp);
+		size_t offset_pos = (start_pos + section_size) - cfile::io::tell(cfp);
 
 		if (offset_pos) {
 			mprintf(("PLR => Warning: (0x%04x) Short read, information may have been lost!\n", section_id));
-			cfile::seek(cfp, offset_pos, cfile::SEEK_MODE_CUR);
+			cfile::io::seek(cfp, offset_pos, cfile::SEEK_MODE_CUR);
 		}
 	}
 

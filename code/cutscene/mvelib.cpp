@@ -67,7 +67,7 @@ MVEFILE *mvefile_open(char *filename)
 
 	// NOTE: CF_TYPE *must* be ANY to get movies off of the CDs
 	// assume lower case filename for *nix
-	file->stream = cfile::open(lower_name, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_ANY);
+	file->stream = cfile::io::open(lower_name, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_ANY);
 	if ( file->stream ) {
 		cf_opened = 1;
 	}
@@ -82,7 +82,7 @@ MVEFILE *mvefile_open(char *filename)
 	file->buf_size = 100 + 1024;
 
 	// verify the file's header
-	cfile::readString(buffer, 20, file->stream);
+	cfile::io::readString(buffer, 20, file->stream);
 	
 	if (strcmp(buffer, MVE_HEADER))
 		mve_valid = 0;
@@ -112,7 +112,7 @@ void mvefile_close(MVEFILE *file)
 {
 	// free the stream
 	if (file->stream)
-		cfile::close(file->stream);
+		cfile::io::close(file->stream);
 
 	file->stream = NULL;
 

@@ -1464,7 +1464,7 @@ void multi_join_load_tcp_addrs()
 	cfile::FileHandle *file = NULL;
 
 	// attempt to open the ip list file
-	file = cfile::open(IP_CONFIG_FNAME, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_DATA);	
+	file = cfile::io::open(IP_CONFIG_FNAME, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_DATA);	
 	if(file == NULL){
 		nprintf(("Network","Error loading tcp.cfg file!\n"));
 		return;
@@ -1474,9 +1474,9 @@ void multi_join_load_tcp_addrs()
 	multi_free_server_list();
 
 	// read in all the strings in the file
-	while(!cfile::eof(file)){
+	while(!cfile::io::eof(file)){
 		line[0] = '\0';
-		cfile::readLine(line,MAX_IP_STRING,file);
+		cfile::io::readLine(line,MAX_IP_STRING,file);
 
 		// strip off any newline character
 		if(line[strlen(line) - 1] == '\n'){
@@ -1507,7 +1507,7 @@ void multi_join_load_tcp_addrs()
 		}
 	}
 
-	cfile::close(file);
+	cfile::io::close(file);
 }
 
 // do stuff like pinging servers, sending out requests, etc

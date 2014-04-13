@@ -386,20 +386,20 @@ int gr_create_font(char * typeface)
 	
 	bool localize = true;
 
-	fp = cfile::open( typeface, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_ANY, localize );
+	fp = cfile::io::open( typeface, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_ANY, localize );
 	if ( fp == NULL ) return -1;
 
 	strcpy_s( fnt->filename, typeface );
-	cfile::read( &fnt->id, 4, 1, fp );
-	cfile::read( &fnt->version, sizeof(int), 1, fp );
-	cfile::read( &fnt->num_chars, sizeof(int), 1, fp );
-	cfile::read( &fnt->first_ascii, sizeof(int), 1, fp );
-	cfile::read( &fnt->w, sizeof(int), 1, fp );
-	cfile::read( &fnt->h, sizeof(int), 1, fp );
-	cfile::read( &fnt->num_kern_pairs, sizeof(int), 1, fp );
-	cfile::read( &fnt->kern_data_size, sizeof(int), 1, fp );
-	cfile::read( &fnt->char_data_size, sizeof(int), 1, fp );
-	cfile::read( &fnt->pixel_data_size, sizeof(int), 1, fp );
+	cfile::io::read( &fnt->id, 4, 1, fp );
+	cfile::io::read( &fnt->version, sizeof(int), 1, fp );
+	cfile::io::read( &fnt->num_chars, sizeof(int), 1, fp );
+	cfile::io::read( &fnt->first_ascii, sizeof(int), 1, fp );
+	cfile::io::read( &fnt->w, sizeof(int), 1, fp );
+	cfile::io::read( &fnt->h, sizeof(int), 1, fp );
+	cfile::io::read( &fnt->num_kern_pairs, sizeof(int), 1, fp );
+	cfile::io::read( &fnt->kern_data_size, sizeof(int), 1, fp );
+	cfile::io::read( &fnt->char_data_size, sizeof(int), 1, fp );
+	cfile::io::read( &fnt->pixel_data_size, sizeof(int), 1, fp );
 
 	fnt->id = INTEL_SHORT( fnt->id ); //-V570
 	fnt->version = INTEL_INT( fnt->version ); //-V570
@@ -415,14 +415,14 @@ int gr_create_font(char * typeface)
 	if ( fnt->kern_data_size )	{
 		fnt->kern_data = (font_kernpair *)vm_malloc( fnt->kern_data_size );
 		Assert(fnt->kern_data!=NULL);
-		cfile::read( fnt->kern_data, fnt->kern_data_size, 1, fp );
+		cfile::io::read( fnt->kern_data, fnt->kern_data_size, 1, fp );
 	} else {
 		fnt->kern_data = NULL;
 	}
 	if ( fnt->char_data_size )	{
 		fnt->char_data = (font_char *)vm_malloc( fnt->char_data_size );
 		Assert( fnt->char_data != NULL );
-		cfile::read( fnt->char_data, fnt->char_data_size, 1, fp );
+		cfile::io::read( fnt->char_data, fnt->char_data_size, 1, fp );
 
 		for (int i=0; i<fnt->num_chars; i++) {
 			fnt->char_data[i].spacing = INTEL_INT( fnt->char_data[i].spacing ); //-V570
@@ -437,11 +437,11 @@ int gr_create_font(char * typeface)
 	if ( fnt->pixel_data_size )	{
 		fnt->pixel_data = (ubyte *)vm_malloc( fnt->pixel_data_size );
 		Assert(fnt->pixel_data!=NULL);
-		cfile::read( fnt->pixel_data, fnt->pixel_data_size, 1, fp );
+		cfile::io::read( fnt->pixel_data, fnt->pixel_data_size, 1, fp );
 	} else {
 		fnt->pixel_data = NULL;
 	}
-	cfile::close(fp);
+	cfile::io::close(fp);
 
 	// Create a bitmap for hardware cards.
 	// JAS:  Try to squeeze this into the smallest square power of two texture.

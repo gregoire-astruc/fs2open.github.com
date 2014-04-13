@@ -191,7 +191,7 @@ void read_menu_tbl(char* menu_name, char* bkg_filename, char* mask_filename, MEN
 	// open localization
 	lcl_ext_open();
 
-	fp = cfile::open(NOX("menu.tbl"));
+	fp = cfile::io::open(NOX("menu.tbl"));
 	if (fp == NULL) {
 		Error(LOCATION, "menu.tbl could not be opened\n");
 
@@ -202,7 +202,7 @@ void read_menu_tbl(char* menu_name, char* bkg_filename, char* mask_filename, MEN
 	}
 
 
-	while (cfile::readLine(tmp_line, 132, fp)) {
+	while (cfile::io::readLine(tmp_line, 132, fp)) {
 		p1 = strchr(tmp_line,'\n'); if (p1) *p1 = '\0';
 		p1 = strchr(tmp_line,';'); if (p1) *p1 = '\0';
 		p1 = p3 = strchr( tmp_line, '[' );
@@ -211,7 +211,7 @@ void read_menu_tbl(char* menu_name, char* bkg_filename, char* mask_filename, MEN
 			// close localization
 			lcl_ext_close();
 
-			cfile::close(fp);
+			cfile::io::close(fp);
 			return;
 		}
 		
@@ -221,7 +221,7 @@ void read_menu_tbl(char* menu_name, char* bkg_filename, char* mask_filename, MEN
 				if (p2) *p2 = 0;
 				if (!stricmp( ++p1, menu_name )) state = 1;
 			} else {
-				cfile::close(fp);
+				cfile::io::close(fp);
 				break;
 			}
 		} else if (state) {
@@ -278,7 +278,7 @@ void read_menu_tbl(char* menu_name, char* bkg_filename, char* mask_filename, MEN
 			}
 		}
 	}	
-	cfile::close(fp);
+	cfile::io::close(fp);
 	
 	// close localization
 	lcl_ext_close();

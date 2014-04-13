@@ -430,7 +430,7 @@ int bm_load_sub_slow(const char *real_filename, const int num_ext, const char **
 	if (rval >= (size_t) num_ext)
 		return -1;
 
-	cfile::FileHandle *test = cfile::open(fullPath);
+	cfile::FileHandle *test = cfile::io::open(fullPath);
 
 	if (test != NULL) {
 		if (img_cfp != NULL)
@@ -603,7 +603,7 @@ int bm_load( const char *real_filename )
 
 Done:
 	if (img_cfp != NULL)
-		cfile::close(img_cfp);
+		cfile::io::close(img_cfp);
 
 	return handle;
 }
@@ -954,8 +954,8 @@ int bm_load_animation( const char *real_filename, int *nframes, int *fps, int *k
 
 			for(i=0;i<the_anim.num_keys;i++){
 				the_anim.keys[i].frame_num = 0;
-				cfile::read(&the_anim.keys[i].frame_num, 2, 1, img_cfp);
-				cfile::read(&the_anim.keys[i].offset, 4, 1, img_cfp);
+				cfile::io::read(&the_anim.keys[i].frame_num, 2, 1, img_cfp);
+				cfile::io::read(&the_anim.keys[i].offset, 4, 1, img_cfp);
 				the_anim.keys[i].frame_num = INTEL_INT( the_anim.keys[i].frame_num ); //-V570
 				the_anim.keys[i].offset = INTEL_INT( the_anim.keys[i].offset ); //-V570
 			}
@@ -981,7 +981,7 @@ int bm_load_animation( const char *real_filename, int *nframes, int *fps, int *k
 
 	if (n < 0) {
 		if (img_cfp != NULL)
-			cfile::close(img_cfp);
+			cfile::io::close(img_cfp);
 
 		return -1;
 	}
@@ -1003,7 +1003,7 @@ int bm_load_animation( const char *real_filename, int *nframes, int *fps, int *k
 					Warning(LOCATION, "EFF: No frame images were found.  EFF, %s, is invalid.\n", filename);
 
 					if (img_cfp != NULL)
-						cfile::close(img_cfp);
+						cfile::io::close(img_cfp);
 
 					return -1;
 				}
@@ -1069,7 +1069,7 @@ int bm_load_animation( const char *real_filename, int *nframes, int *fps, int *k
 		*fps = anim_fps;
 
 	if (img_cfp != NULL)
-		cfile::close(img_cfp);
+		cfile::io::close(img_cfp);
 
 	if (keyframe)
 		*keyframe = key;

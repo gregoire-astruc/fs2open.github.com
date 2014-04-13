@@ -1605,7 +1605,7 @@ void hud_config_as_player()
 void hud_config_color_save(char *name)
 {
 	int idx;
-	cfile::FileHandle *out = cfile::open(name, cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_PLAYERS);
+	cfile::FileHandle *out = cfile::io::open(name, cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_PLAYERS);
 	char vals[255] = "";
 
 	// bad
@@ -1625,7 +1625,7 @@ void hud_config_color_save(char *name)
 	}
 	
 	// close the file
-	cfile::close(out);	
+	cfile::io::close(out);	
 }
 
 void hud_config_color_load(const char *name)

@@ -58,7 +58,7 @@ bool logfile_init(int logfile_type)
 	}
 
 	// attempt to open the file
-	logfiles[logfile_type].log_file = cfile::open(logfiles[logfile_type].filename, cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_DATA);
+	logfiles[logfile_type].log_file = cfile::io::open(logfiles[logfile_type].filename, cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_DATA);
 
 	if(logfiles[logfile_type].log_file == NULL){
 		nprintf(("Network","Error opening %s for writing!!\n",logfiles[logfile_type].filename));
@@ -74,7 +74,7 @@ void logfile_close(int logfile_type)
 	// if we have a valid file, write a trailer and close
 	if(logfiles[logfile_type].log_file != NULL){
 
-		cfile::close(logfiles[logfile_type].log_file);
+		cfile::io::close(logfiles[logfile_type].log_file);
 		logfiles[logfile_type].log_file = NULL;
 	}
 }
@@ -130,7 +130,7 @@ void log_string(int logfile_type, const char *string, int add_time)
 
 	// now print it to the logfile if necessary	
 	cfile::write<const char*>(tmp, logfiles[logfile_type].log_file);
-	cfile::flush(logfiles[logfile_type].log_file);
+	cfile::io::flush(logfiles[logfile_type].log_file);
 
 #if defined(LOGFILE_ECHO_TO_DEBUG)
 	mprintf(("Log file type %d %s",logfile_type, tmp));

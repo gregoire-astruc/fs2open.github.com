@@ -2948,19 +2948,19 @@ void multi_get_mission_checksum(const char *filename)
 	Multi_current_file_length = -1;
 
 	// get the filename
-	in = cfile::open(filename);
+	in = cfile::io::open(filename);
 	if(in != NULL){
 		// get the length of the file
-		Multi_current_file_length = cfile::fileLength(in);
-		cfile::close(in);
+		Multi_current_file_length = cfile::io::fileLength(in);
+		cfile::io::close(in);
 
-		in = cfile::open(filename);
+		in = cfile::io::open(filename);
 		if(in != NULL){
 			// get the checksum of the file
 			cfile::checksum::crc::doShort(in, &Multi_current_file_checksum);
 
 			// close the file
-			cfile::close(in);
+			cfile::io::close(in);
 			in = NULL;
 		}
 		// if the file doesn't exist, setup some special values, so the server recognizes this
@@ -3086,14 +3086,14 @@ void multi_update_valid_missions()
 	}
 	
 	// attempt to open the valid mission config file
-	in = cfile::open(MULTI_VALID_MISSION_FILE, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_DATA);
+	in = cfile::io::open(MULTI_VALID_MISSION_FILE, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_DATA);
 
 	if (in != NULL) {		
 		// read in all listed missions
-		while ( !cfile::eof(in) ) {
+		while ( !cfile::io::eof(in) ) {
 			// read in a line
 			memset(next_line, 0, 512);
-			cfile::readLine(next_line, 512, in);
+			cfile::io::readLine(next_line, 512, in);
 
 			drop_trailing_white_space(next_line);
 			drop_leading_white_space(next_line);
@@ -3132,7 +3132,7 @@ void multi_update_valid_missions()
 		}
 
 		// close the infile
-		cfile::close(in);
+		cfile::io::close(in);
 		in = NULL;	
 	}
 
@@ -3150,7 +3150,7 @@ void multi_update_valid_missions()
 	}
 
 	// now rewrite the outfile with the new mission info
-	in = cfile::open(MULTI_VALID_MISSION_FILE, cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_DATA);
+	in = cfile::io::open(MULTI_VALID_MISSION_FILE, cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_DATA);
 	if(in == NULL){
 		// if we're a standalone, kill the validate dialog
 		if(Game_mode & GM_STANDALONE_SERVER){
@@ -3177,7 +3177,7 @@ void multi_update_valid_missions()
 	}
 
 	// close the outfile
-	cfile::close(in);
+	cfile::io::close(in);
 	in = NULL;
 
 	// if we're a standalone, kill the validate dialog
@@ -3285,12 +3285,12 @@ void multi_spew_pxo_checksums(int max_files, char *outfile)
 	cfile::listFiles(fileNames, cfile::TYPE_MISSIONS, wild_card);
 
 	// open the outfile
-	cfile::FileHandle *out = cfile::open(outfile, cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_ROOT);
+	cfile::FileHandle *out = cfile::io::open(outfile, cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_ROOT);
 
 	if (out == NULL)
 		return;
 
-	std::iostream& stream = cfile::getStream(out);
+	std::iostream& stream = cfile::io::getStream(out);
 
 	p = Cmdline_spew_mission_crcs;
 
@@ -3358,7 +3358,7 @@ void multi_spew_pxo_checksums(int max_files, char *outfile)
 		stream << '"' << description << '"' << std::endl;
 	}
 
-	cfile::close(out);
+	cfile::io::close(out);
 }
 
 /*

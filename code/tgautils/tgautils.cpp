@@ -374,7 +374,7 @@ int targa_read_header(const char *real_filename, cfile::FileHandle *img_cfp, int
 
 		strcat_s( filename, ".tga" );
 
-		targa_file = cfile::open(filename);
+		targa_file = cfile::io::open(filename);
 
 		if ( !targa_file ) {
 			return TARGA_ERROR_READING;
@@ -420,7 +420,7 @@ int targa_read_header(const char *real_filename, cfile::FileHandle *img_cfp, int
 	// header.image_descriptor=targa_file.read_char();
 
 	if (img_cfp == NULL) {
-		cfile::close(targa_file);
+		cfile::io::close(targa_file);
 		targa_file = NULL;
 	}
 	
@@ -516,31 +516,31 @@ int targa_read_bitmap(const char *real_filename, ubyte *image_data, ubyte *palet
 	if ( p ) *p = 0;
 	strcat_s( filename, ".tga" );
 
-	targa_file = cfile::open( filename , cfile::MODE_READ, cfile::OPEN_NORMAL, cf_type );
+	targa_file = cfile::io::open( filename , cfile::MODE_READ, cfile::OPEN_NORMAL, cf_type );
 	if ( !targa_file ){
 		return TARGA_ERROR_READING;
 	}		
 
 	// read the footer info first
-	cfile::seek( targa_file, cfile::fileLength(targa_file) - TARGA_FOOTER_SIZE, cfile::SEEK_MODE_SET );
+	cfile::io::seek( targa_file, cfile::io::fileLength(targa_file) - TARGA_FOOTER_SIZE, cfile::SEEK_MODE_SET );
 
 	memset( &footer, 0, sizeof(targa_footer) );
 
 	footer.ext_offset = cfile::read<uint>(targa_file);
 	footer.dev_offset = cfile::read<uint>(targa_file);
 
-	cfile::readString(footer.sig_string, sizeof(footer.sig_string), targa_file);
+	cfile::io::readString(footer.sig_string, sizeof(footer.sig_string), targa_file);
 
 	if ( !strcmp(footer.sig_string, Xfile_ID) ) {
 		// it's an extended file to lets be sure to skip the extra crap which comes after the
 		// image data section, dev section comes first in the file and we only need one offset
 		if (footer.dev_offset || footer.ext_offset) {
-			xfile_offset = cfile::fileLength(targa_file) - ((footer.dev_offset) ? footer.dev_offset : footer.ext_offset);
+			xfile_offset = cfile::io::fileLength(targa_file) - ((footer.dev_offset) ? footer.dev_offset : footer.ext_offset);
 		}
 	}
 
 	// done with the footer so jump back and do normal reading
-	cfile::seek(targa_file, 0, cfile::SEEK_MODE_SET);
+	cfile::io::seek(targa_file, 0, cfile::SEEK_MODE_SET);
 
 	header.id_length = cfile::read<ubyte>(targa_file);
 	// header.id_length=targa_file.read_char();
@@ -584,21 +584,21 @@ int targa_read_bitmap(const char *real_filename, ubyte *image_data, ubyte *palet
 	Assert( (bytes_per_pixel == 2) || (bytes_per_pixel == 3) || (bytes_per_pixel == 4) );
 
 	if ( (bytes_per_pixel < 2) || (bytes_per_pixel > 4) ) {
-		cfile::close(targa_file);
+		cfile::io::close(targa_file);
 		Int3();
 
 		return TARGA_ERROR_READING;
 	}
 
 	if((header.image_type!=1)&&(header.image_type!=2)&&(header.image_type!=9)&&(header.image_type!=10)) {
-		cfile::close(targa_file);
+		cfile::io::close(targa_file);
 		return TARGA_ERROR_READING;
 	}
 
 	// skip the Image ID field -- should not be needed
 	if(header.id_length>0) {
-		if (cfile::seek(targa_file, header.id_length, cfile::SEEK_MODE_CUR)) {
-			cfile::close(targa_file);
+		if (cfile::io::seek(targa_file, header.id_length, cfile::SEEK_MODE_CUR)) {
+			cfile::io::close(targa_file);
 			return TARGA_ERROR_READING;
 		}
 	}
@@ -636,7 +636,7 @@ int targa_read_bitmap(const char *real_filename, ubyte *image_data, ubyte *palet
 		}
 	}
 
-	int bytes_remaining = cfile::fileLength(targa_file) - cfile::tell(targa_file) - xfile_offset;
+	int bytes_remaining = cfile::io::fileLength(targa_file) - cfile::io::tell(targa_file) - xfile_offset;
 
 	Assert(bytes_remaining > 0);
 
@@ -686,7 +686,7 @@ int targa_read_bitmap(const char *real_filename, ubyte *image_data, ubyte *palet
 	}
 
 	vm_free(fileptr);
-	cfile::close(targa_file);
+	cfile::io::close(targa_file);
 	targa_file = NULL;
 
 	return TARGA_ERROR_NONE;
@@ -716,7 +716,7 @@ int targa_write_bitmap(char *real_filename, ubyte *data, ubyte *palette, int w, 
 	if ( p ) *p = 0;
 	strcat_s( filename, ".tga" );
 
-	f = cfile::open(filename , cfile::MODE_WRITE);
+	f = cfile::io::open(filename , cfile::MODE_WRITE);
 	if ( !f ){
 		return TARGA_ERROR_READING;
 	}			
@@ -762,7 +762,7 @@ int targa_write_bitmap(char *real_filename, ubyte *data, ubyte *palette, int w, 
 	compressed_data = (ubyte*)vm_malloc(w * h * bytes_per_pixel);
 	Assert(compressed_data);
 	if(compressed_data == NULL){
-		cfile::close(f);
+		cfile::io::close(f);
 		return -1;
 	}
 
@@ -770,12 +770,12 @@ int targa_write_bitmap(char *real_filename, ubyte *data, ubyte *palette, int w, 
 	compressed_data_len = targa_compress((char*)compressed_data, (char*)data, 3, bytes_per_pixel, w * h * bytes_per_pixel);
 	if (compressed_data_len < 0) {
 		vm_free(compressed_data);
-		cfile::close(f);		
+		cfile::io::close(f);		
 		return -1;
 	}
 
 	cfile::write(compressed_data, compressed_data_len, 1, f);
-	cfile::close(f);
+	cfile::io::close(f);
 	f = NULL;
 
 	return 0;

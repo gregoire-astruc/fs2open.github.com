@@ -79,7 +79,7 @@ int load_nebula_sub(char *filename)
 	char id[16];
 	int version, major;
 
-	fp = cfile::open(filename);
+	fp = cfile::io::open(filename);
 
 	if ( !fp )	{
 		return 0;
@@ -125,7 +125,7 @@ int load_nebula_sub(char *filename)
 		cfile::read( &tri[i][2], sizeof(int), 1, fp );
 	}
 
-	cfile::close(fp);
+	cfile::io::close(fp);
 
 	return 1;
 }

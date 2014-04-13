@@ -805,7 +805,7 @@ namespace cfile
 		return outMode;
 	}
 
-	FileHandle* open(const SCP_string& file_path, int mode, OpenType type, DirType dir_type, bool localize)
+	FileHandle* io::open(const SCP_string& file_path, int mode, OpenType type, DirType dir_type, bool localize)
 	{
 		Assertion(inited, "CFile system has not been inited!");
 
@@ -846,7 +846,7 @@ namespace cfile
 		return NULL;
 	}
 
-	bool close(FileHandle* handle)
+	bool io::close(FileHandle* handle)
 	{
 		Assert(handle);
 		Assertion(cfilePool->is_from(handle), "Handle not allocated by the cfile system!");
@@ -865,7 +865,7 @@ namespace cfile
 		return true;
 	}
 
-	std::iostream& getStream(FileHandle* handle)
+	std::iostream& io::getStream(FileHandle* handle)
 	{
 		Assert(handle != NULL);
 		Assertion(handle->maxReadLength == 0, "Trying to use C++ stream with read length restriction is not possible!");
@@ -873,7 +873,7 @@ namespace cfile
 		return handle->stream;
 	}
 
-	void setMaxReadLength(FileHandle* handle, size_t size)
+	void io::setMaxReadLength(FileHandle* handle, size_t size)
 	{
 		Assert(handle != NULL);
 		Assert(handle->mode & MODE_READ);
@@ -883,12 +883,12 @@ namespace cfile
 		handle->readLengthStart = handle->stream.tellg();
 	}
 
-	const std::string& getFilePath(FileHandle* handle)
+	const std::string& io::getFilePath(FileHandle* handle)
 	{
 		return handle->entry->getPath();
 	}
 
-	bool flush(FileHandle* handle)
+	bool io::flush(FileHandle* handle)
 	{
 		Assert(handle != NULL);
 
@@ -910,7 +910,7 @@ namespace cfile
 		return true;
 	}
 
-	int seek(FileHandle *fp, int offset, cfile::SeekMode where)
+	int io::seek(FileHandle *fp, int offset, cfile::SeekMode where)
 	{
 		Assert(fp != NULL);
 
@@ -952,7 +952,7 @@ namespace cfile
 		}
 	}
 
-	int tell(FileHandle* fp)
+	int io::tell(FileHandle* fp)
 	{
 		Assert(fp != NULL);
 
@@ -966,7 +966,7 @@ namespace cfile
 		return -1;
 	}
 
-	bool eof(FileHandle* fp)
+	bool io::eof(FileHandle* fp)
 	{
 		Assert(fp != NULL);
 		Assert(fp->mode & MODE_READ);
@@ -980,53 +980,53 @@ namespace cfile
 		return fp->stream.eof();
 	}
 
-	int fileLength(FileHandle* handle)
+	int io::fileLength(FileHandle* handle)
 	{
-		int curr = tell(handle);
+		int curr = io::tell(handle);
 
-		seek(handle, 0, SEEK_MODE_END);
+		io::seek(handle, 0, SEEK_MODE_END);
 
-		int length = tell(handle);
+		int length = io::tell(handle);
 
-		seek(handle, curr, SEEK_MODE_SET);
+		io::seek(handle, curr, SEEK_MODE_SET);
 
 		return length;
 	}
 
 	template<>
-	char read<char>(FileHandle* handle)
+	char io::read<char>(FileHandle* handle)
 	{
 		Assert(handle != NULL);
 
 		char c;
 
-		if (read(&c, sizeof(c), 1, handle) != 1)
+		if (io::read(&c, sizeof(c), 1, handle) != 1)
 			return 0;
 
 		return c;
 	}
 
 	template<>
-	ubyte read<ubyte>(FileHandle* handle)
+	ubyte io::read<ubyte>(FileHandle* handle)
 	{
 		Assert(handle != NULL);
 
 		ubyte c;
 
-		if (read(&c, sizeof(c), 1, handle) != 1)
+		if (io::read(&c, sizeof(c), 1, handle) != 1)
 			return 0;
 
 		return c;
 	}
 
 	template<>
-	int read<int>(FileHandle* handle)
+	int io::read<int>(FileHandle* handle)
 	{
 		Assert(handle != NULL);
 
 		int i;
 
-		if (read(&i, sizeof(i), 1, handle) != 1)
+		if (io::read(&i, sizeof(i), 1, handle) != 1)
 			return 0;
 
 		i = INTEL_INT(i);
@@ -1034,13 +1034,13 @@ namespace cfile
 	}
 
 	template<>
-	short read<short>(FileHandle* handle)
+	short io::read<short>(FileHandle* handle)
 	{
 		Assert(handle != NULL);
 
 		short s;
 
-		if (read(&s, sizeof(s), 1, handle) != 1)
+		if (io::read(&s, sizeof(s), 1, handle) != 1)
 			return 0;
 
 		s = INTEL_SHORT(s);
@@ -1048,13 +1048,13 @@ namespace cfile
 	}
 
 	template<>
-	ushort read<ushort>(FileHandle* handle)
+	ushort io::read<ushort>(FileHandle* handle)
 	{
 		Assert(handle != NULL);
 
 		ushort s;
 
-		if (read(&s, sizeof(s), 1, handle) != 1)
+		if (io::read(&s, sizeof(s), 1, handle) != 1)
 			return 0;
 
 		s = INTEL_SHORT(s);
@@ -1062,13 +1062,13 @@ namespace cfile
 	}
 
 	template<>
-	uint read<uint>(FileHandle* handle)
+	uint io::read<uint>(FileHandle* handle)
 	{
 		Assert(handle != NULL);
 
 		uint i;
 
-		if (read(&i, sizeof(i), 1, handle) != 1)
+		if (io::read(&i, sizeof(i), 1, handle) != 1)
 			return 0;
 
 		i = INTEL_INT(i);
@@ -1076,13 +1076,13 @@ namespace cfile
 	}
 
 	template<>
-	float read<float>(FileHandle* handle)
+	float io::read<float>(FileHandle* handle)
 	{
 		Assert(handle != NULL);
 
 		float f;
 
-		if (read(&f, sizeof(f), 1, handle) != 1)
+		if (io::read(&f, sizeof(f), 1, handle) != 1)
 			return 0.0f;
 
 		f = INTEL_FLOAT(&f);
@@ -1090,13 +1090,13 @@ namespace cfile
 	}
 
 	template<>
-	double read<double>(FileHandle* handle)
+	double io::read<double>(FileHandle* handle)
 	{
 		Assert(handle != NULL);
 
 		double f;
 
-		if (read(&f, sizeof(f), 1, handle) != 1)
+		if (io::read(&f, sizeof(f), 1, handle) != 1)
 			return 0.0;
 
 		f = INTEL_FLOAT(&f);
@@ -1104,20 +1104,20 @@ namespace cfile
 	}
 
 	template<>
-	vec3d read<vec3d>(FileHandle* handle)
+	vec3d io::read<vec3d>(FileHandle* handle)
 	{
 		Assert(handle != NULL);
 
 		vec3d v;
 
-		v.xyz.x = read<float>(handle);
-		v.xyz.y = read<float>(handle);
-		v.xyz.z = read<float>(handle);
+		v.xyz.x = io::read<float>(handle);
+		v.xyz.y = io::read<float>(handle);
+		v.xyz.z = io::read<float>(handle);
 
 		return v;
 	}
 
-	int read(void* buf, int elsize, int nelem, FileHandle* handle)
+	int io::read(void* buf, int elsize, int nelem, FileHandle* handle)
 	{
 		Assert(handle != NULL);
 		Assert(handle->mode & MODE_READ);
@@ -1143,14 +1143,14 @@ namespace cfile
 		return static_cast<int>(handle->stream.gcount()) / elsize;
 	}
 
-	void readString(char* buf, int n, FileHandle* handle)
+	void io::readString(char* buf, int n, FileHandle* handle)
 	{
 		Assert(handle != NULL);
 
 		char c;
 
 		do {
-			c = read<char>(handle);
+			c = io::read<char>(handle);
 			if (n > 0)	{
 				*buf++ = c;
 				n--;
@@ -1158,7 +1158,7 @@ namespace cfile
 		} while (c != 0);
 	}
 
-	bool readLine(char* buf, int n, FileHandle* handle)
+	bool io::readLine(char* buf, int n, FileHandle* handle)
 	{
 		Assert(handle != NULL);
 		Assert(buf != NULL);
@@ -1171,7 +1171,7 @@ namespace cfile
 			do {
 				char tmp_c;
 
-				int ret = read(&tmp_c, 1, 1, handle);
+				int ret = io::read(&tmp_c, 1, 1, handle);
 				if (ret != 1) {
 					*buf = 0;
 					if (buf > t) {
@@ -1191,82 +1191,82 @@ namespace cfile
 		return true;
 	}
 
-	void readStringLen(char* buf, int n, FileHandle* handle)
+	void io::readStringLen(char* buf, int n, FileHandle* handle)
 	{
 		Assert(handle != NULL);
 
 		int len;
-		len = read<int>(handle);
+		len = io::read<int>(handle);
 		Assertion((len < n), "len: %i, n: %i", len, n);
 		if (len)
-			read(buf, len, 1, handle);
+			io::read(buf, len, 1, handle);
 
 		buf[len] = 0;
 	}
 
 	template<>
-	bool write<char>(boost::call_traits<char>::param_type val, FileHandle* handle)
+	bool io::write<char>(boost::call_traits<char>::param_type val, FileHandle* handle)
 	{
-		return write(&val, sizeof(char), 1, handle) == 1;
+		return io::write(&val, sizeof(char), 1, handle) == 1;
 	}
 
 	template<>
-	bool write<ubyte>(boost::call_traits<ubyte>::param_type val, FileHandle* handle)
+	bool io::write<ubyte>(boost::call_traits<ubyte>::param_type val, FileHandle* handle)
 	{
-		return write(&val, sizeof(ubyte), 1, handle) == 1;
+		return io::write(&val, sizeof(ubyte), 1, handle) == 1;
 	}
 
 	template<>
-	bool write<short>(boost::call_traits<short>::param_type val, FileHandle* handle)
+	bool io::write<short>(boost::call_traits<short>::param_type val, FileHandle* handle)
 	{
 		short s = INTEL_SHORT(val);
-		return write(&s, sizeof(short), 1, handle) == 1;
+		return io::write(&s, sizeof(short), 1, handle) == 1;
 	}
 
 	template<>
-	bool write<ushort>(boost::call_traits<ushort>::param_type val, FileHandle* handle)
+	bool io::write<ushort>(boost::call_traits<ushort>::param_type val, FileHandle* handle)
 	{
 		ushort s = INTEL_SHORT(val);
-		return write(&s, sizeof(ushort), 1, handle) == 1;
+		return io::write(&s, sizeof(ushort), 1, handle) == 1;
 	}
 
 	template<>
-	bool write<int>(boost::call_traits<int>::param_type val, FileHandle* handle)
+	bool io::write<int>(boost::call_traits<int>::param_type val, FileHandle* handle)
 	{
 		int i = INTEL_INT(val);
-		return write(&i, sizeof(int), 1, handle) == 1;
+		return io::write(&i, sizeof(int), 1, handle) == 1;
 	}
 
 	template<>
-	bool write<uint>(boost::call_traits<uint>::param_type val, FileHandle* handle)
+	bool io::write<uint>(boost::call_traits<uint>::param_type val, FileHandle* handle)
 	{
 		uint i = INTEL_INT(val);
-		return write(&i, sizeof(uint), 1, handle) == 1;
+		return io::write(&i, sizeof(uint), 1, handle) == 1;
 	}
 
 	template<>
-	bool write<float>(boost::call_traits<float>::param_type val, FileHandle* handle)
+	bool io::write<float>(boost::call_traits<float>::param_type val, FileHandle* handle)
 	{
 		float i = INTEL_SHORT(val);
-		return write(&i, sizeof(float), 1, handle) == 1;
+		return io::write(&i, sizeof(float), 1, handle) == 1;
 	}
 
 	template<>
-	bool write<char const *>(boost::call_traits<const char*>::param_type buf, cfile::FileHandle* handle)
+	bool io::write<char const *>(boost::call_traits<const char*>::param_type buf, cfile::FileHandle* handle)
 	{
 		Assert(handle != NULL);
 
 		if ((!buf) || (buf && !buf[0])) {
-			return write<char>(0, handle);
+			return io::write<char>(0, handle);
 		}
 		int len = strlen(buf);
-		if (!write(buf, len, 1, handle)){
+		if (!io::write(buf, len, 1, handle)){
 			return 0;
 		}
-		return write<char>(0, handle);
+		return io::write<char>(0, handle);
 	}
 
-	int write(const void* buf, int elsize, int nelem, FileHandle* handle)
+	int io::write(const void* buf, int elsize, int nelem, FileHandle* handle)
 	{
 		Assert(handle != NULL);
 		Assert(handle->mode & MODE_WRITE);
@@ -1277,19 +1277,19 @@ namespace cfile
 		return nelem;
 	}
 
-	void writeStringLen(const char* buf, FileHandle* handle)
+	void io::writeStringLen(const char* buf, FileHandle* handle)
 	{
 		int len = strlen(buf);
 
-		write<int>(len, handle);
+		io::write<int>(len, handle);
 
 		if (len)
 		{
-			write(buf, len, 1, handle);
+			io::write(buf, len, 1, handle);
 		}
 	}
 
-	void* returndata(FileHandle* handle)
+	void* io::returndata(FileHandle* handle)
 	{
 		// This relies heavily on the implementation in VFSPP!!!
 		using namespace boost::iostreams;
@@ -1454,8 +1454,8 @@ namespace cfile
 
 				// if max_size is -1, set it to be the size of the file
 				if (max_size < 0){
-					seek(cfile, 0, SEEK_MODE_SET);
-					max_size = fileLength(cfile);
+					io::seek(cfile, 0, SEEK_MODE_SET);
+					max_size = io::fileLength(cfile);
 				}
 
 				cf_total = 0;
@@ -1469,7 +1469,7 @@ namespace cfile
 					}
 
 					// read in some buffer
-					cf_len = read(cf_buffer, 1, read_size, cfile);
+					cf_len = io::read(cf_buffer, 1, read_size, cfile);
 
 					// total we've read so far
 					cf_total += cf_len;
@@ -1568,7 +1568,7 @@ namespace cfile
 				*chksum = 0;
 
 				// attempt to open the file
-				cfile = open(filename, MODE_READ, OPEN_NORMAL, cf_type);
+				cfile = io::open(filename, MODE_READ, OPEN_NORMAL, cf_type);
 				if (cfile == NULL){
 					return 0;
 				}
@@ -1577,7 +1577,7 @@ namespace cfile
 				ret_val = doSum(cfile, chksum, NULL, max_size);
 
 				// close the file down
-				close(cfile);
+				io::close(cfile);
 				cfile = NULL;
 
 				// return the result
@@ -1592,19 +1592,19 @@ namespace cfile
 				int start_pos;
 
 				// Returns current position of file.
-				start_pos = tell(file);
+				start_pos = io::tell(file);
 				if (start_pos == -1){
 					return 0;
 				}
 
 				// move to the beginning of the file
-				if (seek(file, 0, SEEK_MODE_SET)){
+				if (io::seek(file, 0, SEEK_MODE_SET)){
 					return 0;
 				}
 
 				ret_code = doSum(file, chksum, NULL, max_size);
 				// move back to the start position
-				seek(file, start_pos, SEEK_MODE_SET);
+				io::seek(file, start_pos, SEEK_MODE_SET);
 
 				return ret_code;
 			}
@@ -1619,7 +1619,7 @@ namespace cfile
 				*chksum = 0;
 
 				// attempt to open the file
-				cfile = open(filename, MODE_READ, OPEN_NORMAL, cf_type);
+				cfile = io::open(filename, MODE_READ, OPEN_NORMAL, cf_type);
 				if (cfile == NULL){
 					return 0;
 				}
@@ -1628,7 +1628,7 @@ namespace cfile
 				ret_val = doSum(cfile, NULL, chksum, max_size);
 
 				// close the file down
-				close(cfile);
+				io::close(cfile);
 				cfile = NULL;
 
 				// return the result
@@ -1643,18 +1643,18 @@ namespace cfile
 				int start_pos;
 
 				// Returns current position of file.
-				start_pos = tell(file);
+				start_pos = io::tell(file);
 				if (start_pos == -1){
 					return 0;
 				}
 
 				// move to the beginning of the file
-				if (seek(file, 0, SEEK_MODE_SET)){
+				if (io::seek(file, 0, SEEK_MODE_SET)){
 					return 0;
 				}
 				ret_code = doSum(file, NULL, chksum, max_size);
 				// move back to the start position
-				seek(file, start_pos, SEEK_MODE_SET);
+				io::seek(file, start_pos, SEEK_MODE_SET);
 
 				return ret_code;
 			}
@@ -1671,7 +1671,7 @@ namespace cfile
 
 				ubyte count;
 
-				if (read(&count, 1, 1, cfile) != 1)	{
+				if (io::read(&count, 1, 1, cfile) != 1)	{
 					break;
 				}
 
@@ -1683,13 +1683,13 @@ namespace cfile
 					if (run_span)	{
 						// RLE'd data
 						ubyte c;
-						if (read(&c, 1, 1, cfile) != 1)	{
+						if (io::read(&c, 1, 1, cfile) != 1)	{
 							break;
 						}
 						memset(out, c, count);
 					}
 					else {
-						if (read(out, 1, count, cfile) != count)	{
+						if (io::read(out, 1, count, cfile) != count)	{
 							break;
 						}
 					}

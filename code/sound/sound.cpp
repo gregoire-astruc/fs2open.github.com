@@ -175,7 +175,7 @@ void snd_spew_info()
 {
 	size_t idx;
 	char txt[512] = "";
-	cfile::FileHandle *out = cfile::open("sounds.txt", cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_DATA);
+	cfile::FileHandle *out = cfile::io::open("sounds.txt", cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_DATA);
 	if(out == NULL){
 		return;
 	}
@@ -194,7 +194,7 @@ void snd_spew_info()
 
 	// close the outfile
 	if(out != NULL){
-		cfile::close(out);
+		cfile::io::close(out);
 		out = NULL;
 	}
 }
@@ -334,7 +334,7 @@ int snd_load( game_snd *gs, int allow_hardware_load )
 	}
 
 	// open the file
-	cfile::FileHandle *fp = cfile::open(fullName);
+	cfile::FileHandle *fp = cfile::io::open(fullName);
 
 	// ok, we got it, so set the proper filename for logging purposes
 	strcat_s(filename, audio_ext[extIndex]);
@@ -378,7 +378,7 @@ int snd_load( game_snd *gs, int allow_hardware_load )
  
 	// make sure the file handle is closed
 	if (fp != NULL)
-		cfile::close(fp);
+		cfile::io::close(fp);
 
 	if ( rc == -1 ) {
 		nprintf(("Sound", "SOUND ==> Failed to load '%s'\n", filename));

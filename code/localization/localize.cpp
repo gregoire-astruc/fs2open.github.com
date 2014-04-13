@@ -563,7 +563,7 @@ void lcl_ext_open()
 	}
 
 	// otherwise open the file
-	Lcl_ext_file = cfile::open(Lcl_ext_filename);
+	Lcl_ext_file = cfile::io::open(Lcl_ext_filename);
 	if(Lcl_ext_file == NULL){
 		return;
 	}		
@@ -583,7 +583,7 @@ void lcl_ext_close()
 	}
 		
 	// otherwise close it
-	cfile::close(Lcl_ext_file);
+	cfile::io::close(Lcl_ext_file);
 	Lcl_ext_file = NULL;
 }
 
@@ -1157,7 +1157,7 @@ int lcl_ext_lookup(char *out, int id)
 
 	// seek to the closest pointer <= the id# we're looking for
 	pointer = id / LCL_GRANULARITY;
-	cfile::seek(Lcl_ext_file, Lcl_pointers[pointer], cfile::SEEK_MODE_SET);
+	cfile::io::seek(Lcl_ext_file, Lcl_pointers[pointer], cfile::SEEK_MODE_SET);
 
 	// reset parsing vars and go to town
 	Ts_current_state = TS_SCANNING;
@@ -1165,7 +1165,7 @@ int lcl_ext_lookup(char *out, int id)
 //	Ts_text_size;
 	memset(Ts_text, 0, PARSE_TEXT_BUF_SIZE);
 	memset(Ts_id_text, 0, PARSE_ID_BUF_SIZE);
-	while ((cfile::tell(Lcl_ext_file) < Lcl_pointers[Lcl_pointer_count - 1]) && cfile::readLine(text, 1024, Lcl_ext_file)){
+	while ((cfile::io::tell(Lcl_ext_file) < Lcl_pointers[Lcl_pointer_count - 1]) && cfile::io::readLine(text, 1024, Lcl_ext_file)){
 		ret = lcl_ext_lookup_sub(text, out, id);
 			
 		// run the line parse function		
@@ -1364,7 +1364,7 @@ void lcl_ext_setup_pointers()
 
 	// reset seek variables and begin		
 	Lcl_pointer_count = 0;
-	while (cfile::readLine(line, 1024, Lcl_ext_file)){
+	while (cfile::io::readLine(line, 1024, Lcl_ext_file)){
 		tok = strtok(line, " \n");
 		if(tok == NULL){
 			continue;			
@@ -1385,7 +1385,7 @@ void lcl_ext_setup_pointers()
 	}
 
 	string_count = 0;	
-	while (cfile::readLine(line, 1024, Lcl_ext_file)){
+	while (cfile::io::readLine(line, 1024, Lcl_ext_file)){
 		ret = lcl_ext_lookup_sub(line, NULL, -1);
 
 		// do stuff
@@ -1398,7 +1398,7 @@ void lcl_ext_setup_pointers()
 		// end of language found
 		case 3 :
 			// mark one final pointer
-			Lcl_pointers[Lcl_pointer_count++] = cfile::tell(Lcl_ext_file) - strlen(line) - 1;
+			Lcl_pointers[Lcl_pointer_count++] = cfile::io::tell(Lcl_ext_file) - strlen(line) - 1;
 			lcl_ext_close();
 			return;
 		}
@@ -1407,7 +1407,7 @@ void lcl_ext_setup_pointers()
 		if(ret & (1<<31)){		
 			if((string_count % LCL_GRANULARITY) == 0){
 				// mark the pointer down
-				Lcl_pointers[Lcl_pointer_count++] = cfile::tell(Lcl_ext_file) - strlen(line) - 1;
+				Lcl_pointers[Lcl_pointer_count++] = cfile::io::tell(Lcl_ext_file) - strlen(line) - 1;
 
 				// if we're out of pointer slots
 				if(Lcl_pointer_count >= LCL_MAX_POINTERS){

@@ -317,32 +317,32 @@ int ds_parse_sound(cfile::FileHandle* fp, ubyte **dest, uint *dest_size, WAVEFOR
 		// Skip the "RIFF" tag and file size (8 bytes)
 		// Skip the "WAVE" tag (4 bytes)
 		// IMPORTANT!! Look at snd_load before even THINKING about changing this.
-		cfile::seek( fp, 12, cfile::SEEK_MODE_SET );
+		cfile::io::seek( fp, 12, cfile::SEEK_MODE_SET );
 
 		// Now read RIFF tags until the end of file
 		while (1) {
-			if ( cfile::read( &tag, sizeof(uint), 1, fp ) != 1 ) {
+			if ( cfile::io::read( &tag, sizeof(uint), 1, fp ) != 1 ) {
 				break;
 			}
 
 			tag = INTEL_INT( tag );
 
-			if ( cfile::read( &size, sizeof(uint), 1, fp ) != 1 ) {
+			if ( cfile::io::read( &size, sizeof(uint), 1, fp ) != 1 ) {
 				break;
 			}
 
 			size = INTEL_INT( size );
 
-			next_chunk = cfile::tell(fp) + size;
+			next_chunk = cfile::io::tell(fp) + size;
 
 			switch (tag) {
 				case 0x20746d66: { // The 'fmt ' tag
-					PCM_header.wf.wFormatTag		= cfile::read<ushort>(fp);
-					PCM_header.wf.nChannels			= cfile::read<ushort>(fp);
-					PCM_header.wf.nSamplesPerSec	= cfile::read<uint>(fp);
-					PCM_header.wf.nAvgBytesPerSec	= cfile::read<uint>(fp);
-					PCM_header.wf.nBlockAlign		= cfile::read<ushort>(fp);
-					PCM_header.wBitsPerSample		= cfile::read<ushort>(fp);
+					PCM_header.wf.wFormatTag		= cfile::io::read<ushort>(fp);
+					PCM_header.wf.nChannels			= cfile::io::read<ushort>(fp);
+					PCM_header.wf.nSamplesPerSec	= cfile::io::read<uint>(fp);
+					PCM_header.wf.nAvgBytesPerSec	= cfile::io::read<uint>(fp);
+					PCM_header.wf.nBlockAlign		= cfile::io::read<ushort>(fp);
+					PCM_header.wBitsPerSample		= cfile::io::read<ushort>(fp);
 
 					// should be either: WAVE_FORMAT_PCM, WAVE_FORMAT_ADPCM, WAVE_FORMAT_IEEE_FLOAT
 					switch (PCM_header.wf.wFormatTag) {
@@ -391,7 +391,7 @@ int ds_parse_sound(cfile::FileHandle* fp, ubyte **dest, uint *dest_size, WAVEFOR
 					}
 
 					if (PCM_header.wf.wFormatTag == WAVE_FORMAT_ADPCM) {
-						cbExtra = cfile::read<ushort>(fp);
+						cbExtra = cfile::io::read<ushort>(fp);
 					}
 
 					// Allocate memory for WAVEFORMATEX structure + extra bytes
@@ -402,7 +402,7 @@ int ds_parse_sound(cfile::FileHandle* fp, ubyte **dest, uint *dest_size, WAVEFOR
 
 						// Read those extra bytes, append to WAVEFORMATEX structure
 						if (cbExtra != 0) {
-							cfile::read( ((ubyte *)(*header) + sizeof(WAVEFORMATEX)), cbExtra, 1, fp);
+							cfile::io::read( ((ubyte *)(*header) + sizeof(WAVEFORMATEX)), cbExtra, 1, fp);
 						}
 					} else {
 						// malloc failed
@@ -418,7 +418,7 @@ int ds_parse_sound(cfile::FileHandle* fp, ubyte **dest, uint *dest_size, WAVEFOR
 					(*dest) = (ubyte *)vm_malloc(size);
 					Assert( *dest != NULL );
 
-					cfile::read( *dest, size, 1, fp );
+					cfile::io::read( *dest, size, 1, fp );
 
 					got_data = true;
 
@@ -435,7 +435,7 @@ int ds_parse_sound(cfile::FileHandle* fp, ubyte **dest, uint *dest_size, WAVEFOR
 				break;
 			}
 
-			cfile::seek( fp, next_chunk, cfile::SEEK_MODE_SET );
+			cfile::io::seek( fp, next_chunk, cfile::SEEK_MODE_SET );
 		}
 
 		// we're all good, can leave now
@@ -481,7 +481,7 @@ int ds_parse_sound_info(char *real_filename, sound_info *s_info)
 
 
 	// open the file
-	cfile::FileHandle *fp = cfile::open(fullName);
+	cfile::FileHandle *fp = cfile::io::open(fullName);
 
 	if (fp == NULL) {
 		return -1;
@@ -535,31 +535,31 @@ int ds_parse_sound_info(char *real_filename, sound_info *s_info)
 		// Skip the "RIFF" tag and file size (8 bytes)
 		// Skip the "WAVE" tag (4 bytes)
 		// IMPORTANT!! Look at snd_load before even THINKING about changing this.
-		cfile::seek( fp, 12, cfile::SEEK_MODE_SET );
+		cfile::io::seek( fp, 12, cfile::SEEK_MODE_SET );
 
 		// Now read RIFF tags until the end of file
 		while (1) {
-			if ( cfile::read( &tag, sizeof(uint), 1, fp ) != 1 ) {
+			if ( cfile::io::read( &tag, sizeof(uint), 1, fp ) != 1 ) {
 				break;
 			}
 
 			tag = INTEL_INT( tag );
 
-			if ( cfile::read( &size, sizeof(uint), 1, fp ) != 1 ) {
+			if ( cfile::io::read( &size, sizeof(uint), 1, fp ) != 1 ) {
 				break;
 			}
 
 			size = INTEL_INT( size );
-			next_chunk = cfile::tell(fp) + size;
+			next_chunk = cfile::io::tell(fp) + size;
 
 			switch (tag) {
 				case 0x20746d66: // The 'fmt ' tag
-					PCM_header.wf.wFormatTag		= cfile::read<ushort>(fp);
-					PCM_header.wf.nChannels			= cfile::read<ushort>(fp);
-					PCM_header.wf.nSamplesPerSec	= cfile::read<uint>(fp);
-					PCM_header.wf.nAvgBytesPerSec	= cfile::read<uint>(fp);
-					PCM_header.wf.nBlockAlign		= cfile::read<ushort>(fp);
-					PCM_header.wBitsPerSample		= cfile::read<ushort>(fp);
+					PCM_header.wf.wFormatTag		= cfile::io::read<ushort>(fp);
+					PCM_header.wf.nChannels			= cfile::io::read<ushort>(fp);
+					PCM_header.wf.nSamplesPerSec	= cfile::io::read<uint>(fp);
+					PCM_header.wf.nAvgBytesPerSec	= cfile::io::read<uint>(fp);
+					PCM_header.wf.nBlockAlign		= cfile::io::read<ushort>(fp);
+					PCM_header.wBitsPerSample		= cfile::io::read<ushort>(fp);
 
 					// should be either: WAVE_FORMAT_PCM, WAVE_FORMAT_ADPCM, WAVE_FORMAT_IEEE_FLOAT
 					switch (PCM_header.wf.wFormatTag) {
@@ -630,11 +630,11 @@ int ds_parse_sound_info(char *real_filename, sound_info *s_info)
 				rval = 0;
 				goto Done;
 			}
-			cfile::seek( fp, next_chunk, cfile::SEEK_MODE_SET );
+			cfile::io::seek( fp, next_chunk, cfile::SEEK_MODE_SET );
 		}
 	}
 Done:
-	cfile::close(fp);
+	cfile::io::close(fp);
 	return rval;
 }
 

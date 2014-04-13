@@ -4248,7 +4248,7 @@ void interp_configure_vertex_buffers(polymodel *pm, int mn)
 			// AAAAAHH! not enough stored data - Abort, Retry, Fail?
 			Warning(LOCATION, "IBX: Safety Check Failure!  The file doesn't contain enough data, deleting '%s'\n", ibuffer_info.name);
 
-			cfile::close( ibuffer_info.read );
+			cfile::io::close( ibuffer_info.read );
 			ibuffer_info.read = NULL;
 			ibuffer_info.size = 0;
 			cfile::deleteFile( ibuffer_info.name, cfile::TYPE_CACHE );

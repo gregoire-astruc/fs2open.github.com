@@ -2048,7 +2048,7 @@ void read_raw_file_text(const char *filename, cfile::DirType mode, char *raw_tex
 
 	Assert(filename);
 
-	mf = cfile::open(filename, cfile::MODE_READ, cfile::OPEN_NORMAL, mode);
+	mf = cfile::io::open(filename, cfile::MODE_READ, cfile::OPEN_NORMAL, mode);
 	if (mf == NULL)
 	{
 		nprintf(("Error", "Wokka!  Error opening file (%s)!\n", filename));
@@ -2056,7 +2056,7 @@ void read_raw_file_text(const char *filename, cfile::DirType mode, char *raw_tex
 	}
 
 	// read the entire file in
-	int file_len = cfile::fileLength(mf);
+	int file_len = cfile::io::fileLength(mf);
 
 	if(!file_len) {
 		nprintf(("Error", "Oh noes!!  File is empty! (%s)!\n", filename));
@@ -2073,7 +2073,7 @@ void read_raw_file_text(const char *filename, cfile::DirType mode, char *raw_tex
 	// read first 10 bytes to determine if file is encrypted
 	cfile::read(raw_text, MIN(file_len, 10), 1, mf);
 	file_is_encrypted = is_encrypted(raw_text);
-	cfile::seek(mf, 0, cfile::SEEK_MODE_SET);
+	cfile::io::seek(mf, 0, cfile::SEEK_MODE_SET);
 
 	// Goober5000 - also determine if file is Unicode
 	file_is_unicode = is_unicode(raw_text);
@@ -2103,7 +2103,7 @@ void read_raw_file_text(const char *filename, cfile::DirType mode, char *raw_tex
 	//WMC - Slap a NULL character on here for the odd error where we forgot a #End
 	raw_text[file_len] = '\0';
 
-	cfile::close(mf);
+	cfile::io::close(mf);
 }
 
 // Goober5000

@@ -1135,16 +1135,16 @@ void options_multi_protocol_load_ip_file()
 	Om_num_ips = 0;
 
 	// attempt to open the ip list file
-	file = cfile::open(IP_CONFIG_FNAME, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_DATA);
+	file = cfile::io::open(IP_CONFIG_FNAME, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_DATA);
 	if(file == NULL){
 		nprintf(("Network","Error loading tcp.cfg file!\n"));
 		return;
 	}
 
 	// read in all the strings in the file
-	while(!cfile::eof(file)){
+	while(!cfile::io::eof(file)){
 		line[0] = '\0';
-		cfile::readLine(line,IP_STRING_LEN,file);
+		cfile::io::readLine(line,IP_STRING_LEN,file);
 
 		// strip off any newline character
 		if(line[strlen(line) - 1] == '\n'){
@@ -1164,7 +1164,7 @@ void options_multi_protocol_load_ip_file()
 		}
 	}
 
-	cfile::close(file);
+	cfile::io::close(file);
 }
 
 // save the ip address file
@@ -1174,7 +1174,7 @@ void options_multi_protocol_save_ip_file()
 	cfile::FileHandle *file = NULL;
 
 	// attempt to open the ip list file for writing
-	file = cfile::open(IP_CONFIG_FNAME, cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_DATA);
+	file = cfile::io::open(IP_CONFIG_FNAME, cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_DATA);
 	if(file == NULL){
 		nprintf(("Network","Error loading tcp.cfg file\n"));
 		return;
@@ -1195,7 +1195,7 @@ void options_multi_protocol_save_ip_file()
 		}
 	}
 
-	cfile::close(file);
+	cfile::io::close(file);
 }
 
 // draw the list of ip addresses

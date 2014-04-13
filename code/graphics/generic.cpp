@@ -169,7 +169,7 @@ int generic_anim_stream(generic_anim *ga)
 	}
 
 	//make sure we can open it
-	img_cfp = cfile::open(fullName, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_ANY);
+	img_cfp = cfile::io::open(fullName, cfile::MODE_READ, cfile::OPEN_NORMAL, cfile::TYPE_ANY);
 
 	if (img_cfp == NULL) {
 		return -1;
@@ -180,9 +180,9 @@ int generic_anim_stream(generic_anim *ga)
 	strcat_s(ga->filename, ext_list[rval]);
 	ga->type = type_list[rval];
 	//seek to the end
-	cfile::seek(img_cfp, 0, cfile::SEEK_MODE_END);
+	cfile::io::seek(img_cfp, 0, cfile::SEEK_MODE_END);
 
-	cfile::close(img_cfp);
+	cfile::io::close(img_cfp);
 
 	//TODO: add streaming EFF
 	if(ga->type == BM_TYPE_ANI) {
