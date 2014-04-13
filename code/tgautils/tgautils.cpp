@@ -774,7 +774,7 @@ int targa_write_bitmap(char *real_filename, ubyte *data, ubyte *palette, int w, 
 		return -1;
 	}
 
-	cfile::write(compressed_data, compressed_data_len, 1, f);
+	cfile::io::write(compressed_data, compressed_data_len, 1, f);
 	cfile::io::close(f);
 	f = NULL;
 

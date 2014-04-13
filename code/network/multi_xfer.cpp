@@ -866,7 +866,7 @@ void multi_xfer_process_data(xfer_entry *xe, ubyte *data, int data_size)
 	nprintf(("Network","."));		
 
 	// attempt to write the rest of the data string to the file
-	if((xe->file == NULL) || !cfile::write(data, data_size, 1, xe->file)){
+	if((xe->file == NULL) || !cfile::io::write(data, data_size, 1, xe->file)){
 		// inform the sender we had a problem
 		multi_xfer_send_nak(xe->file_socket, xe->sig);
 

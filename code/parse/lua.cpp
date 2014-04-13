@@ -1363,7 +1363,7 @@ ADE_FUNC(write, l_File, "string or number, ...",
 		if(type == LUA_TSTRING)
 		{
 			char *s = (char*)lua_tostring(L, l_pos);
-			if (cfile::write(s, sizeof(char), strlen(s), cfp->handle))
+			if (cfile::io::write(s, sizeof(char), strlen(s), cfp->handle))
 				num_successful++;
 		}
 		else if(type == LUA_TNUMBER)
@@ -1371,7 +1371,7 @@ ADE_FUNC(write, l_File, "string or number, ...",
 			double d = lua_tonumber(L, l_pos);
 			char buf[32]= {0};
 			sprintf(buf, LUA_NUMBER_FMT, d);
-			if (cfile::write(buf, sizeof(char), strlen(buf), cfp->handle))
+			if (cfile::io::write(buf, sizeof(char), strlen(buf), cfp->handle))
 				num_successful++;
 		}
 

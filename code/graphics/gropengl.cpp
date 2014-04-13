@@ -928,7 +928,7 @@ static void opengl_flush_frame_dump()
 		glReadPixels(0, 0, gr_screen.max_w, gr_screen.max_h, GL_BGR_EXT, GL_UNSIGNED_BYTE, GL_dump_buffer);
 
 		// save the data out
-		cfile::write( GL_dump_buffer, GL_dump_frame_size, 1, f );
+		cfile::io::write( GL_dump_buffer, GL_dump_frame_size, 1, f );
 
 		cfile::io::close(f);
 

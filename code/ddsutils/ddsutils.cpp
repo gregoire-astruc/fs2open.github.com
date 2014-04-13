@@ -418,8 +418,8 @@ void dds_save_image(int width, int height, int bpp, int num_mipmaps, ubyte *data
 
 	// now save it all...
 	uint dds_id = DDS_FILECODE;
-	cfile::write(&dds_id, 1, 4, image);
-	cfile::write(&dds_header, 1, sizeof(DDSURFACEDESC2), image);
+	cfile::io::write(&dds_id, 1, 4, image);
+	cfile::io::write(&dds_header, 1, sizeof(DDSURFACEDESC2), image);
 
 	int faces = (cubemap) ? 6 : 1;
 	int f_width = width;
@@ -437,7 +437,7 @@ void dds_save_image(int width, int height, int bpp, int num_mipmaps, ubyte *data
 		for (int j = 0; j < num_mipmaps; j++) {
 			f_size = (f_width * f_height * (bpp >> 3));
 
-			cfile::write(data + f_offset, 1, f_size, image);
+			cfile::io::write(data + f_offset, 1, f_size, image);
 
 			// increase offset for next mipmap level
 			f_offset += f_size;

@@ -3706,7 +3706,7 @@ void multi_pxo_set_end_of_motd()
 		cfile::FileHandle *out = cfile::io::open("oldmotd.txt", cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_DATA);
 		if(out != NULL){
 			// write all the text
-			cfile::write(&new_chksum, sizeof(new_chksum), 1, out);
+			cfile::io::write(&new_chksum, sizeof(new_chksum), 1, out);
 			
 			// close the outfile
 			cfile::io::close(out);
