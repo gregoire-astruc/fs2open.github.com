@@ -1,7 +1,7 @@
 
 #include "cfile/cfile.h"
 
-#include "cfile/ZipFileSystem.h"
+#include "cfile/archives/ZipFileSystem.h"
 
 #include <boost/foreach.hpp>
 #include <boost/algorithm/string.hpp>

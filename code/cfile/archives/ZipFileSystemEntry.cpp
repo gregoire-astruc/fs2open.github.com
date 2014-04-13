@@ -1,8 +1,8 @@
 
 #include "globalincs/pstypes.h"
 
-#include "cfile/ZipFileSystem.h"
-#include "cfile/ZipFileSystemEntry.h"
+#include "cfile/archives/ZipFileSystem.h"
+#include "cfile/archives/ZipFileSystemEntry.h"
 
 #include <boost/algorithm/string.hpp>
 

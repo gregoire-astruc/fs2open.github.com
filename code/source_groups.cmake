@@ -54,15 +54,18 @@ set (file_root_camera
 # CFile files
 set (file_root_cfile
 	cfile/cfile.cpp
-	cfile/VPFileSystem.cpp
-	cfile/VPFileSystemEntry.cpp
-	cfile/ZipFileSystem.cpp
-	cfile/ZipFileSystemEntry.cpp
 	cfile/cfile.h
-	cfile/VPFileSystem.h
-	cfile/VPFileSystemEntry.h
-	cfile/ZipFileSystem.h
-	cfile/ZipFileSystemEntry.h
+)
+
+set(file_root_cfile_archives
+	cfile/archives/VPFileSystem.cpp
+	cfile/archives/VPFileSystemEntry.cpp
+	cfile/archives/ZipFileSystem.cpp
+	cfile/archives/ZipFileSystemEntry.cpp
+	cfile/archives/VPFileSystem.h
+	cfile/archives/VPFileSystemEntry.h
+	cfile/archives/ZipFileSystem.h
+	cfile/archives/ZipFileSystemEntry.h
 )
 
 # Cmdline files
@@ -920,6 +923,7 @@ source_group("Autopilot"                          FILES ${file_root_autopilot})
 source_group("Bmpman"                             FILES ${file_root_bmpman})
 source_group("Camera"                             FILES ${file_root_camera})
 source_group("CFile"                              FILES ${file_root_cfile})
+source_group("CFile\\Archives"                    FILES ${file_root_cfile_archives})
 source_group("Cmdline"                            FILES ${file_root_cmdline})
 source_group("CMeasure"                           FILES ${file_root_cmeasure})
 source_group("ControlConfig"                      FILES ${file_root_controlconfig})
@@ -999,6 +1003,7 @@ set (file_root
 	${file_root_bmpman}
 	${file_root_camera}
 	${file_root_cfile}
+	${file_root_cfile_archives}
 	${file_root_cmdline}
 	${file_root_cmeasure}
 	${file_root_controlconfig}

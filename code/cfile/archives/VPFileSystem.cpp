@@ -1,7 +1,7 @@
 
 #include "cfile/cfile.h"
 
-#include "cfile/VPFileSystem.h"
+#include "cfile/archives/VPFileSystem.h"
 
 #include <boost/foreach.hpp>
 #include <boost/algorithm/string.hpp>
@@ -75,7 +75,7 @@ namespace cfile
 
 			boost::split(dirParts, rootPath, boost::is_any_of(DirectorySeparatorStr), boost::token_compress_on);
 
-			BOOST_FOREACH(std::string& part, dirParts)
+			for(std::string& part : dirParts)
 			{
 				if (!currentDir.empty())
 				{

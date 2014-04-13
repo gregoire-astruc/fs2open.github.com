@@ -1,6 +1,6 @@
 
-#include "cfile/VPFileSystem.h"
-#include "cfile/VPFileSystemEntry.h"
+#include "cfile/archives/VPFileSystem.h"
+#include "cfile/archives/VPFileSystemEntry.h"
 
 #include <boost/foreach.hpp>
 
