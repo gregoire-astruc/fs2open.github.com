@@ -22,7 +22,7 @@ void png_scp_read_data(png_structp png_ptr, png_bytep data, png_size_t length)
 	/* fread() returns 0 on error, so it is OK to store this in a png_size_t
 	* instead of an int, which is what fread() actually returns.
 	*/
-	check = (png_size_t)cfile::read(data, (png_size_t)1, length, png_file);
+	check = (png_size_t)cfile::io::read(data, (png_size_t)1, length, png_file);
 	if (check != length)
 		png_error(png_ptr, "Read Error");
 }

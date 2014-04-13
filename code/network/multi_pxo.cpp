@@ -3692,7 +3692,7 @@ void multi_pxo_set_end_of_motd()
 	cfile::FileHandle *in = cfile::io::open("oldmotd.txt");
 	if(in != NULL){
 		// read the old checksum
-		cfile::read(&old_chksum, sizeof(old_chksum), 1, in);
+		cfile::io::read(&old_chksum, sizeof(old_chksum), 1, in);
 		cfile::io::close(in);
 		
 		// same checksum? no blink

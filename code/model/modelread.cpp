@@ -1536,7 +1536,7 @@ int read_model_file(polymodel * pm, const char *filename, int n_subsystems, mode
 				pm->submodel[n].bsp_data_size = cfile::read<int>(fp);
 				if ( pm->submodel[n].bsp_data_size > 0 )	{
 					pm->submodel[n].bsp_data = (ubyte *)vm_malloc(pm->submodel[n].bsp_data_size);
-					cfile::read(pm->submodel[n].bsp_data,1,pm->submodel[n].bsp_data_size,fp);
+					cfile::io::read(pm->submodel[n].bsp_data,1,pm->submodel[n].bsp_data_size,fp);
 					swap_bsp_data( pm, pm->submodel[n].bsp_data );
 				} else {
 					pm->submodel[n].bsp_data = NULL;
@@ -1574,7 +1574,7 @@ int read_model_file(polymodel * pm, const char *filename, int n_subsystems, mode
 				{
 					pm->sldc_size = cfile::read<int>(fp);
 					pm->shield_collision_tree = (ubyte *)vm_malloc(pm->sldc_size);
-					cfile::read(pm->shield_collision_tree,1,pm->sldc_size,fp);
+					cfile::io::read(pm->shield_collision_tree,1,pm->sldc_size,fp);
 					swap_sldc_data(pm->shield_collision_tree);
 					//mprintf(( "Shield Collision Tree, %d bytes in size\n", pm->sldc_size));
 				}
@@ -2086,7 +2086,7 @@ int read_model_file(polymodel * pm, const char *filename, int n_subsystems, mode
 					pm->debug_info = (char *)vm_malloc(pm->debug_info_size+1);
 					Assert(pm->debug_info!=NULL);
 					memset(pm->debug_info,0,len+1);
-					cfile::read( pm->debug_info, 1, len, fp );
+					cfile::io::read( pm->debug_info, 1, len, fp );
 				#endif
 				break;
 

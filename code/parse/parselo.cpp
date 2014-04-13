@@ -2071,7 +2071,7 @@ void read_raw_file_text(const char *filename, cfile::DirType mode, char *raw_tex
 		raw_text = Mission_text_raw;
 
 	// read first 10 bytes to determine if file is encrypted
-	cfile::read(raw_text, MIN(file_len, 10), 1, mf);
+	cfile::io::read(raw_text, MIN(file_len, 10), 1, mf);
 	file_is_encrypted = is_encrypted(raw_text);
 	cfile::io::seek(mf, 0, cfile::SEEK_MODE_SET);
 
@@ -2089,7 +2089,7 @@ void read_raw_file_text(const char *filename, cfile::DirType mode, char *raw_tex
 		char	*scrambled_text;
 		scrambled_text = (char*)vm_malloc(file_len+1);
 		Assert(scrambled_text);
-		cfile::read(scrambled_text, file_len, 1, mf);
+		cfile::io::read(scrambled_text, file_len, 1, mf);
 		// unscramble text
 		unencrypt(scrambled_text, file_len, raw_text, &unscrambled_len);
 		file_len = unscrambled_len;
@@ -2097,7 +2097,7 @@ void read_raw_file_text(const char *filename, cfile::DirType mode, char *raw_tex
 	}
 	else
 	{
-		cfile::read(raw_text, file_len, 1, mf);
+		cfile::io::read(raw_text, file_len, 1, mf);
 	}
 
 	//WMC - Slap a NULL character on here for the odd error where we forgot a #End

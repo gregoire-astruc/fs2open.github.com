@@ -1027,7 +1027,7 @@ void multi_xfer_send_next(xfer_entry *xe)
 	ADD_USHORT(data_size);
 	
 	// copy in the data
-	if(cfile::read(data+packet_size,1,(int)data_size,xe->file) == 0){
+	if(cfile::io::read(data+packet_size,1,(int)data_size,xe->file) == 0){
 		// send a nack to the receiver
 		multi_xfer_send_nak(xe->file_socket, xe->sig);
 

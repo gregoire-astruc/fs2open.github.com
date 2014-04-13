@@ -218,7 +218,7 @@ int mvefile_fetch_next_chunk(MVEFILE *file)
 		return 0;
 
 	// fail if we can't read the next segment descriptor
-	if (cfile::read(buffer, 1, 4, file->stream) < 4)
+	if (cfile::io::read(buffer, 1, 4, file->stream) < 4)
 		return 0;
 
 	// pull out the next length
@@ -247,7 +247,7 @@ int mvefile_fetch_next_chunk(MVEFILE *file)
 
 	// read the chunk
 	if (length > 0) {
-		if (cfile::read(file->cur_chunk, 1, length, file->stream) < length)
+		if (cfile::io::read(file->cur_chunk, 1, length, file->stream) < length)
 			return 0;
 	}
 

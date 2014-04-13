@@ -58,7 +58,7 @@ int pcx_read_header(const char *real_filename, cfile::FileHandle *img_cfp, int *
 	}
 
 	// read 128 char PCX header
-	if (cfile::read( &header, sizeof(PCXHeader), 1, PCXfile )!=1)	{
+	if (cfile::io::read( &header, sizeof(PCXHeader), 1, PCXfile )!=1)	{
 		if (img_cfp == NULL)
 			cfile::io::close( PCXfile );
 		return PCX_ERROR_NO_HEADER;
@@ -96,7 +96,7 @@ int pcx_read_header(const char *real_filename, cfile::FileHandle *img_cfp, int *
 	
 	if ( pal ) {
 		cfile::io::seek( PCXfile, -768, cfile::SEEK_MODE_END );
-		cfile::read( pal, 3, 256, PCXfile );
+		cfile::io::read( pal, 3, 256, PCXfile );
 	}
 
 	if (img_cfp == NULL)
@@ -242,7 +242,7 @@ int pcx_read_bitmap( const char * real_filename, ubyte *org_data, ubyte *pal, in
 	}
 
 	// read 128 char PCX header
-	if (cfile::read( &header, sizeof(PCXHeader), 1, PCXfile )!=1)	{
+	if (cfile::io::read( &header, sizeof(PCXHeader), 1, PCXfile )!=1)	{
 		cfile::io::close( PCXfile );
 	
 		return PCX_ERROR_NO_HEADER;
@@ -272,7 +272,7 @@ int pcx_read_bitmap( const char * real_filename, ubyte *org_data, ubyte *pal, in
 	// Read in a character which should be 12 to be extended palette file
 
 	cfile::io::seek( PCXfile, -768, cfile::SEEK_MODE_END );
-	cfile::read( palette, 1, (3 * 256), PCXfile );
+	cfile::io::read( palette, 1, (3 * 256), PCXfile );
 	cfile::io::seek( PCXfile, sizeof(PCXHeader), cfile::SEEK_MODE_SET );
 	
 	buffer_size = 1024;
@@ -280,7 +280,7 @@ int pcx_read_bitmap( const char * real_filename, ubyte *org_data, ubyte *pal, in
 	
 //	Assert( buffer_size == 1024 );	// AL: removed to avoid optimized warning 'unreachable code'
 	
-	buffer_size = cfile::read( buffer, 1, buffer_size, PCXfile );
+	buffer_size = cfile::io::read( buffer, 1, buffer_size, PCXfile );
 
 	count = 0;
 
@@ -291,7 +291,7 @@ int pcx_read_bitmap( const char * real_filename, ubyte *org_data, ubyte *pal, in
 			if ( count == 0 )	{
 				data = buffer[buffer_pos++];
 				if ( buffer_pos == buffer_size )	{
-					buffer_size = cfile::read( buffer, 1, buffer_size, PCXfile );
+					buffer_size = cfile::io::read( buffer, 1, buffer_size, PCXfile );
 					Assert( buffer_size > 0 );
 					buffer_pos = 0;
 				}
@@ -299,7 +299,7 @@ int pcx_read_bitmap( const char * real_filename, ubyte *org_data, ubyte *pal, in
 					count = data & 0x3F;
 					data = buffer[buffer_pos++];
 					if ( buffer_pos == buffer_size )	{
-						buffer_size = cfile::read( buffer, 1, buffer_size, PCXfile );
+						buffer_size = cfile::io::read( buffer, 1, buffer_size, PCXfile );
 						Assert( buffer_size > 0 );
 						buffer_pos = 0;
 					}

@@ -149,7 +149,7 @@ void palette_load_table( const char * filename )
 
 		fsize	= cfile::io::fileLength( fp );
 		Assert( fsize == 9472 );
-		cfile::read( palette_org, 256*3, 1, fp );
+		cfile::io::read( palette_org, 256*3, 1, fp );
 		cfile::io::close(fp);
 
 		for (i=0; i<768; i++ )	{	
@@ -311,7 +311,7 @@ int palette_read_cached( char *name )
 		return 0;
 	}
 	
-	cfile::read( &new_checksum, 4, 1, fp );
+	cfile::io::read( &new_checksum, 4, 1, fp );
 	if ( gr_palette_checksum != new_checksum )	{
 		mprintf(( "Cached palette file is out of date (Checksum)\n" ));
 		cfile::io::close(fp);
@@ -331,7 +331,7 @@ int palette_read_cached( char *name )
 	
 	if ( fade_table_saved )	{
 		int new_gamma;
-		cfile::read( &new_gamma, 4, 1, fp );
+		cfile::io::read( &new_gamma, 4, 1, fp );
 		cfile::legacy::read_compressed(&gr_fade_table, 256 * 34 * 2, 1, fp);		// 17KB
 		if ( new_gamma == Gr_gamma_int )	{
 			palette_fade_table_calculated = 1;

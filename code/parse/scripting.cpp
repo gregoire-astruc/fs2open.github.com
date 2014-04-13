@@ -1176,7 +1176,7 @@ void script_state::ParseChunkSub(int *out_lang, int *out_index, char* debug_str)
 			char *raw_lua = (char*)vm_malloc(len+1);
 			raw_lua[len] = '\0';
 
-			cfile::read(raw_lua, len, 1, cfp);
+			cfile::io::read(raw_lua, len, 1, cfp);
 			cfile::io::close(cfp);
 
 			//WMC - use filename instead of debug_str so that the filename

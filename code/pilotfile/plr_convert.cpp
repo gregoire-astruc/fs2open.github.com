@@ -173,7 +173,7 @@ void pilotfile_convert::plr_import_hud()
 	plr->hud_rp_dist = cfile::read<int>(cfp);
 
 	for (idx = 0; idx < 39; idx++) {
-		cfile::read(&c, sizeof(conv_color), 1, cfp);
+		cfile::io::read(&c, sizeof(conv_color), 1, cfp);
 
 		if ( (c.alphacolor != -1) || (c.is_alphacolor != 1) ) {
 			throw "Data check failure in hud!";

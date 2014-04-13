@@ -271,7 +271,7 @@ namespace cfile
 		*
 		* @note Appends NULL character to string (buf)
 		*/
-		void readStringLen(char* buf, int n, FileHandle* handle);
+		void readStringLen(char* buf, int n, FileHandle* file);
 
 		template<class T>
 		bool write(typename boost::call_traits<T>::param_type val, FileHandle* handle);

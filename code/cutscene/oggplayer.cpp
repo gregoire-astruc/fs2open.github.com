@@ -88,7 +88,7 @@ static bool use_shaders = true;
 static int OGG_buffer_data(THEORAFILE *movie)
 {
 	char *buffer = ogg_sync_buffer(&movie->osyncstate, 8192); // Doubled read size to fix choppy audio with high bitrate movies - Valathil
-	int bytes = cfile::read(buffer, 1, 8192, movie->cfp);
+	int bytes = cfile::io::read(buffer, 1, 8192, movie->cfp);
 
 	ogg_sync_wrote(&movie->osyncstate, bytes);
 
@@ -380,7 +380,7 @@ static void OGG_video_init(theora_info *tinfo)
 			if (cf_shader != NULL) {
 				int len = cfile::io::fileLength(cf_shader);
 				vert = (char*) vm_malloc(len + 1);
-				cfile::read(vert, len + 1, 1, cf_shader);
+				cfile::io::read(vert, len + 1, 1, cf_shader);
 				cfile::io::close(cf_shader);
 			} else {
 				mprintf(("   Loading built-in default shader for: %s\n", vert_name));
@@ -396,7 +396,7 @@ static void OGG_video_init(theora_info *tinfo)
 			if (cf_shader != NULL) {
 				int len = cfile::io::fileLength(cf_shader);
 				frag = (char*) vm_malloc(len + 1);
-				cfile::read(frag, len + 1, 1, cf_shader);
+				cfile::io::read(frag, len + 1, 1, cf_shader);
 				cfile::io::close(cf_shader);
 			} else {
 				mprintf(("   Loading built-in default shader for: %s\n", frag_name));

@@ -648,7 +648,7 @@ int targa_read_bitmap(const char *real_filename, ubyte *image_data, ubyte *palet
 
 	ubyte *src_pixels = fileptr;
 
-	cfile::read(fileptr, bytes_remaining, 1, targa_file);	
+	cfile::io::read(fileptr, bytes_remaining, 1, targa_file);	
 	
 	int rowsize = header.width * dest_size;
 

@@ -86,12 +86,12 @@ int load_nebula_sub(char *filename)
 	}
 
 	// ID of NEBU
-	cfile::read( id, 4, 1, fp );	
+	cfile::io::read( id, 4, 1, fp );	
 	if ( strncmp( id, NEBULA_FILE_ID, 4))	{
 		mprintf(( "Not a valid nebula file.\n" ));
 		return 0;
 	} 
-	cfile::read( &version, sizeof(int), 1, fp );
+	cfile::io::read( &version, sizeof(int), 1, fp );
 	major = version / 100;
 
 	if ( major != NEBULA_MAJOR_VERSION )	{
@@ -99,9 +99,9 @@ int load_nebula_sub(char *filename)
 		return 0;
 	}	
 
-	cfile::read( &num_pts, sizeof(int), 1, fp );
+	cfile::io::read( &num_pts, sizeof(int), 1, fp );
 	Assert( num_pts < MAX_POINTS );
-	cfile::read( &num_tris, sizeof(int), 1, fp );
+	cfile::io::read( &num_tris, sizeof(int), 1, fp );
 	Assert( num_tris < MAX_TRIS );
 
 	int i;
@@ -109,9 +109,9 @@ int load_nebula_sub(char *filename)
 		float xf, yf;
 		int l;
 
-		cfile::read( &xf, sizeof(float), 1, fp );
-		cfile::read( &yf, sizeof(float), 1, fp );
-		cfile::read( &l, sizeof(int), 1, fp );
+		cfile::io::read( &xf, sizeof(float), 1, fp );
+		cfile::io::read( &yf, sizeof(float), 1, fp );
+		cfile::io::read( &l, sizeof(int), 1, fp );
 		project_2d_onto_sphere( &nebula_vecs[i], 1.0f - xf, yf );
 		vm_vec_scale( &nebula_vecs[i], 10.0f );
 		nebula_verts[i].b = ubyte((l*255)/31);
@@ -120,9 +120,9 @@ int load_nebula_sub(char *filename)
 	}
 
 	for (i=0; i<num_tris; i++ )	{
-		cfile::read( &tri[i][0], sizeof(int), 1, fp );
-		cfile::read( &tri[i][1], sizeof(int), 1, fp );
-		cfile::read( &tri[i][2], sizeof(int), 1, fp );
+		cfile::io::read( &tri[i][0], sizeof(int), 1, fp );
+		cfile::io::read( &tri[i][1], sizeof(int), 1, fp );
+		cfile::io::read( &tri[i][2], sizeof(int), 1, fp );
 	}
 
 	cfile::io::close(fp);
