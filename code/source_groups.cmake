@@ -54,7 +54,17 @@ set (file_root_camera
 # CFile files
 set (file_root_cfile
 	cfile/cfile.cpp
+	cfile/checksum.cpp
+	cfile/fileystem.cpp
+	cfile/io.cpp
+	cfile/util.cpp
 	cfile/cfile.h
+	cfile/checksum.h
+	cfile/filesystem.h
+	cfile/io.h
+	cfile/internal.h
+	cfile/types.h
+	cfile/util.h
 )
 
 set(file_root_cfile_archives
