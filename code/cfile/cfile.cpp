@@ -27,8 +27,8 @@
 
 #include "cfile/cfile.h"
 
-#include "cfile/VPFileSystem.h"
-#include "cfile/ZipFileSystem.h"
+#include "cfile/archives/VPFileSystem.h"
+#include "cfile/archives/ZipFileSystem.h"
 
 #include "cmdline/cmdline.h"
 
