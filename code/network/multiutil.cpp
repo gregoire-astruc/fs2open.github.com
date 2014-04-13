@@ -3163,15 +3163,15 @@ void multi_update_valid_missions()
 	for (idx = 0; idx < Multi_create_mission_list.size(); idx++) {
 		switch(Multi_create_mission_list[idx].valid_status){
 		case MVALID_STATUS_VALID:
-			cfile::write<const char*>(Multi_create_mission_list[idx].filename, in);
-			cfile::write<const char*>(NOX("   valid"), in);
-			cfile::write<const char*>(NOX("\n"), in);
+			cfile::io::write<const char*>(Multi_create_mission_list[idx].filename, in);
+			cfile::io::write<const char*>(NOX("   valid"), in);
+			cfile::io::write<const char*>(NOX("\n"), in);
 			break;
 
 		case MVALID_STATUS_INVALID:
-			cfile::write<const char*>(Multi_create_mission_list[idx].filename, in);
-			cfile::write<const char*>(NOX("   invalid"), in);
-			cfile::write<const char*>(NOX("\n"), in);
+			cfile::io::write<const char*>(Multi_create_mission_list[idx].filename, in);
+			cfile::io::write<const char*>(NOX("   invalid"), in);
+			cfile::io::write<const char*>(NOX("\n"), in);
 			break;
 		}
 	}

@@ -911,18 +911,18 @@ static void opengl_flush_frame_dump()
 		cfile::FileHandle *f = cfile::io::open(filename, cfile::MODE_WRITE, cfile::OPEN_NORMAL, cfile::TYPE_DATA);
 
 		// Write the TGA header
-		cfile::write<ubyte>( 0, f );	//	IDLength;
-		cfile::write<ubyte>( 0, f );	//	ColorMapType;
-		cfile::write<ubyte>( 2, f );	//	ImageType;		// 2 = 24bpp, uncompressed, 10=24bpp rle compressed
-		cfile::write<short>( 0, f );	// CMapStart;
-		cfile::write<short>( 0, f );	//	CMapLength;
-		cfile::write<ubyte>( 0, f );	// CMapDepth;
-		cfile::write<short>( 0, f );	//	XOffset;
-		cfile::write<short>( 0, f );	//	YOffset;
-		cfile::write<short>( (ushort)gr_screen.max_w, f );	//	Width;
-		cfile::write<short>( (ushort)gr_screen.max_h, f );	//	Height;
-		cfile::write<ubyte>( 24, f );	//PixelDepth;
-		cfile::write<ubyte>( 0, f );	//ImageDesc;
+		cfile::io::write<ubyte>( 0, f );	//	IDLength;
+		cfile::io::write<ubyte>( 0, f );	//	ColorMapType;
+		cfile::io::write<ubyte>( 2, f );	//	ImageType;		// 2 = 24bpp, uncompressed, 10=24bpp rle compressed
+		cfile::io::write<short>( 0, f );	// CMapStart;
+		cfile::io::write<short>( 0, f );	//	CMapLength;
+		cfile::io::write<ubyte>( 0, f );	// CMapDepth;
+		cfile::io::write<short>( 0, f );	//	XOffset;
+		cfile::io::write<short>( 0, f );	//	YOffset;
+		cfile::io::write<short>( (ushort)gr_screen.max_w, f );	//	Width;
+		cfile::io::write<short>( (ushort)gr_screen.max_h, f );	//	Height;
+		cfile::io::write<ubyte>( 24, f );	//PixelDepth;
+		cfile::io::write<ubyte>( 0, f );	//ImageDesc;
 
 		glReadBuffer(GL_FRONT);
 		glReadPixels(0, 0, gr_screen.max_w, gr_screen.max_h, GL_BGR_EXT, GL_UNSIGNED_BYTE, GL_dump_buffer);

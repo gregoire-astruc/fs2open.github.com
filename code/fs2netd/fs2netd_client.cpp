@@ -1207,7 +1207,7 @@ void fs2netd_update_ban_list()
 
 		if (banlist_cfg != NULL) {
 			for (SCP_vector<SCP_string>::iterator bl = FS2NetD_ban_list.begin(); bl != FS2NetD_ban_list.end(); ++bl) {
-				cfile::write<const char*>(bl->c_str(), banlist_cfg);
+				cfile::io::write<const char*>(bl->c_str(), banlist_cfg);
 			}
 
 			cfile::io::close(banlist_cfg);

@@ -129,7 +129,7 @@ void log_string(int logfile_type, const char *string, int add_time)
 	strcat_s(tmp, "\n");
 
 	// now print it to the logfile if necessary	
-	cfile::write<const char*>(tmp, logfiles[logfile_type].log_file);
+	cfile::io::write<const char*>(tmp, logfiles[logfile_type].log_file);
 	cfile::io::flush(logfiles[logfile_type].log_file);
 
 #if defined(LOGFILE_ECHO_TO_DEBUG)

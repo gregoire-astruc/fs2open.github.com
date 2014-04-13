@@ -1616,12 +1616,12 @@ void hud_config_color_save(char *name)
 
 	// write out all gauges
 	for(idx=0; idx<NUM_HUD_GAUGES; idx++){
-		cfile::write<const char*>("+Gauge: ", out);
-		cfile::write<const char*>(HC_gauge_descriptions(idx), out);
-		cfile::write<const char*>("\n", out);
-		cfile::write<const char*>("+RGBA: ", out);
+		cfile::io::write<const char*>("+Gauge: ", out);
+		cfile::io::write<const char*>(HC_gauge_descriptions(idx), out);
+		cfile::io::write<const char*>("\n", out);
+		cfile::io::write<const char*>("+RGBA: ", out);
 		sprintf(vals, "%d %d %d %d\n\n", HUD_config.clr[idx].red, HUD_config.clr[idx].green, HUD_config.clr[idx].blue, HUD_config.clr[idx].alpha);
-		cfile::write<const char*>(vals, out);
+		cfile::io::write<const char*>(vals, out);
 	}
 	
 	// close the file

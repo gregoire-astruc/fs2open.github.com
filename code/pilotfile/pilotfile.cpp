@@ -34,10 +34,10 @@ void pilotfile::startSection(Section::id section_id)
 
 	const int zero = 0;
 
-	cfile::write<short>( (ushort)section_id, cfp );
+	cfile::io::write<short>( (ushort)section_id, cfp );
 
 	// to be updated when endSection() is called
-	cfile::write<int>(zero, cfp);
+	cfile::io::write<int>(zero, cfp);
 
 	// starting offset, for size of section
 	m_size_offset = cfile::io::tell(cfp);
@@ -57,7 +57,7 @@ void pilotfile::endSection()
 	if (section_size) {
 		// go back to section size in file and write proper value
 		cfile::io::seek(cfp, cur - section_size - sizeof(int), cfile::SEEK_MODE_SET);
-		cfile::write<int>((int)section_size, cfp);
+		cfile::io::write<int>((int)section_size, cfp);
 
 		// go back to previous location for next section
 		cfile::io::seek(cfp, cur, cfile::SEEK_MODE_SET);

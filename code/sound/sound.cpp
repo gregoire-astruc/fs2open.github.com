@@ -180,7 +180,7 @@ void snd_spew_info()
 		return;
 	}
 	
-	cfile::write<const char*>("Sounds loaded :\n", out);
+	cfile::io::write<const char*>("Sounds loaded :\n", out);
 
 	// spew info for all sounds
 	for (idx = 0; idx < Sounds.size(); idx++) {
@@ -189,7 +189,7 @@ void snd_spew_info()
 		}
 		
 		sprintf(txt, "%s (%ds)\n", Sounds[idx].filename, Sounds[idx].info.duration); 
-		cfile::write<const char*>(txt, out);
+		cfile::io::write<const char*>(txt, out);
 	}
 
 	// close the outfile

@@ -1187,11 +1187,11 @@ void options_multi_protocol_save_ip_file()
 		// it was added.  We'll only grab games that we can actually get to.
 		//Assert(psnet_is_valid_ip_string(Multi_ip_addrs[idx]));
 
-		cfile::write<const char*>(Om_ip_addrs[idx],file);
+		cfile::io::write<const char*>(Om_ip_addrs[idx],file);
 
 	   // make sure to tack on a newline if necessary
 		if(Om_ip_addrs[idx][strlen(&Om_ip_addrs[idx][0]) - 1] != '\n'){
-			cfile::write<const char*>(NOX("\n"), file);
+			cfile::io::write<const char*>(NOX("\n"), file);
 		}
 	}
 

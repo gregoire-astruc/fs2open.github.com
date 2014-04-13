@@ -4234,7 +4234,7 @@ void interp_configure_vertex_buffers(polymodel *pm, int mn)
 		int ibx_verts = 0;
 		int ibx_size = 0;
 
-		ibx_verts = cfile::read<int>( ibuffer_info.read );
+		ibx_verts = cfile::io::read<int>( ibuffer_info.read );
 		ibuffer_info.size -= sizeof(int);	// subtract
 
 		// vertex count (indexed vertex count)
@@ -4271,7 +4271,7 @@ void interp_configure_vertex_buffers(polymodel *pm, int mn)
 			model_list->calculate_tangent();
 
 			for (i = 0; i < ibx_verts; i++) {
-				int ivert = cfile::read<int>( ibuffer_info.read );
+				int ivert = cfile::io::read<int>( ibuffer_info.read );
 
 				tlist->vert[i] = model_list->vert[ivert];
 				tlist->norm[i] = model_list->norm[ivert];
@@ -4298,13 +4298,13 @@ void interp_configure_vertex_buffers(polymodel *pm, int mn)
 		model_list->make_index_buffer(vertex_list);
 
 		if (ibuffer_info.write != NULL) {
-			cfile::write<int>( model_list->n_verts, ibuffer_info.write );
+			cfile::io::write<int>( model_list->n_verts, ibuffer_info.write );
 
 			int count = (int)vertex_list.size();
 			Assert( model_list->n_verts == count );
 
 			for (i = 0; i < count; i++) {
-				cfile::write<int>( vertex_list[i], ibuffer_info.write );
+				cfile::io::write<int>( vertex_list[i], ibuffer_info.write );
 			}
 		}
 
@@ -4331,7 +4331,7 @@ void interp_configure_vertex_buffers(polymodel *pm, int mn)
 
 		for (j = 0; j < polygon_list[i].n_verts; j++) {
 			if (ibuffer_info.read != NULL) {
-				first_index = cfile::read<int>(ibuffer_info.read);
+				first_index = cfile::io::read<int>(ibuffer_info.read);
 				Assert( first_index >= 0 );
 
 				new_buffer.assign(j, first_index);
@@ -4342,7 +4342,7 @@ void interp_configure_vertex_buffers(polymodel *pm, int mn)
 				new_buffer.assign(j, first_index);
 
 				if (ibuffer_info.write != NULL) {
-					cfile::write<int>(first_index, ibuffer_info.write);
+					cfile::io::write<int>(first_index, ibuffer_info.write);
 				}
 			}
 		}

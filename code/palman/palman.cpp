@@ -298,13 +298,13 @@ int palette_read_cached( char *name )
 		return 0;
 	}
 
-	id  = cfile::read<uint>( fp );
+	id  = cfile::io::read<uint>( fp );
 	if ( id != PAL_ID )	{
 		mprintf(( "Cached palette file has incorrect ID\n" ));
 		cfile::io::close(fp);
 		return 0;
 	}
-	version = cfile::read<int>( fp );
+	version = cfile::io::read<int>( fp );
 	if ( version < PAL_LAST_COMPATIBLE_VERSION ) {
 		mprintf(( "Cached palette file is an older incompatible version\n" ));
 		cfile::io::close(fp);
@@ -327,7 +327,7 @@ int palette_read_cached( char *name )
 
 	cfile::legacy::read_compressed(&palette_lookup, LOOKUP_SIZE, 1, fp);			// 256KB
 
-	int fade_table_saved = cfile::read<int>(fp);
+	int fade_table_saved = cfile::io::read<int>(fp);
 	
 	if ( fade_table_saved )	{
 		int new_gamma;
@@ -342,7 +342,7 @@ int palette_read_cached( char *name )
 		palette_fade_table_calculated = 0;
 	}
 	
-	int num_blend_tables_saved = cfile::read<int>(fp);
+	int num_blend_tables_saved = cfile::io::read<int>(fp);
 	if ( (num_blend_tables_saved == NUM_BLEND_TABLES) && (num_blend_tables_saved>0))	{
 		palette_blend_table_calculated = 1;
 		cfile::legacy::read_compressed(&palette_blend_table, 256 * 256, NUM_BLEND_TABLES, fp);	//64KB*

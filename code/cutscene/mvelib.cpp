@@ -87,13 +87,13 @@ MVEFILE *mvefile_open(char *filename)
 	if (strcmp(buffer, MVE_HEADER))
 		mve_valid = 0;
 
-	if (cfile::read<short>(file->stream) != MVE_HDRCONST1)
+	if (cfile::io::read<short>(file->stream) != MVE_HDRCONST1)
 		mve_valid = 0;
 
-	if (cfile::read<short>(file->stream) != MVE_HDRCONST2)
+	if (cfile::io::read<short>(file->stream) != MVE_HDRCONST2)
 		mve_valid = 0;
 
-	if (cfile::read<short>(file->stream) != MVE_HDRCONST3)
+	if (cfile::io::read<short>(file->stream) != MVE_HDRCONST3)
 		mve_valid = 0;
 
 	if (!mve_valid) {
