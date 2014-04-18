@@ -59,7 +59,7 @@ void text_view_dlg::set(int ship_class)
 	if (ship_class < 0)
 		return;
 
-	fp = cfile::open("ships.tbl", "r");
+	fp = cfile::io::open("ships.tbl", "r");
 	Assert(fp);
 
 	
@@ -117,7 +117,7 @@ void text_view_dlg::set(int ship_class)
 	for (n = 0; n < num_files; n++){
 		strcat(tbl_file_names[n], ".tbm");
 
-		fp = cfile::open(tbl_file_names[n], "r");
+		fp = cfile::io::open(tbl_file_names[n], "r");
 		Assert(fp);
 
 		memset( line, 0, sizeof(line) );

@@ -116,7 +116,7 @@ int CFred_mission_save::save_mission_file(char *pathname)
 
 	reset_parse();
 	fred_parse_flag = 0;
-	fp = cfile::open(savepath, "wt", CFILE_NORMAL);
+	fp = cfile::io::open(savepath, "wt", CFILE_NORMAL);
 	if (!fp)	{
 		nprintf(("Error", "Can't open mission file to save.\n"));
 		return -1;
@@ -215,7 +215,7 @@ int CFred_mission_save::autosave_mission_file(char *pathname)
 	strcpy(backup_name + len, ".001");
 	reset_parse();
 	fred_parse_flag = 0;
-	fp = cfile::open(backup_name, "wt", CFILE_NORMAL, CF_TYPE_MISSIONS);
+	fp = cfile::io::open(backup_name, "wt", CFILE_NORMAL, CF_TYPE_MISSIONS);
 	if (!fp)	{
 		nprintf(("Error", "Can't open mission file to save.\n"));
 		return -1;
@@ -3934,7 +3934,7 @@ int CFred_mission_save::save_campaign_file(char *pathname)
 	fred_parse_flag = 0;
 
 	pathname = cf_add_ext(pathname, FS_CAMPAIGN_FILE_EXT);
-	fp = cfile::open(pathname, "wt", CFILE_NORMAL, CF_TYPE_MISSIONS);
+	fp = cfile::io::open(pathname, "wt", CFILE_NORMAL, CF_TYPE_MISSIONS);
 	if (!fp)	{
 		nprintf(("Error", "Can't open campaign file to save.\n"));
 		return -1;
