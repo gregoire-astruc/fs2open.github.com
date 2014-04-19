@@ -1,5 +1,5 @@
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8.11)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 SET(FSO_VERSION_MAJOR 3)
@@ -18,10 +18,20 @@ IF(NOT DEFINED CMAKE_INSTALL_PREFIX)
 	SET(RESET_INSTALL_PREFIX TRUE)
 ENDIF(NOT DEFINED CMAKE_INSTALL_PREFIX)
 
+# Reset this variable
+SET(TARGET_COPY_FILES "" CACHE INTERNAL "" FORCE)
+SET(TARGET_COPY_DIRS "" CACHE INTERNAL "" FORCE)
+
 PROJECT(FS2_Open)
+
+IF(CMAKE_CROSSCOMPILING)
+	SET(IMPORT_EXE_DIR "IMPORT_EXE_DIR-NOTFOUND" CACHE FILEPATH "Required for a cross compiling build, point to binary directory of a cmake build for the real OS")
+	INCLUDE(${IMPORT_EXE_DIR}/ImportExecutables.cmake)
+ENDIF(CMAKE_CROSSCOMPILING)
 
 LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/external/rpavlik-cmake-modules")
+LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/external/cotire")
 
 IF(NOT DEFINED FSO_INSTRUCTION_SET)
 	INCLUDE(cpufeatures)
@@ -40,7 +50,9 @@ IF(RESET_INSTALL_PREFIX)
 	ENDIF(NOT $ENV{FS2PATH} STREQUAL "")
 ENDIF(RESET_INSTALL_PREFIX)
 
-set(CMAKE_CONFIGURATION_TYPES Debug Release CACHE STRING "Available configurations" FORCE)
+IF(DEFINED CMAKE_CONFIGURATION_TYPES)
+	set(CMAKE_CONFIGURATION_TYPES Debug Release CACHE STRING "Available configurations" FORCE)
+ENDIF(DEFINED CMAKE_CONFIGURATION_TYPES)
 
 ### Define options and editable variables in the section below:
 # This is only needed for single configuration generators so don't annoy others
@@ -57,6 +69,10 @@ IF (WIN32)
 	OPTION(FSO_BUILD_FRED2 "Build FRED2 binary" OFF)
 ENDIF(WIN32)
 
+OPTION(FSO_BUILD_TOOLS "Build tools related to FSO" OFF)
+
+OPTION(FSO_DEVELOPMENT_MODE "Generate binaries in development mode, only use if you know what you're doing!" OFF)
+
 OPTION(FSO_BUILD_WXFRED2 "Build wxFRED2 binary" OFF)
 
 OPTION(FSO_BUILD_INCLUDED_LIBS "Build and use the included libraries istead of using the system headers and libraries" OFF)
@@ -70,6 +86,8 @@ OPTION(FSO_USE_OPENALSOFT "Download and build OpenAL Soft instead of using the s
 
 SET(FSO_FREESPACE_PATH "${CMAKE_INSTALL_PREFIX}" CACHE FILEPATH "The path of the FreeSpace directory you want to use. Please note that you will have to change CMAKE_INSTALL_PREFIX if you change this at some point.")
 
+SET(FSO_RUN_ARGUMENTS "" CACHE STRING "Additional arguments passed to a generated executable when run with the generated build files.")
+
 LIST(FIND POSSIBLE_INSTUCTION_SETS "${FSO_INSTRUCTION_SET}" SET_INDEX)
 
 IF (SET_INDEX LESS 0)
@@ -81,10 +99,19 @@ ENDIF(SET_INDEX LESS 0)
 
 OPTION(FSO_CMAKE_DEBUG "Enable cmake debugging in while generating build files" OFF)
 
+OPTION(COTIRE_ENABLE "Enable cotire, disabling may be useful for cmake files development" ON)
+
 MARK_AS_ADVANCED(FORCE FSO_CMAKE_DEBUG)
 MARK_AS_ADVANCED(FORCE FSO_BUILD_INCLUDED_LIBS)
 MARK_AS_ADVANCED(FORCE FSO_USE_OPENALSOFT)
 MARK_AS_ADVANCED(FORCE FSO_USE_LUAJIT)
+MARK_AS_ADVANCED(FORCE FSO_DEVELOPMENT_MODE)
+MARK_AS_ADVANCED(FORCE COTIRE_ENABLE)
+
+IF(COTIRE_ENABLE)
+	# Include cotire file from https://github.com/sakra/cotire/ 
+	include(cotire)
+ENDIF(COTIRE_ENABLE)
 
 INCLUDE(globals)
 INCLUDE(toolchain)

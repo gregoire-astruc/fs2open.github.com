@@ -320,8 +320,4 @@ typedef void (* glDrawRangeElementsProcPtr) (GLenum mode, GLuint start, GLuint e
 #define vglBlendColor					GLEXT_CALL( OGL_BLEND_COLOR, PFNGLBLENDCOLORPROC )
 #define vglGetShaderiv					GLEXT_CALL( OGL_GET_SHADER_IV, PFNGLGETSHADERIVPROC )
 
-// special extensions
-#define vwglSwapIntervalEXT			GLEXT_SPC_CALL( OGL_SPC_WGL_SWAP_INTERVAL, PFNWGLSWAPINTERVALEXTPROC )
-#define vglXSwapIntervalSGI			GLEXT_SPC_CALL( OGL_SPC_GLX_SWAP_INTERVAL, PFNGLXSWAPINTERVALSGIPROC )
-
 #endif // _GROPENGLEXT_H

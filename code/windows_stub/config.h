@@ -38,6 +38,9 @@
 #pragma warning(disable: 4101)
 #endif
 
+#elif defined(__MINGW32__) || defined(__GNUC__)
+// We're using mingw or we're crosscompiling
+#define _cdecl __cdecl
 #endif
 
 #if !defined BYTE_ORDER
@@ -54,6 +57,8 @@
 #ifndef snprintf
 #define snprintf _snprintf
 #endif
+
+#define STUB_FUNCTION nprintf(( "Warning", "STUB: %s in "__FILE__" at line %d\n", __FUNCTION__, __LINE__))
 
 #else  // ! Win32
 

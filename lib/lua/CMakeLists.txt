@@ -68,7 +68,6 @@ IF(FSO_USE_LUAJIT)
 		)
 	ENDIF(WIN32)
 	
-	 # Use the included lua headers as the ones from luajit don't exist yet, that shouldn't cause problems, hopefully...
 	set_target_properties(luajit_lib
 		PROPERTIES
 			FOLDER "3rdparty"

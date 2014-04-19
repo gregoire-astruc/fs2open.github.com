@@ -8,6 +8,7 @@ IF(FSO_USE_OPENALSOFT)
 	ELSE(FSO_DEVELOPMENT_MODE)
 		SET(CONFIG Release)
 	ENDIF(FSO_DEVELOPMENT_MODE)
+	
 	ExternalProject_Add(OpenALsoft
 		PREFIX OpenALsoft
 		# Downloading

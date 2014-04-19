@@ -13,9 +13,8 @@
 #define FS_CMDLINE_HEADER_FILE
 
 
-int parse_cmdline(char *cmdline);
+int parse_cmdline(int argc, char *argv[]);
 
-int fred2_parse_cmdline(int argc, char *argv[]);
 // COMMAND LINE SETTINGS
 // This section is for reference by all the *_init() functions. For example, the multiplayer init function
 // could check to see if (int Cmdline_multi_stream_chat_to_file) has been set by the command line parser.
@@ -120,12 +119,12 @@ extern int Cmdline_nomovies;	// WMC Toggles movie playing support
 extern int Cmdline_no_set_gamma;
 extern int Cmdline_novbo;
 extern int Cmdline_no_fbo;
+extern int Cmdline_no_pbo;
 extern int Cmdline_noglsl;
 extern int Cmdline_mipmap;
 extern int Cmdline_ati_color_swap;
 extern int Cmdline_no_3d_sound;
 extern int Cmdline_no_glsl_model_rendering;
-extern int Cmdline_no_di_mouse;
 extern int Cmdline_drawelements;
 extern char* Cmdline_keyboard_layout;
 
@@ -145,10 +144,9 @@ extern int Cmdline_show_stats;
 extern int Cmdline_save_render_targets;
 extern int Cmdline_debug_window;
 extern int Cmdline_verify_vps;
-#ifdef SCP_UNIX
-extern int Cmdline_no_grab;
-#endif
 extern int Cmdline_reparse_mainhall;
 extern bool Cmdline_frame_profile;
+extern bool Cmdline_profile_write_file;
+extern bool Cmdline_no_unfocus_pause;
 
 #endif
