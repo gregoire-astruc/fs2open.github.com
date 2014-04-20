@@ -2194,7 +2194,7 @@ void multi_pxo_set_status_text(const char *txt)
 	strncpy(Multi_pxo_status_text, txt, MAX_PXO_TEXT_LEN-1);
 
 	// make sure it fits properly
-	gr_force_fit_string(Multi_pxo_status_text, MAX_PXO_TEXT_LEN-1, Multi_pxo_status_coords[gr_screen.res][2]);
+	font::force_fit_string(Multi_pxo_status_text, MAX_PXO_TEXT_LEN-1, Multi_pxo_status_coords[gr_screen.res][2]);
 }
 
 /**
@@ -2546,7 +2546,7 @@ void multi_pxo_blit_channels()
 		memset(chan_name, 0, MAX_PXO_TEXT_LEN);
 		Assert(moveup->name);
 		strcpy_s(chan_name,moveup->name);
-		gr_force_fit_string(chan_name, MAX_PXO_TEXT_LEN-1, Multi_pxo_chan_coords[gr_screen.res][2] - Multi_pxo_chan_column_offsets[gr_screen.res][CHAN_PLAYERS_COLUMN]);
+		font::force_fit_string(chan_name, MAX_PXO_TEXT_LEN-1, Multi_pxo_chan_coords[gr_screen.res][2] - Multi_pxo_chan_column_offsets[gr_screen.res][CHAN_PLAYERS_COLUMN]);
 
 		// blit the strings
 		gr_string(Multi_pxo_chan_coords[gr_screen.res][0], y_start, chan_name + 1);
@@ -2958,7 +2958,7 @@ void multi_pxo_blit_players()
 
 		// make sure the string fits		
 		strcpy_s(player_name,moveup->name);		
-		gr_force_fit_string(player_name, MAX_PXO_TEXT_LEN-1, Multi_pxo_player_coords[gr_screen.res][2]);
+		font::force_fit_string(player_name, MAX_PXO_TEXT_LEN-1, Multi_pxo_player_coords[gr_screen.res][2]);
 
 		// blit the string
 		gr_string(Multi_pxo_player_coords[gr_screen.res][0], y_start, player_name);
@@ -3262,7 +3262,7 @@ void multi_pxo_chat_blit()
 	} else {
 		strcpy_s(title,XSTR("Parallax Online - No Channel", 956));
 	}	
-	gr_force_fit_string(title, MAX_PXO_TEXT_LEN-1, Multi_pxo_chat_coords[gr_screen.res][2] - 10);
+	font::force_fit_string(title, MAX_PXO_TEXT_LEN-1, Multi_pxo_chat_coords[gr_screen.res][2] - 10);
 	gr_get_string_size(&token_width,NULL,title);
 	gr_set_color_fast(&Color_normal);
 	gr_string(Multi_pxo_chat_coords[gr_screen.res][0] + ((Multi_pxo_chat_coords[gr_screen.res][2] - token_width)/2), Multi_pxo_chat_title_y[gr_screen.res], title);	
@@ -3841,7 +3841,7 @@ void multi_pxo_com_set_top_text(const char *txt)
 {	
 	if((txt != NULL) && strlen(txt)){
 		strcpy_s(Multi_pxo_com_top_text,txt);
-		gr_force_fit_string(Multi_pxo_com_top_text, MAX_PXO_TEXT_LEN-1, Multi_pxo_com_input_coords[gr_screen.res][2]);
+		font::force_fit_string(Multi_pxo_com_top_text, MAX_PXO_TEXT_LEN-1, Multi_pxo_com_input_coords[gr_screen.res][2]);
 	}	
 }
 
@@ -3852,7 +3852,7 @@ void multi_pxo_com_set_middle_text(const char *txt)
 {
 	if((txt != NULL) && strlen(txt)){
 		strcpy_s(Multi_pxo_com_middle_text,txt);
-		gr_force_fit_string(Multi_pxo_com_middle_text, MAX_PXO_TEXT_LEN-1, Multi_pxo_com_input_coords[gr_screen.res][2]);
+		font::force_fit_string(Multi_pxo_com_middle_text, MAX_PXO_TEXT_LEN-1, Multi_pxo_com_input_coords[gr_screen.res][2]);
 	}	
 }
 
@@ -3863,7 +3863,7 @@ void multi_pxo_com_set_bottom_text(const char *txt)
 {
 	if((txt != NULL) && strlen(txt)){
 		strcpy_s(Multi_pxo_com_bottom_text,txt);
-		gr_force_fit_string(Multi_pxo_com_bottom_text, MAX_PXO_TEXT_LEN-1, Multi_pxo_com_input_coords[gr_screen.res][2]);
+		font::force_fit_string(Multi_pxo_com_bottom_text, MAX_PXO_TEXT_LEN-1, Multi_pxo_com_input_coords[gr_screen.res][2]);
 	}	
 }
 
@@ -4474,12 +4474,12 @@ void multi_pxo_pinfo_build_vals()
 	// pilot name
 	memset(Multi_pxo_pinfo_vals[0], 0, 50);
 	strcpy_s(Multi_pxo_pinfo_vals[0], fs->callsign);
-	gr_force_fit_string(Multi_pxo_pinfo_vals[0], 49, Multi_pxo_pinfo_coords[gr_screen.res][2] - (Multi_pxo_pinfo_val_x[gr_screen.res] - Multi_pxo_pinfo_coords[gr_screen.res][0]));
+	font::force_fit_string(Multi_pxo_pinfo_vals[0], 49, Multi_pxo_pinfo_coords[gr_screen.res][2] - (Multi_pxo_pinfo_val_x[gr_screen.res] - Multi_pxo_pinfo_coords[gr_screen.res][0]));
 
 	// rank
 	memset(Multi_pxo_pinfo_vals[1], 0, 50);	
 	multi_sg_rank_build_name(Ranks[fs->stats.rank].name, Multi_pxo_pinfo_vals[1]);	
-	gr_force_fit_string(Multi_pxo_pinfo_vals[1], 49, Multi_pxo_pinfo_coords[gr_screen.res][2] - (Multi_pxo_pinfo_val_x[gr_screen.res] - Multi_pxo_pinfo_coords[gr_screen.res][0]));
+	font::force_fit_string(Multi_pxo_pinfo_vals[1], 49, Multi_pxo_pinfo_coords[gr_screen.res][2] - (Multi_pxo_pinfo_val_x[gr_screen.res] - Multi_pxo_pinfo_coords[gr_screen.res][0]));
 
 	// kills
 	memset(Multi_pxo_pinfo_vals[2], 0, 50);

@@ -28,6 +28,7 @@
 #include "graphics/gropengltnl.h"
 #include "graphics/gropenglbmpman.h"
 #include "graphics/gropengldraw.h"
+#include "graphics/software/font_internal.h"
 #include "debugconsole/timerbar.h"
 #include "nebula/neb.h"
 #include "graphics/gropenglshader.h"
@@ -309,8 +310,12 @@ void gr_opengl_aabitmap(int x, int y, bool resize, bool mirror)
 
 struct v4 { GLfloat x, y, u, v; };
 
-extern int font_get_char_width_old(font* fnt, ubyte c1, ubyte c2, int *width, int* spacing);
-void gr_opengl_string_old(int sx, int sy, const char*s, bool resize, font* fontData, int top, int height, int textHeight, int tokenLength)
+namespace font
+{
+	extern int get_char_width_old(font* fnt, ubyte c1, ubyte c2, int *width, int* spacing);
+}
+
+void gr_opengl_string_old(int sx, int sy, const char*s, bool resize, font::font* fontData, int top, int height, int textHeight, int tokenLength)
 {
 	int width, spacing, letter;
 	int x, y, do_resize;
@@ -366,7 +371,7 @@ void gr_opengl_string_old(int sx, int sy, const char*s, bool resize, font* fontD
 
 	if (sx == 0x8000) {
 		// centered
-		x = get_centered_x(s);
+		x = font::get_centered_x(s);
 	}
 	else {
 		x = sx;
@@ -387,7 +392,7 @@ void gr_opengl_string_old(int sx, int sy, const char*s, bool resize, font* fontD
 
 			if (sx == 0x8000) {
 				// centered
-				x = get_centered_x(s);
+				x = font::get_centered_x(s);
 			}
 			else {
 				x = sx;
@@ -398,7 +403,7 @@ void gr_opengl_string_old(int sx, int sy, const char*s, bool resize, font* fontD
 			break;
 		}
 
-		letter = font_get_char_width_old(fontData, s[0], s[1], &width, &spacing);
+		letter = get_char_width_old(fontData, s[0], s[1], &width, &spacing);
 		s++;
 
 		//not in font, draw as space
@@ -526,6 +531,9 @@ void gr_opengl_string_old(int sx, int sy, const char*s, bool resize, font* fontD
 
 void gr_opengl_string(int sx, int sy, const char *s, bool resize)
 {
+	using namespace font;
+	namespace fo = font;
+
 	GL_CHECK_FOR_ERRORS("start of string()");
 
 	Assertion(s != NULL, "NULL pointer passed to gr_string!");
@@ -539,7 +547,7 @@ void gr_opengl_string(int sx, int sy, const char *s, bool resize)
 	if (currentFont->getType() == VFNT_FONT)
 	{
 		VFNTFont *fnt = static_cast<VFNTFont*>(currentFont);
-		font *fontData = fnt->getFontData();
+		fo::font *fontData = fnt->getFontData();
 
 		gr_opengl_string_old(sx, sy, s, resize, fontData, fnt->getTopOffset(),
 			fnt->getHeight(), fnt->getTextHeight(), strlen(s));
@@ -647,7 +655,7 @@ void gr_opengl_string(int sx, int sy, const char *s, bool resize)
 
 				int width;
 				int spacing;
-				font_get_char_width_old(ftglFont->getSpecialCharacterFont(), *text, '\0', &width, &spacing);
+				get_char_width_old(ftglFont->getSpecialCharacterFont(), *text, '\0', &width, &spacing);
 					
 				xOffset += spacing;
 			}

@@ -437,7 +437,7 @@ void HudGaugeRadar::initialize()
 	}
 
 	int w,h;
-	gr_set_font(FONT1);
+	font::set_font(font::FONT1);
 
 	Small_blip_string[0] = ubyte(SMALL_BLIP_CHAR);
 	Small_blip_string[1] = 0;

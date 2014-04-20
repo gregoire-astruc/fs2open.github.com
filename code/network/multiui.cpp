@@ -1339,7 +1339,7 @@ void multi_join_display_games()
 			} 
 
 			// make sure the string fits in the display area and draw it
-			gr_force_fit_string(str,200,Mj_game_name_coords[gr_screen.res][MJ_W_COORD]);			
+			font::force_fit_string(str,200,Mj_game_name_coords[gr_screen.res][MJ_W_COORD]);			
 			gr_string(Mj_game_name_coords[gr_screen.res][MJ_X_COORD],y_start,str);
 
 			// display the ping time
@@ -3729,10 +3729,10 @@ void multi_create_game_do()
 
 			// draw "Loading" on it
 			gr_set_color_fast(&Color_normal);
-			gr_set_font(FONT2);
+			font::set_font(font::FONT2);
 			gr_get_string_size(&str_w, &str_h, loading_str);
 			gr_string((gr_screen.max_w - str_w) / 2, (gr_screen.max_h - str_h) / 2, loading_str, false);
-			gr_set_font(FONT1);
+			font::set_font(font::FONT1);
 
 			gr_flip();
 
@@ -4268,7 +4268,7 @@ void multi_create_plist_blit_normal()
 			if(Net_players[idx].flags & NETINFO_FLAG_OBSERVER){
 				strcat_s(str,XSTR("(O)",787));  // [[ Observer ]]
 			}
-			gr_force_fit_string(str,CALLSIGN_LEN,Mc_players_coords[gr_screen.res][MC_W_COORD] - total_offset);
+			font::force_fit_string(str,CALLSIGN_LEN,Mc_players_coords[gr_screen.res][MC_W_COORD] - total_offset);
 			gr_string(Mc_players_coords[gr_screen.res][MC_X_COORD] + total_offset,y_start,str);
 
 			y_start += 10;			
@@ -4341,7 +4341,7 @@ void multi_create_plist_blit_team()
 			if(Net_players[idx].flags & NETINFO_FLAG_OBSERVER){
 				strcat_s(str,XSTR("(O)",787));
 			}
-			gr_force_fit_string(str,CALLSIGN_LEN,Mc_players_coords[gr_screen.res][MC_W_COORD] - total_offset);
+			font::force_fit_string(str,CALLSIGN_LEN,Mc_players_coords[gr_screen.res][MC_W_COORD] - total_offset);
 
 			// display him in the correct half of the list depending on his team
 			gr_string(Mc_players_coords[gr_screen.res][MC_X_COORD] + total_offset,y_start,str);
@@ -4407,7 +4407,7 @@ void multi_create_plist_blit_team()
 			if(Net_players[idx].flags & NETINFO_FLAG_OBSERVER){
 				strcat_s(str,XSTR("(O)",787));
 			}
-			gr_force_fit_string(str,CALLSIGN_LEN,Mc_players_coords[gr_screen.res][MC_W_COORD] - total_offset);
+			font::force_fit_string(str,CALLSIGN_LEN,Mc_players_coords[gr_screen.res][MC_W_COORD] - total_offset);
 
 			// display him in the correct half of the list depending on his team
 			gr_string(Mc_players_coords[gr_screen.res][MC_X_COORD] + total_offset,y_start,str);
@@ -4687,7 +4687,7 @@ void multi_create_list_do()
 		
 		// force fit the mission name string
 		strcpy_s(selected_name, mcip->name);
-		gr_force_fit_string(selected_name, 255, Mc_column1_w[gr_screen.res]);
+		font::force_fit_string(selected_name, 255, Mc_column1_w[gr_screen.res]);
 		gr_string(Mc_mission_name_x[gr_screen.res], y_start, selected_name);
 
 		// draw the max players if in mission mode		
@@ -4696,7 +4696,7 @@ void multi_create_list_do()
 
 		// force fit the mission filename string
 		strcpy_s(selected_name, mcip->filename);
-		gr_force_fit_string(selected_name, 255, Mc_column3_w[gr_screen.res]);
+		font::force_fit_string(selected_name, 255, Mc_column3_w[gr_screen.res]);
 		gr_string(Mc_mission_fname_x[gr_screen.res], y_start, selected_name);
 
 		y_start += 10;
@@ -7025,7 +7025,7 @@ void multi_jw_plist_blit_normal()
 			if(Net_players[idx].flags & NETINFO_FLAG_OBSERVER){
 				strcat_s(str,"(0)");
 			}
-			gr_force_fit_string(str,CALLSIGN_LEN,Mjw_players_coords[gr_screen.res][MJW_W_COORD] - total_offset);
+			font::force_fit_string(str,CALLSIGN_LEN,Mjw_players_coords[gr_screen.res][MJW_W_COORD] - total_offset);
 			gr_string(Mjw_players_coords[gr_screen.res][MJW_X_COORD] + total_offset,y_start,str);
 
 			y_start += 10;			
@@ -7096,7 +7096,7 @@ void multi_jw_plist_blit_team()
 
 			// make sure the string will fit
 			strcpy_s(str,Net_players[idx].m_player->callsign);
-			gr_force_fit_string(str,CALLSIGN_LEN,Mjw_players_coords[gr_screen.res][MJW_W_COORD] - total_offset);
+			font::force_fit_string(str,CALLSIGN_LEN,Mjw_players_coords[gr_screen.res][MJW_W_COORD] - total_offset);
 
 			// display him in the correct half of the list depending on his team
 			gr_string(Mjw_players_coords[gr_screen.res][MJW_X_COORD] + total_offset,y_start,str);
@@ -7156,7 +7156,7 @@ void multi_jw_plist_blit_team()
 			if(Net_players[idx].flags & NETINFO_FLAG_OBSERVER){
 				strcat_s(str,"(0)");
 			}
-			gr_force_fit_string(str,CALLSIGN_LEN,Mjw_players_coords[gr_screen.res][MJW_W_COORD] - total_offset);
+			font::force_fit_string(str,CALLSIGN_LEN,Mjw_players_coords[gr_screen.res][MJW_W_COORD] - total_offset);
 
 			// display him in the correct half of the list depending on his team
 			gr_string(Mjw_players_coords[gr_screen.res][MJW_X_COORD] + total_offset,y_start,str);
@@ -8342,7 +8342,7 @@ void multi_sync_display_name(const char *name,int index,int np_index)
 
 	// if we're in team vs. team mode
 	if(Netgame.type_flags & NG_TYPE_TEAM){
-		gr_force_fit_string(fit,CALLSIGN_LEN, Ms_status2_coords[gr_screen.res][MS_X_COORD] - Ms_status_coords[gr_screen.res][MS_X_COORD] - 20 - Ms_cd_icon_offset[gr_screen.res] - Ms_team_icon_offset[gr_screen.res]);			
+		font::force_fit_string(fit,CALLSIGN_LEN, Ms_status2_coords[gr_screen.res][MS_X_COORD] - Ms_status_coords[gr_screen.res][MS_X_COORD] - 20 - Ms_cd_icon_offset[gr_screen.res] - Ms_team_icon_offset[gr_screen.res]);			
 
 		// if this is the currently selected player, draw him highlighted
 		if(np_index == Multi_sync_player_select){
@@ -8390,7 +8390,7 @@ void multi_sync_display_name(const char *name,int index,int np_index)
 			}
 		}		
 	} else {
-		gr_force_fit_string(fit, CALLSIGN_LEN, Ms_status2_coords[gr_screen.res][MS_X_COORD] - Ms_status_coords[gr_screen.res][MS_X_COORD] - 20 - Ms_cd_icon_offset[gr_screen.res]);
+		font::force_fit_string(fit, CALLSIGN_LEN, Ms_status2_coords[gr_screen.res][MS_X_COORD] - Ms_status_coords[gr_screen.res][MS_X_COORD] - 20 - Ms_cd_icon_offset[gr_screen.res]);
 
 		// if this is the currently selected player, draw him highlighted
 		if(np_index == Multi_sync_player_select){
@@ -8416,7 +8416,7 @@ void multi_sync_display_status(const char *status,int index)
 
 	// make sure the string actually fits
 	strcpy_s(fit, status);
-	gr_force_fit_string(fit, 250, Ms_status2_coords[gr_screen.res][MS_W_COORD] - 20);
+	font::force_fit_string(fit, 250, Ms_status2_coords[gr_screen.res][MS_W_COORD] - 20);
 	gr_set_color_fast(&Color_bright);	
 	gr_string(Ms_status2_coords[gr_screen.res][MS_X_COORD], Ms_status2_coords[gr_screen.res][MS_Y_COORD] + (index * 10), fit);		
 }

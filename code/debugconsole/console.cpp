@@ -471,7 +471,7 @@ void debug_draw()
 	int i;
 
 	gr_clear();
-	gr_set_font(FONT1);
+	font::set_font(font::FONT1);
 	gr_set_color_fast( &Color_bright );
 	gr_string( 0x8000, 3, "Debug Console" );
 

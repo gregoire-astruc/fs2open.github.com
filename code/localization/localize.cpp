@@ -261,7 +261,7 @@ void parse_stringstbl_quick(const char *filename)
 			for (i = 1; i < LCL_MAX_FONTS; ++i) {
 				// default to "none"/0 except for font03 which defaults to 176
 				// NOTE: fonts.tbl may override these values
-				if (i == FONT3) {
+				if (i == font::FONT3) {
 					language.special_char_indexes[i] = 176;
 				} else {
 					language.special_char_indexes[i] = 0;

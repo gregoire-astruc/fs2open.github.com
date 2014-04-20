@@ -2766,7 +2766,7 @@ int check_sexp_syntax(int node, int return_type, int recursive, int *bad_node, i
 					return SEXP_CHECK_TYPE_MISMATCH;
 				}
 
-				if (FontManager::getFont(CTEXT(node)) == NULL)
+				if (font::FontManager::getFont(CTEXT(node)) == NULL)
 					return SEXP_CHECK_INVALID_FONT;
 
 				break;
@@ -20850,7 +20850,7 @@ void sexp_show_subtitle_text(int node)
 		char *font_name = CTEXT(n);
 		n = CDR(n);
 
-		fontnum = FontManager::getFontIndex(font_name);
+		fontnum = font::FontManager::getFontIndex(font_name);
 	}
 
 	bool post_shaded = false;

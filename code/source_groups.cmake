@@ -284,13 +284,18 @@ set (file_root_graphics_openglgr_opengl_headers
 
 # Graphics -> SoftwareGr files
 set (file_root_graphics_softwaregr
-	graphics/font.cpp
-	graphics/font.h
 	graphics/generic.cpp
 	graphics/generic.h
 	graphics/grstub.cpp
 	graphics/grstub.h
 	graphics/line.h
+)
+
+
+set (file_root_graphics_softwaregr_font
+	graphics/software/font.cpp
+	graphics/software/font_internal.h
+	graphics/font.h
 )
 
 # Hud files
@@ -944,6 +949,7 @@ source_group("Graphics\\OpenGLGr"                 FILES ${file_root_graphics_ope
 source_group("Graphics\\OpenGLGr\\OpenGL CPPs"    FILES ${file_root_graphics_openglgr_opengl_cpps})
 source_group("Graphics\\OpenGLGr\\OpenGL Headers" FILES ${file_root_graphics_openglgr_opengl_headers})
 source_group("Graphics\\SoftwareGr"               FILES ${file_root_graphics_softwaregr})
+source_group("Graphics\\SoftwareGr\\Font"         FILES ${file_root_graphics_softwaregr_font})
 source_group("Hud"                                FILES ${file_root_hud})
 source_group("iff_defs"                           FILES ${file_root_iff_defs})
 source_group("InetFile"                           FILES ${file_root_inetfile})
@@ -1018,6 +1024,7 @@ set (file_root
 	${file_root_graphics_openglgr_opengl_cpps}
 	${file_root_graphics_openglgr_opengl_headers}
 	${file_root_graphics_softwaregr}
+	${file_root_graphics_softwaregr_font}
 	${file_root_hud}
 	${file_root_iff_defs}
 	${file_root_inetfile}

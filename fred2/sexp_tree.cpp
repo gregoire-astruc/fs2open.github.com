@@ -2548,7 +2548,7 @@ int sexp_tree::get_default_value(sexp_list_item *item, char *text_buf, int op, i
 			break;
 
 		case OPF_FONT:
-			str = const_cast<char*>(FontManager::getFont(0)->getName().c_str());
+			str = const_cast<char*>(font::FontManager::getFont(0)->getName().c_str());
 			break;
 
 		case OPF_AUDIO_VOLUME_OPTION:
@@ -5283,8 +5283,8 @@ sexp_list_item *sexp_tree::get_listing_opf_font()
 	int i;
 	sexp_list_item head;
 
-	for (i = 0; i < FontManager::numberOfFonts(); i++) {
-		head.add_data(const_cast<char*>(FontManager::getFont(i)->getName().c_str()));
+	for (i = 0; i < font::FontManager::numberOfFonts(); i++) {
+		head.add_data(const_cast<char*>(font::FontManager::getFont(i)->getName().c_str()));
 	}
 
 	return head.next;

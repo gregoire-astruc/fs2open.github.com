@@ -252,7 +252,7 @@ void gr_close()
 			Int3();		// Invalid graphics mode
 	}
 
-	FontManager::close();
+	font::close();
 
 	Gr_inited = 0;
 }
@@ -1416,4 +1416,15 @@ void gr_flip()
 	}
 
 	gr_screen.gf_flip();
+}
+
+void gr_print_timestamp(int x, int y, int timestamp)
+{
+	char time[8];
+
+	// format the time information into strings
+	sprintf(time, "%.1d:%.2d:%.2d", (timestamp / 3600000) % 10, (timestamp / 60000) % 60, (timestamp / 1000) % 60);
+	time[7] = '\0';
+
+	gr_string(x, y, time);
 }

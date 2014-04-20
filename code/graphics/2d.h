@@ -875,4 +875,15 @@ void gr_pline_special(vec3d **pts, int num_pts, int thickness,bool resize=true);
 
 void gr_clear_shaders_cache();
 
+/**
+* @brief Prints the current time
+*
+* Draws the timestamp of the current #Missiontime in the format @c h:mm:ss at the specified coordinates
+*
+* @param x The x position where the timestamp should be draw
+* @param y The y position where the timestamp should be draw
+* @param timestamp The timespamp in milliseconds to be printed
+*/
+void gr_print_timestamp(int x, int y, int timestamp);
+
 #endif

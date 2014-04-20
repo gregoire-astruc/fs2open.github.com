@@ -1485,7 +1485,7 @@ void render_frame()
 	g3_start_frame(1);  // ** Accounted for
 	// 1 means use zbuffering
 
-	gr_set_font(FONT1);
+	font::set_font(font::FONT1);
 	light_reset();
 
 	g3_set_view_matrix(&eye_pos, &eye_orient, 0.5f);

@@ -198,7 +198,7 @@ void parse_hud_gauges_tbl(const char *filename)
 		hud_clr_p = &hud_color;
 	}
 
-	parse_font(Hud_font, "$Font:");
+	font::parse_font(Hud_font, "$Font:");
 	
 	if(optional_string("$Max Directives:")) {
 		stuff_int(&Max_directives);
@@ -305,7 +305,7 @@ void parse_hud_gauges_tbl(const char *filename)
 						ship_clr_p = &ship_color;
 					}
 
-					parse_font(ship_font, "$Font:");
+					font::parse_font(ship_font, "$Font:");
 				} else {
 					// can't find ship class. move on.
 					ship_classes.push_back(-1);
@@ -337,7 +337,7 @@ void parse_hud_gauges_tbl(const char *filename)
 					ship_clr_p = &ship_color;
 				}
 
-				parse_font(ship_font, "$Font:");
+				font::parse_font(ship_font, "$Font:");
 				break;
 			default:
 			// No particular ship. -1 for default HUD configuration.
@@ -1098,7 +1098,7 @@ T* gauge_load_common(int base_w, int base_h, int hud_font, bool scale_gauge, SCP
 	float origin[2] = {default_origin_x, default_origin_y};
 	int offset[2] = {default_offset_x, default_offset_y};
 	int base_res[2];
-	int font_num = FONT1;
+	int font_num = font::FONT1;
 	int colors[3] = {255, 255, 255};
 	bool lock_color = false;
 
@@ -1195,7 +1195,7 @@ T* gauge_load_common(int base_w, int base_h, int hud_font, bool scale_gauge, SCP
 		}
 	}
 
-	parse_font(Hud_font, "$Font:");
+	font::parse_font(Hud_font, "$Font:");
 
 	if (set_position) {
 		if(optional_string("Slew:")) {
@@ -1240,7 +1240,7 @@ void load_gauge_custom(int base_w, int base_h, int hud_font, bool scale_gauge, S
 	int gauge_type = HUD_CENTER_RETICLE;
 	bool slew = false;
 	bool active_by_default = true;
-	int font_num = FONT1;
+	int font_num = font::FONT1;
 	int txtoffset_x = 0, txtoffset_y = 0;
 	ubyte r = 255, g = 255, b = 255;
 	int colors[3] = {255, 255, 255};
@@ -2856,7 +2856,7 @@ void load_gauge_radar_dradis(int base_w, int base_h, int hud_font, bool scale_ga
 	int display_size[2] = {0, 0};
 	int canvas_size[2] = {0, 0};
 
-	int font_num = FONT1;
+	int font_num = font::FONT1;
 
 	int loop_snd = -1;
 	float loop_snd_volume = 1.0f;
@@ -2918,7 +2918,7 @@ void load_gauge_radar_dradis(int base_w, int base_h, int hud_font, bool scale_ga
 		coords[1] = (int)(base_res[1] * origin[1]) + offset[1];
 	}
 
-	parse_font(Hud_font, "$Font:");
+	font::parse_font(Hud_font, "$Font:");
 
 	if(optional_string("Size:")) {
 		stuff_int_list(Radar_radius, 2);
@@ -4300,7 +4300,7 @@ void load_gauge_fixed_messages(int base_w, int base_h, int hud_font, bool scale_
 	int offset[2] = {0, 0};
 	int coords[2];
 
-	gr_set_font(FONT1);
+	font::set_font(font::FONT1);
 	int h = gr_get_font_height();
 
 	coords[0] = 0x8000; //Magic number, means "Center on X"

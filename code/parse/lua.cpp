@@ -1346,13 +1346,13 @@ ADE_FUNC(write, l_File, "string or number, ...",
 class font_h
 {
 private:
-	FSFont *font;
+	font::FSFont *font;
 
 public:
-	font_h(FSFont *font) : font( font ) {}
+	font_h(font::FSFont *font) : font(font) {}
 	font_h() : font( NULL ) {}
 
-	FSFont *Get()
+	font::FSFont *Get()
 	{
 		if (!isValid())
 			return NULL;
@@ -12585,7 +12585,7 @@ ade_lib l_Graphics_Fonts("Fonts", &l_Graphics, NULL, "Font library");
 
 ADE_FUNC(__len, l_Graphics_Fonts, NULL, "Number of loaded fonts", "number", "Number of loaded fonts")
 {
-	return ade_set_args(L, "i", FontManager::numberOfFonts());
+	return ade_set_args(L, "i", font::FontManager::numberOfFonts());
 }
 
 ADE_INDEXER(l_Graphics_Fonts, "number Index/string Filename", "Array of loaded fonts", "font", "Font handle, or invalid font handle if index is invalid")
@@ -12597,7 +12597,7 @@ ADE_INDEXER(l_Graphics_Fonts, "number Index/string Filename", "Array of loaded f
 		if (!ade_get_args(L, "*i", &index))
 			return ade_set_error(L, "o", l_Font.Set(font_h()));
 
-		return ade_set_args(L, "o", l_Font.Set(font_h(FontManager::getFont(index))));
+		return ade_set_args(L, "o", l_Font.Set(font_h(font::FontManager::getFont(index))));
 	}
 	else
 	{
@@ -12606,7 +12606,7 @@ ADE_INDEXER(l_Graphics_Fonts, "number Index/string Filename", "Array of loaded f
 		if(!ade_get_args(L, "*s", &s))
 			return ade_set_error(L, "o", l_Font.Set(font_h()));
 
-		return ade_set_args(L, "o", l_Font.Set(font_h(FontManager::getFont(s))));
+		return ade_set_args(L, "o", l_Font.Set(font_h(font::FontManager::getFont(s))));
 	}
 }
 
@@ -12618,10 +12618,10 @@ ADE_VIRTVAR(CurrentFont, l_Graphics, "font", "Current font", "font", NULL)
 		return ade_set_error(L, "o", l_Font.Set(font_h()));
 
 	if(ADE_SETTING_VAR && newFh->isValid()) {
-		gr_set_font(newFh->Get());
+		font::FontManager::setCurrentFont(newFh->Get());
 	}
 	
-	return ade_set_args(L, "o", l_Font.Set(font_h(FontManager::getCurrentFont())));
+	return ade_set_args(L, "o", l_Font.Set(font_h(font::FontManager::getCurrentFont())));
 }
 
 //****SUBLIBRARY: Graphics/PostEffects

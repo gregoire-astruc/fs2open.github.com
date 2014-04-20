@@ -150,7 +150,7 @@ void UI_BUTTON::draw()
 			gr_bitmap(x, y);
 		}
 	} else {
-		gr_set_font(my_wnd->f_id);
+		font::set_font(my_wnd->f_id);
 		gr_set_clip( x, y, w, h );
 
 		// draw the button's box

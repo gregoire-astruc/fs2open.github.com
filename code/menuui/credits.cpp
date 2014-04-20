@@ -789,7 +789,7 @@ void credits_do_frame(float frametime)
 	}
 
 	gr_set_clip(Credits_text_coords[gr_screen.res][CREDITS_X_COORD], Credits_text_coords[gr_screen.res][CREDITS_Y_COORD], Credits_text_coords[gr_screen.res][CREDITS_W_COORD], Credits_text_coords[gr_screen.res][CREDITS_H_COORD]);
-	gr_set_font(FONT1);
+	font::set_font(font::FONT1);
 	gr_set_color_fast(&Color_normal);
 	
 	int sy; // The current position of the first text part
