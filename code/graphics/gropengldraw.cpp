@@ -719,6 +719,9 @@ void gr_opengl_string(int sx, int sy, const char *s, bool resize)
 			text = text + tokenLength;
 		}
 
+		// HACK: The FSO OpenGL state doesn't know that ftgl changed the texture so this will enable a different texture.
+		GL_state.Texture.Enable();
+
 		GL_state.CullFace(cull_face);
 	}
 	else
