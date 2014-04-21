@@ -406,10 +406,20 @@ void HudGaugeMessages::scrollMessages()
 				}
 			}
 		} else {
+			size_t index = std::distance(active_messages.begin(), m);
+
 			*m = active_messages.back();
 			active_messages.pop_back();
 
-			continue;
+			if (index >= active_messages.size())
+			{
+				// We may not use the iterator any longer
+				break;
+			}
+			else
+			{
+				continue;
+			}
 		}
 
 		++m;
