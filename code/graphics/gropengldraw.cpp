@@ -636,7 +636,7 @@ void gr_opengl_string(int sx, int sy, const char *s, bool resize)
 				default:
 					if (*text >= Lcl_special_chars || *text < 0)
 					{
-						specialChar = true;
+						//specialChar = true;
 					}
 					else
 					{

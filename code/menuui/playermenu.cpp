@@ -1110,11 +1110,16 @@ void player_select_display_copyright()
 
 //	sprintf(Copyright_msg1, NOX("FreeSpace 2"));
 	get_version_string(Copyright_msg1, sizeof(Copyright_msg1));
-	if (Lcl_gr) {
-		sprintf(Copyright_msg2, XSTR("Copyright %c 1999, Volition, Inc.  All rights reserved.", 385), '\xA8');
-	} else {
-		sprintf(Copyright_msg2, XSTR("Copyright %c 1999, Volition, Inc.  All rights reserved.", 385), '\x83');
+
+	// UGH! HACK: The retail tables give us a %c for the copyright symbol but that doesn't work with UTF-8 encoded stuff
+	SCP_string copyright_msg(XSTR("Copyright %c 1999, Volition, Inc.  All rights reserved.", 385));
+	size_t pos = copyright_msg.find("%c");
+	if (pos != SCP_string::npos)
+	{
+		copyright_msg.replace(pos, 2, "\xC2\xA9");
 	}
+
+	strcpy_s(Copyright_msg2, copyright_msg.c_str());
 
 	gr_get_string_size(&w, NULL, Copyright_msg1);
 	sx = fl2i((gr_screen.max_w_unscaled / 2) - w/2.0f + 0.5f);

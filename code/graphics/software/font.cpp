@@ -23,6 +23,8 @@
 #include "localization/localize.h"
 #include "parse/parselo.h"
 
+#include <utf8.h>
+
 namespace
 {
 	namespace fo = font;
@@ -848,6 +850,11 @@ namespace font
 	{
 		bool checkLength = textLen >= 0;
 
+		if (textLen < 0)
+		{
+			textLen = strlen(text);
+		}
+
 		float w = 0.0f;
 		float h = i2fl(this->getHeight());
 
@@ -907,7 +914,8 @@ namespace font
 
 			specialChar = false;
 
-			s = s + tokenLength;
+			// Advance the string pointer
+			utf8::advance(s, tokenLength, text + textLen);
 
 			if (checkLength)
 			{
@@ -977,8 +985,10 @@ namespace font
 		if (maxLength <= 0)
 			return 0;
 
-		if (*string >= Lcl_special_chars || *string < 0)
+		/*
+		if (*string >= Lcl_special_chars)
 			return 1;
+		*/
 
 		const char *nullPtr = strchr(const_cast<char*>(string), '\0');
 		const char *nextToken = strpbrk(const_cast<char*>(string), this->separators);
@@ -1009,6 +1019,10 @@ namespace font
 			length = (size_t)maxLength;
 		}
 
+		// length is the number of bytes, now just convert that to the number of code points...
+		return utf8::distance(string, string + length);
+
+		/*
 		for (size_t i = 0; i < length; i++)
 		{
 			if (string[i] >= Lcl_special_chars || string[i] < 0)
@@ -1017,8 +1031,7 @@ namespace font
 				return i;
 			}
 		}
-
-		return length;
+		*/
 	}
 
 	void FTGLFont::setLineWidth(float width)

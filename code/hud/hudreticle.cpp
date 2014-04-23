@@ -572,7 +572,7 @@ void HudGaugeThrottle::renderThrottleSpeed(float current_speed, int y_end)
 		}
 	} else if ( Players[Player_num].flags & PLAYER_FLAGS_MATCH_TARGET ) {
 		if ( Use_custom_match_speed ) {
-			if (Lcl_gr) {
+			if (font::get_font(font_num)->getType() != font::VFNT_FONT || Lcl_gr) {
 				// print an m, cuz the voice says its an m.  
 				// its a normal m cuz the german font has no special m (its an a)
 				renderString(position[0] + Match_speed_offsets[0], position[1] + Match_speed_offsets[1], "m");
@@ -587,7 +587,7 @@ void HudGaugeThrottle::renderThrottleSpeed(float current_speed, int y_end)
 				offset = 3;
 			}
 
-			if (Lcl_gr) {
+			if (font::get_font(font_num)->getType() != font::VFNT_FONT || Lcl_gr) {
 				// print an m, cuz the voice says its an m.  
 				// its a normal m cuz the german font has no special m (its an a)
 				renderString(sx+offset, sy + h, "m");
