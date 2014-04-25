@@ -5305,6 +5305,7 @@ void load_gauge_primary_weapons(int base_w, int base_h, int hud_font, bool scale
 	int ammo_x = 28;
 	int link_x = 33;
 	int name_x = 35;
+	SCP_string fname_selection = "selection_indicator";
 
 	HudGaugePrimaryWeapons* hud_gauge = gauge_load_common<HudGaugePrimaryWeapons>(base_w, base_h, hud_font, scale_gauge, ship_idx, use_clr, origin[0], origin[1], offset[0], offset[1]);
 
@@ -5371,6 +5372,11 @@ void load_gauge_primary_weapons(int base_w, int base_h, int hud_font, bool scale
 	if ( optional_string("Name X-offset:") ) {
 		stuff_int(&name_x);
 	}
+
+	if (optional_string("Selected Indicator:"))
+	{
+		stuff_string(fname_selection, F_NAME);
+	}
 	
 	hud_gauge->initBitmaps(fname_first, fname_entry, fname_last);
 	hud_gauge->initHeaderOffsets(header_offsets[0], header_offsets[1]);
@@ -5386,6 +5392,7 @@ void load_gauge_primary_weapons(int base_w, int base_h, int hud_font, bool scale
 	hud_gauge->initPrimaryAmmoOffsetX(ammo_x);
 	hud_gauge->initPrimaryLinkOffsetX(link_x);
 	hud_gauge->initPrimaryNameOffsetX(name_x);
+	hud_gauge->initSelectedTexture(fname_selection);
 
 	if(ship_idx->at(0) >= 0) {
 		for (SCP_vector<int>::iterator ship_index = ship_idx->begin(); ship_index != ship_idx->end(); ++ship_index) {
@@ -5422,6 +5429,7 @@ void load_gauge_secondary_weapons(int base_w, int base_h, int hud_font, bool sca
 	int name_x = 39;
 	int reload_x = 118;
 	int unlink_x = 33;
+	SCP_string fname_selection = "selection_indicator";
 
 	HudGaugeSecondaryWeapons* hud_gauge = gauge_load_common<HudGaugeSecondaryWeapons>(base_w, base_h, hud_font, scale_gauge, ship_idx, use_clr, origin[0], origin[1], offset[0], offset[1]);
 
@@ -5497,6 +5505,11 @@ void load_gauge_secondary_weapons(int base_w, int base_h, int hud_font, bool sca
 		stuff_int(&reload_x);
 	}
 
+	if (optional_string("Selected Indicator:"))
+	{
+		stuff_string(fname_selection, F_NAME);
+	}
+
 	hud_gauge->initBitmaps(fname_first, fname_entry, fname_last);
 	hud_gauge->initHeaderOffsets(header_offsets[0], header_offsets[1]);
 	hud_gauge->initHeaderText(header_text);
@@ -5513,6 +5526,7 @@ void load_gauge_secondary_weapons(int base_w, int base_h, int hud_font, bool sca
 	hud_gauge->initSecondaryNameOffsetX(name_x);
 	hud_gauge->initSecondaryReloadOffsetX(reload_x);
 	hud_gauge->initSecondaryUnlinkedOffsetX(unlink_x);
+	hud_gauge->initSelectedTexture(fname_selection);
 
 	if(ship_idx->at(0) >= 0) {
 		for (SCP_vector<int>::iterator ship_index = ship_idx->begin(); ship_index != ship_idx->end(); ++ship_index) {

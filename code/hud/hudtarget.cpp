@@ -6810,16 +6810,13 @@ void HudGaugeWeaponList::initSelectedTexture(const SCP_string& fname)
 	selected_indicator = bm_load(fname);
 	if (selected_indicator < 0)
 	{
-		Warning(LOCATION, "Cannot load selection indicator texture: %s\n", fname.c_str());
+		Error(LOCATION, "Cannot load selection indicator texture: %s\n", fname.c_str());
 	}
 	else
 	{
 		bm_get_info(selected_indicator, &selected_indicator_w, &selected_indicator_h);
 
-		auto hudFont = font::FontManager::getFont(font_num);
-		auto height = hudFont->getHeight();
-
-		selected_indicator_scaling = i2fl(height) / i2fl(selected_indicator_h);
+		selected_indicator_scaling = i2fl(_entry_h) / i2fl(selected_indicator_h);
 	}
 }
 
