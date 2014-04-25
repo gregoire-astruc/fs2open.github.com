@@ -28,7 +28,7 @@
 #include "graphics/gropengltnl.h"
 #include "graphics/gropenglbmpman.h"
 #include "graphics/gropengldraw.h"
-#include "graphics/software/font_internal.h"
+#include "graphics/font/font_internal.h"
 #include "debugconsole/timerbar.h"
 #include "nebula/neb.h"
 #include "graphics/gropenglshader.h"
