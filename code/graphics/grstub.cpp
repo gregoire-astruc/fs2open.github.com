@@ -78,7 +78,7 @@ void gr_stub_aabitmap_ex(int x,int y,int w,int h,int sx,int sy,bool resize,bool 
 {
 }
 
-void gr_stub_aabitmap(int x, int y,bool resize, bool mirror)
+void gr_stub_aabitmap(int x, int y, int w, int h, bool resize, bool mirror)
 {
 }
 

@@ -5918,6 +5918,21 @@ void HudGaugeWeapons::initBitmapsSecondaryBottom(char *fname, char *fname_ballis
 	}
 }
 
+void HudGaugeWeapons::initSelectedTexture(const SCP_string& fname)
+{
+	selected_indicator = bm_load(fname);
+	if (selected_indicator < 0)
+	{
+		Warning(LOCATION, "Cannot load selection indicator texture: %s\n", fname.c_str());
+	}
+	else
+	{
+		bm_get_info(selected_indicator, &selected_indicator_w, &selected_indicator_h);
+
+		selected_indicator_scaling = i2fl(primary_text_h) / i2fl(selected_indicator_h);
+	}
+}
+
 void HudGaugeWeapons::pageIn()
 {
 	if(primary_top[0].first_frame > -1) {
@@ -5962,6 +5977,10 @@ void HudGaugeWeapons::pageIn()
 
 	if(secondary_bottom[1].first_frame > -1) {
 		bm_page_in_aabitmap(secondary_bottom[0].first_frame, secondary_bottom[0].num_frames);
+	}
+
+	if (selected_indicator > -1) {
+		bm_page_in_aabitmap(selected_indicator);
 	}
 }
 
@@ -6026,7 +6045,11 @@ void HudGaugeWeapons::render(float frametime)
 
 		// indicate if this is linked or currently armed
 		if ( ((sw->current_primary_bank == i) && !(Player_ship->flags & SF_PRIMARY_LINKED)) || ((Player_ship->flags & SF_PRIMARY_LINKED) && !(Weapon_info[sw->primary_bank_weapons[i]].wi_flags3 & WIF3_NOLINK))) {
-			renderPrintf(position[0] + Weapon_plink_offset_x, name_y, EG_NULL, "%c", Lcl_special_chars + 2);
+			int x = position[0] + Weapon_plink_offset_x;
+			int y = name_y;
+
+			renderBitmapScaled(selected_indicator, x, y,
+				x + fl2i(selected_indicator_w * selected_indicator_scaling), y + primary_text_h);
 		}
 		
 		// either render this primary's image or its name
@@ -6089,12 +6112,19 @@ void HudGaugeWeapons::render(float frametime)
 		end_string_at_first_hash_symbol(weapon_name);
 		
 		if ( sw->current_secondary_bank == i ) {
+			int x = position[0] + Weapon_sunlinked_offset_x;
+			int y = name_y;
+
 			// show that this is the current secondary armed
-			renderPrintf(position[0] + Weapon_sunlinked_offset_x, name_y, EG_NULL, "%c", Lcl_special_chars + 2);			
+			renderBitmapScaled(selected_indicator, x, y,
+				x + fl2i(selected_indicator_w * selected_indicator_scaling), y + fl2i(selected_indicator_h * selected_indicator_scaling));
 
 			// indicate if this is linked
-			if ( Player_ship->flags & SF_SECONDARY_DUAL_FIRE ) {
-				renderPrintf(position[0] + Weapon_slinked_offset_x, name_y, EG_NULL, "%c", Lcl_special_chars + 2);				
+			if (Player_ship->flags & SF_SECONDARY_DUAL_FIRE) {
+				x = position[0] + Weapon_slinked_offset_x;
+
+				renderBitmapScaled(selected_indicator, x, y,
+					x + fl2i(selected_indicator_w * selected_indicator_scaling), y + fl2i(selected_indicator_h * selected_indicator_scaling));
 			}
 
 			// show secondary weapon's image or print its name
@@ -6774,6 +6804,25 @@ void HudGaugeWeaponList::initEntryHeight(int h)
 	_entry_h = h;
 }
 
+
+void HudGaugeWeaponList::initSelectedTexture(const SCP_string& fname)
+{
+	selected_indicator = bm_load(fname);
+	if (selected_indicator < 0)
+	{
+		Warning(LOCATION, "Cannot load selection indicator texture: %s\n", fname.c_str());
+	}
+	else
+	{
+		bm_get_info(selected_indicator, &selected_indicator_w, &selected_indicator_h);
+
+		auto hudFont = font::FontManager::getFont(font_num);
+		auto height = hudFont->getHeight();
+
+		selected_indicator_scaling = i2fl(height) / i2fl(selected_indicator_h);
+	}
+}
+
 void HudGaugeWeaponList::pageIn()
 {
 	if ( _background_first.first_frame >= 0 ) {
@@ -6885,7 +6934,11 @@ void HudGaugePrimaryWeapons::render(float frametime)
 
 		// indicate if this is linked or currently armed
 		if ( (sw->current_primary_bank == i) || (Player_ship->flags & SF_PRIMARY_LINKED) ) {
-			renderPrintf(position[0] + _plink_offset_x, position[1] + text_y_offset, EG_NULL, "%c", Lcl_special_chars + 2);
+			int x = position[0] + _plink_offset_x;
+			int y = position[1] + text_y_offset;
+
+			renderBitmapScaled(selected_indicator, x, y,
+				x + fl2i(selected_indicator_w * selected_indicator_scaling), y + fl2i(selected_indicator_h * selected_indicator_scaling));
 		}
 
 		// either render this primary's image or its name
@@ -6997,11 +7050,19 @@ void HudGaugeSecondaryWeapons::render(float frametime)
 
 		if ( sw->current_secondary_bank == i ) {
 			// show that this is the current secondary armed
-			renderPrintf(position[0] + _sunlinked_offset_x, position[1] + text_y_offset, EG_NULL, "%c", Lcl_special_chars + 2);
+			int x = position[0] + _sunlinked_offset_x;
+			int y = position[1] + text_y_offset;
+
+			renderBitmapScaled(selected_indicator, x, y,
+				x + fl2i(selected_indicator_w * selected_indicator_scaling), y + fl2i(selected_indicator_h * selected_indicator_scaling));
 
 			// indicate if this is linked
 			if ( Player_ship->flags & SF_SECONDARY_DUAL_FIRE ) {
-				renderPrintf(position[0] + _slinked_offset_x, position[1] + text_y_offset, EG_NULL, "%c", Lcl_special_chars + 2);				
+				x = position[0] + _slinked_offset_x;
+				y = position[1] + text_y_offset;
+
+				renderBitmapScaled(selected_indicator, x, y,
+					x + fl2i(selected_indicator_w * selected_indicator_scaling), y + fl2i(selected_indicator_h * selected_indicator_scaling));
 			}
 
 			// show secondary weapon's image or print its name

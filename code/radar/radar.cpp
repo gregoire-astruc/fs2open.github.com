@@ -179,15 +179,19 @@ void HudGaugeRadarStd::drawBlipsSorted(int distort)
 }
 void HudGaugeRadarStd::drawContactCircle( int x, int y, int rad )
 {
+	const int LARGE_DIAMETER = 8;
+	const int SMALL_DIAMETER = 4;
+
 	if ( rad == Radar_blip_radius_target )	{
 		if (radar_target_id_flags & RTIF_BLINK) {
 			if (Missiontime & 8192)
 				return;
 		}
-		renderString( Large_blip_offset_x+x, Large_blip_offset_y+y, Large_blip_string );
+
+		renderCircle(x - LARGE_DIAMETER / 2, y - LARGE_DIAMETER / 2, LARGE_DIAMETER);
 	} else {
 		// rad = RADAR_BLIP_RADIUS_NORMAL;
-		renderString( Small_blip_offset_x+x, Small_blip_offset_y+y, Small_blip_string );
+		renderCircle(x - SMALL_DIAMETER / 2, y - SMALL_DIAMETER / 2, SMALL_DIAMETER);
 	}
 }
 void HudGaugeRadarStd::drawContactImage( int x, int y, int rad, int idx, int clr_idx, int size )

@@ -15,9 +15,6 @@
 #include "hud/hudconfig.h"
 #include "hud/hud.h"
 
-#define SMALL_BLIP_CHAR (Lcl_special_chars + 5)
-#define LARGE_BLIP_CHAR (Lcl_special_chars + 6)
-
 //which radar type are we using
 //to add another radar type, begin by adding a RADAR_MODE_* define and increment MAX_RADAR_MODES
 #define RADAR_MODE_STANDARD 0
@@ -119,15 +116,7 @@ protected:
 	int Radar_death_timer;				// timestamp used to play static on radar
 
 	int		Radar_flicker_timer[NUM_FLICKER_TIMERS];					// timestamp used to flicker blips on and off
-	int		Radar_flicker_on[NUM_FLICKER_TIMERS];	
-
-	int Small_blip_offset_x;
-	int Small_blip_offset_y;
-	int Large_blip_offset_x;
-	int Large_blip_offset_y;
-
-	char Small_blip_string[2];
-	char Large_blip_string[2];
+	int		Radar_flicker_on[NUM_FLICKER_TIMERS];
 public:
 	HudGaugeRadar();
 	HudGaugeRadar(int _gauge_object, int r, int g, int b);

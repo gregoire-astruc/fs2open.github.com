@@ -3430,6 +3430,7 @@ void load_gauge_weapons(int base_w, int base_h, int hud_font, bool scale_gauge, 
 	char fname_s_middle_b[MAX_FILENAME_LEN] = "weapons4_b";
 	char fname_s_bottom[MAX_FILENAME_LEN] = "weapons5";
 	char fname_s_bottom_b[MAX_FILENAME_LEN] = "weapons5_b";
+	SCP_string fname_selection = "selection_indicator";
 
 	if(gr_screen.res == GR_640) {
 		offset[0] = -143;
@@ -3504,6 +3505,10 @@ void load_gauge_weapons(int base_w, int base_h, int hud_font, bool scale_gauge, 
 		if(optional_string("Alt Ballistic Filename:")) {
 			stuff_string(fname_s_bottom_b, F_NAME, MAX_FILENAME_LEN);
 		}
+	}
+	if (optional_string("Selected Indicator:"))
+	{
+		stuff_string(fname_selection, F_NAME);
 	}
 	if(optional_string("Header Offsets:")) {
 		stuff_int_list(Weapon_header_offsets[0], 2);
@@ -3581,6 +3586,7 @@ void load_gauge_weapons(int base_w, int base_h, int hud_font, bool scale_gauge, 
 	hud_gauge->initSecondaryWeaponOffsets(Weapon_sammo_offset_x, Weapon_sname_offset_x, Weapon_sreload_offset_x, Weapon_slinked_offset_x, Weapon_sunlinked_offset_x);
 	hud_gauge->initPrimaryHeights(top_primary_h, primary_text_h);
 	hud_gauge->initSecondaryHeights(top_secondary_h, secondary_text_h);
+	hud_gauge->initSelectedTexture(fname_selection);
 
 	if(ship_idx->at(0) >= 0) {
 		for (SCP_vector<int>::iterator ship_index = ship_idx->begin(); ship_index != ship_idx->end(); ++ship_index) {

@@ -304,6 +304,11 @@ protected:
 	hud_frames secondary_top[NUM_HUD_SETTINGS];
 	hud_frames secondary_middle[NUM_HUD_SETTINGS];
 	hud_frames secondary_bottom[NUM_HUD_SETTINGS];
+
+	int selected_indicator;
+	int selected_indicator_w;
+	int selected_indicator_h;
+	float selected_indicator_scaling;
 	
 	int Weapon_plink_offset_x; // Weapon_plink_coords[gr_screen.res][0][0]
 	int Weapon_pname_offset_x; // Weapon_pname_coords[gr_screen.res][0][0]
@@ -332,6 +337,7 @@ public:
 	void initBitmapsSecondaryTop(char *fname, char *fname_ballistic);
 	void initBitmapsSecondaryMiddle(char *fname, char *fname_ballistic);
 	void initBitmapsSecondaryBottom(char *fname, char *fname_ballistic);
+	void initSelectedTexture(const SCP_string& fname);
 	void initTopOffsetX(int x, int x_b);
 	void initHeaderOffsets(int x, int y, int x_b, int y_b);
 	void initFrameOffsetX(int x, int x_b);
@@ -352,6 +358,11 @@ protected:
 	hud_frames _background_first;
 	hud_frames _background_entry;
 	hud_frames _background_last;
+
+	int selected_indicator;
+	int selected_indicator_w;
+	int selected_indicator_h;
+	float selected_indicator_scaling;
 
 	int _bg_first_offset_x;
 	int _bg_entry_offset_x;
@@ -379,6 +390,7 @@ public:
 	void initHeaderOffsets(int x, int y);
 	void initEntryStartY(int y);
 	void initEntryHeight(int h);
+	void initSelectedTexture(const SCP_string& fname);
 
 	virtual void render(float frametime);
 	void pageIn();

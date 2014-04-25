@@ -354,6 +354,20 @@ namespace
 			Error(LOCATION, "At least three fonts have to be loaded by only %d valid entries were found!", FontManager::numberOfFonts());
 		}
 	}
+
+	ubyte codepoint_to_old(uint32_t point)
+	{
+		switch (point)
+		{
+		case 169: // Copyright symbol
+			return Lcl_special_chars + 4;
+		case 8734: // Infinity symbol
+			return Lcl_special_chars;
+		default:
+			// No special treatment, just truncate
+			return static_cast<ubyte>(point);
+		}
+	}
 }
 
 namespace font
@@ -749,7 +763,7 @@ namespace font
 		return this->fontPtr;
 	}
 
-	extern int get_char_width_old(font* fnt, ubyte c1, ubyte c2, int *width, int* spacing);
+	extern int get_char_width_old(fo::font* fnt, uint32_t c1, uint32_t c2, int *width, int* spacing);
 	void VFNTFont::getStringSize(const char *text, int textLen, int *w1, int *h1) const
 	{
 		int longest_width;
@@ -891,23 +905,13 @@ namespace font
 					lineWidth += this->getTabWidth();
 					break;
 				default:
-					if (*s >= Lcl_special_chars || *s < 0)
-					{
-						specialChar = true;
-
-						int width;
-						int spacing;
-						get_char_width_old(this->specialCharacterData, *s, '\0', &width, &spacing);
-
-						lineWidth += i2fl(spacing);
-					}
 					break;
 				}
 			}
 
 			if (!specialChar)
 			{
-				lineWidth += ftFont->Advance(s, tokenLength);
+				lineWidth += ftFont->Advance(s, utf8::distance(s, s + tokenLength));
 			}
 
 			w = MAX(w, lineWidth);
@@ -915,7 +919,7 @@ namespace font
 			specialChar = false;
 
 			// Advance the string pointer
-			utf8::advance(s, tokenLength, text + textLen);
+			s += tokenLength;
 
 			if (checkLength)
 			{
@@ -984,12 +988,7 @@ namespace font
 
 		if (maxLength <= 0)
 			return 0;
-
-		/*
-		if (*string >= Lcl_special_chars)
-			return 1;
-		*/
-
+		
 		const char *nullPtr = strchr(const_cast<char*>(string), '\0');
 		const char *nextToken = strpbrk(const_cast<char*>(string), this->separators);
 
@@ -1019,19 +1018,7 @@ namespace font
 			length = (size_t)maxLength;
 		}
 
-		// length is the number of bytes, now just convert that to the number of code points...
-		return utf8::distance(string, string + length);
-
-		/*
-		for (size_t i = 0; i < length; i++)
-		{
-			if (string[i] >= Lcl_special_chars || string[i] < 0)
-			{
-				// Special character needs to be handled seperately
-				return i;
-			}
-		}
-		*/
+		return length;
 	}
 
 	void FTGLFont::setLineWidth(float width)
@@ -1196,8 +1183,6 @@ namespace font
 		return ((gr_screen.clip_width_unscaled - w) / 2);
 	}
 
-
-
 	void stuff_first(SCP_string &firstFont)
 	{
 		if (!font_parse_setup("fonts.tbl"))
@@ -1266,24 +1251,25 @@ namespace font
 		return FontManager::getFont(name);
 	}
 
-	
-
 	/**
 	* @brief	Gets the width of an character.
 	*
 	* Returns the width of the specified charachter also taking account of kerning.
 	*
 	* @param fnt				The font data
-	* @param c1				The character that should be checked.
-	* @param c2				The character which follows this character. Used to compute the kerning
+	* @param code1				The character that should be checked.
+	* @param code2				The character which follows this character. Used to compute the kerning
 	* @param [out]	width   	If non-null, the width.
 	* @param [out]	spaceing	If non-null, the spaceing.
 	*
 	* @return	The character width.
 	*/
-	int get_char_width_old(fo::font* fnt, ubyte c1, ubyte c2, int *width, int* spacing)
+	int get_char_width_old(fo::font* fnt, uint32_t code1, uint32_t code2, int *width, int* spacing)
 	{
 		int i, letter;
+
+		ubyte c1 = codepoint_to_old(code1);
+		ubyte c2 = codepoint_to_old(code2);
 
 		letter = c1 - fnt->first_ascii;
 

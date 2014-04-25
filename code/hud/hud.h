@@ -304,6 +304,7 @@ public:
 	// rendering functions
 	void renderBitmap(int x, int y);
 	void renderBitmap(int frame, int x, int y);
+	void renderBitmapScaled(int frame, int x1, int y1, int x2, int y2);
 	void renderBitmapColor(int frame, int x, int y);
 	void renderBitmapUv(int frame, int x, int y, int w, int h, float u0, float v0, float u1, float v1);
 	void renderBitmapEx(int frame, int x, int y, int w, int h, int sx, int sy);

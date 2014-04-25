@@ -36,6 +36,8 @@
 #include "freespace.h"
 #include "localization/localize.h"
 
+#include <utf8.h>
+
 GLuint Scene_framebuffer;
 GLuint Scene_color_texture;
 GLuint Scene_luminance_texture;
@@ -61,7 +63,7 @@ void gr_opengl_pixel(int x, int y, bool resize)
 	gr_line(x, y, x, y, resize);
 }
 
-void opengl_aabitmap_ex_internal(int x, int y, int w, int h, int sx, int sy, bool resize, bool mirror)
+void opengl_aabitmap_ex_internal(int x, int y, int w, int h, int sx, int sy, bool resize, bool mirror, bool resize_texture = false)
 {
 	if ( (w < 1) || (h < 1) ) {
 		return;
@@ -99,8 +101,17 @@ void opengl_aabitmap_ex_internal(int x, int y, int w, int h, int sx, int sy, boo
 	u0 = u_scale * (i2fl(sx) / i2fl(bw));
 	v0 = v_scale * (i2fl(sy) / i2fl(bh));
 
-	u1 = u_scale * (i2fl(sx+w) / i2fl(bw));
-	v1 = v_scale * (i2fl(sy+h) / i2fl(bh));
+	// If we want to resize the texture instead of clipping it
+	if (resize_texture)
+	{
+		u1 = u_scale;
+		v1 = v_scale;
+	}
+	else
+	{
+		u1 = u_scale * (i2fl(sx + w) / i2fl(bw));
+		v1 = v_scale * (i2fl(sy + h) / i2fl(bh));
+	}
 
 	x1 = i2fl(x + ((do_resize) ? gr_screen.offset_x_unscaled : gr_screen.offset_x));
 	y1 = i2fl(y + ((do_resize) ? gr_screen.offset_y_unscaled : gr_screen.offset_y));
@@ -247,11 +258,13 @@ void gr_opengl_aabitmap_ex(int x, int y, int w, int h, int sx, int sy, bool resi
 	opengl_aabitmap_ex_internal(dx1, dy1, (dx2 - dx1 + 1), (dy2 - dy1 + 1), sx, sy, resize, mirror);
 }
 
-void gr_opengl_aabitmap(int x, int y, bool resize, bool mirror)
+void gr_opengl_aabitmap(int x, int y, int w, int h, bool resize, bool mirror)
 {
-	int w, h, do_resize;
+	int do_resize;
 
-	bm_get_info(gr_screen.current_bitmap, &w, &h);
+	if (w < 0 || h < 0) {
+		bm_get_info(gr_screen.current_bitmap, &w, &h);
+	}
 
 	if ( resize && (gr_screen.custom_size || (gr_screen.rendering_to_texture != -1)) ) {
 		do_resize = 1;
@@ -305,17 +318,17 @@ void gr_opengl_aabitmap(int x, int y, bool resize, bool mirror)
 	}
 
 	// Draw bitmap bm[sx,sy] into (dx1,dy1)-(dx2,dy2)
-	opengl_aabitmap_ex_internal(dx1, dy1, (dx2 - dx1 + 1), (dy2 - dy1 + 1), sx, sy, resize, mirror);
+	opengl_aabitmap_ex_internal(dx1, dy1, (dx2 - dx1 + 1), (dy2 - dy1 + 1), sx, sy, resize, mirror, true);
 }
 
 struct v4 { GLfloat x, y, u, v; };
 
 namespace font
 {
-	extern int get_char_width_old(font* fnt, ubyte c1, ubyte c2, int *width, int* spacing);
+	extern int get_char_width_old(font* fnt, uint32_t c1, uint32_t c2, int *width, int* spacing);
 }
 
-void gr_opengl_string_old(int sx, int sy, const char*s, bool resize, font::font* fontData, int top, int height, int textHeight, int tokenLength)
+void gr_opengl_string_old(int sx, int sy, const char*s, bool resize, font::font* fontData, int top, int height, int textHeight)
 {
 	int width, spacing, letter;
 	int x, y, do_resize;
@@ -334,8 +347,10 @@ void gr_opengl_string_old(int sx, int sy, const char*s, bool resize, font::font*
 		return;
 	}
 
+	size_t strLen = strlen(s);
+
 	// conversion from quads to triangles requires six vertices per quad
-	struct v4 *glVert = (struct v4*) vm_malloc(sizeof(struct v4) * MIN(strlen(s), (size_t) tokenLength) * 6);
+	struct v4 *glVert = (struct v4*) vm_malloc(sizeof(struct v4) * strLen * 6);
 	int curChar = 0;
 
 	int ibw, ibh;
@@ -382,7 +397,7 @@ void gr_opengl_string_old(int sx, int sy, const char*s, bool resize, font::font*
 	GLboolean cull_face = GL_state.CullFace(GL_FALSE);
 
 	// pick out letter coords, draw it, goto next letter and do the same
-	for (int i = 0; i < tokenLength && *s; i++)
+	for (size_t i = 0; i < strLen && *s; i++)
 	{
 		x += spacing;
 
@@ -403,8 +418,27 @@ void gr_opengl_string_old(int sx, int sy, const char*s, bool resize, font::font*
 			break;
 		}
 
-		letter = get_char_width_old(fontData, s[0], s[1], &width, &spacing);
-		s++;
+		// Old character handling if the current char is less than zero or a new UTF-8 character
+		if (*s < 0)
+		{
+			try
+			{
+				// This method only supports one UTF-8 character as once but this is sufficient for old texts
+				uint32_t codepoint = utf8::next(s, s + strLen);
+				letter = get_char_width_old(fontData, codepoint, s[0], &width, &spacing);
+			}
+			catch (utf8::invalid_utf8&)
+			{
+				// use default, probably something special
+				letter = get_char_width_old(fontData, s[0], s[1], &width, &spacing);
+				s++;
+			}
+		}
+		else
+		{
+			letter = get_char_width_old(fontData, s[0], s[1], &width, &spacing);
+			s++;
+		}
 
 		//not in font, draw as space
 		if (letter < 0) {
@@ -550,7 +584,7 @@ void gr_opengl_string(int sx, int sy, const char *s, bool resize)
 		fo::font *fontData = fnt->getFontData();
 
 		gr_opengl_string_old(sx, sy, s, resize, fontData, fnt->getTopOffset(),
-			fnt->getHeight(), fnt->getTextHeight(), strlen(s));
+			fnt->getHeight(), fnt->getTextHeight());
 	}
 	else if (currentFont->getType() == FTGL_FONT)
 	{
@@ -603,7 +637,7 @@ void gr_opengl_string(int sx, int sy, const char *s, bool resize)
 
 		int tokenLength;
 
-		const char *text = s;
+		const char* text = s;
 		bool specialChar = false;
 
 		FTPoint advance;
@@ -634,89 +668,67 @@ void gr_opengl_string(int sx, int sy, const char *s, bool resize)
 					xOffset += fl2i(ceil(ftglFont->getTabWidth()));
 					break;
 				default:
-					if (*text >= Lcl_special_chars || *text < 0)
-					{
-						//specialChar = true;
-					}
-					else
-					{
-						doRender = true;
-					}
+					doRender = true;
 
 					break;
 				}
 			}
 
-			if (specialChar)
-			{
-				gr_opengl_string_old(sx + xOffset, sy + yOffset, text, resize,
-					ftglFont->getSpecialCharacterFont(), ftglFont->getTopOffset(),
-					ftglFont->getHeight(), ftglFont->getTextHeight(), tokenLength);
+			y = sy + yOffset;
 
-				int width;
-				int spacing;
-				get_char_width_old(ftglFont->getSpecialCharacterFont(), *text, '\0', &width, &spacing);
-					
-				xOffset += spacing;
+			if (sx == 0x8000)
+			{
+				x = get_centered_x(text);
 			}
-			else if (doRender)
+			else
 			{
-				y = sy + yOffset;
-
-				if (sx == 0x8000)
-				{
-					x = get_centered_x(text);
-				}
-				else
-				{
-					x = sx + xOffset;
-				}
-
-				if ((x + ftglFont->getStringWidth(text, tokenLength)) < clip_left)
-				{
-					doRender = false;
-				}
-
-				if ((y + ftglFont->getHeight()) < clip_top)
-				{
-					doRender = false;
-				}
-
-				if (x > clip_right)
-				{
-					doRender = false;
-				}
-
-				if (y > clip_bottom)
-				{
-					doRender = false;
-				}
-
-				x += ((do_resize) ? gr_screen.offset_x_unscaled : gr_screen.offset_x);
-				y += ((do_resize) ? gr_screen.offset_y_unscaled : gr_screen.offset_y) + currentFont->getTopOffset();
-
-				if (do_resize)
-				{
-					gr_resize_screen_pos(&x, &y);
-				}
-
-				if (doRender && tokenLength > 0)
-				{
-					glPushMatrix();
-
-					glTranslatef(i2fl(x), i2fl(y) + ftglFont->getYOffset(), 0.0f);
-
-					glScalef(scale_x, -scale_y, 1.0f);
-
-					advance = ftFont->Render(text, tokenLength);
-
-					glPopMatrix();
-
-					xOffset += fl2i(ceil(advance.Xf()));
-				}
+				x = sx + xOffset;
 			}
 
-			text = text + tokenLength;
+			if ((x + ftglFont->getStringWidth(text, tokenLength)) < clip_left)
+			{
+				doRender = false;
+			}
+
+			if ((y + ftglFont->getHeight()) < clip_top)
+			{
+				doRender = false;
+			}
+
+			if (x > clip_right)
+			{
+				doRender = false;
+			}
+
+			if (y > clip_bottom)
+			{
+				doRender = false;
+			}
+
+			x += ((do_resize) ? gr_screen.offset_x_unscaled : gr_screen.offset_x);
+			y += ((do_resize) ? gr_screen.offset_y_unscaled : gr_screen.offset_y) + currentFont->getTopOffset();
+
+			if (do_resize)
+			{
+				gr_resize_screen_pos(&x, &y);
+			}
+
+			if (doRender && tokenLength > 0)
+			{
+				glPushMatrix();
+
+				glTranslatef(i2fl(x), i2fl(y) + ftglFont->getYOffset(), 0.0f);
+
+				glScalef(scale_x, -scale_y, 1.0f);
+
+				advance = ftFont->Render(text, utf8::distance(text, text + tokenLength));
+
+				glPopMatrix();
+
+				xOffset += fl2i(ceil(advance.Xf()));
+			}
+
+			text += tokenLength;
 		}
 
 		// HACK: The FSO OpenGL state doesn't know that ftgl changed the texture so this will enable a different texture.

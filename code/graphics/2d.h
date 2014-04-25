@@ -320,7 +320,7 @@ typedef struct screen {
 	// void (*gf_bitmap)(int x, int y, bool resize);
 	void (*gf_bitmap_ex)(int x, int y, int w, int h, int sx, int sy, bool resize);
 
-	void (*gf_aabitmap)(int x, int y, bool resize, bool mirror);
+	void (*gf_aabitmap)(int x, int y, int w, int h, bool resize, bool mirror);
 	void (*gf_aabitmap_ex)(int x, int y, int w, int h, int sx, int sy, bool resize, bool mirror);
 
 	void (*gf_string)(int x, int y, const char * text,bool resize);
@@ -624,9 +624,9 @@ __inline void gr_set_clip(int x, int y, int w, int h, bool resize=true)
 void gr_set_bitmap(int bitmap_num, int alphablend = GR_ALPHABLEND_NONE, int bitbltmode = GR_BITBLT_MODE_NORMAL, float alpha = 1.0f);
 
 #define gr_clear				GR_CALL(gr_screen.gf_clear)
-__inline void gr_aabitmap(int x, int y, bool resize = true, bool mirror = false)
+__inline void gr_aabitmap(int x, int y, int w = -1, int h = -1, bool resize = true, bool mirror = false)
 {
-	(*gr_screen.gf_aabitmap)(x,y,resize,mirror);
+	(*gr_screen.gf_aabitmap)(x,y,w,h,resize,mirror);
 }
 
 __inline void gr_aabitmap_ex(int x, int y, int w, int h, int sx, int sy, bool resize = true, bool mirror = false)

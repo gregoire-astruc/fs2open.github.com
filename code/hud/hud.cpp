@@ -859,6 +859,41 @@ void HudGauge::renderBitmap(int frame, int x, int y)
 	renderBitmap(x, y);
 }
 
+void HudGauge::renderBitmapScaled(int frame, int x1, int y1, int x2, int y2)
+{
+	gr_set_bitmap(frame);
+
+	int nx = 0, ny = 0;
+
+	if (!emp_should_blit_gauge()) {
+		return;
+	}
+
+	emp_hud_jitter(&x1, &y1);
+	emp_hud_jitter(&x2, &y2);
+
+	if (gr_screen.rendering_to_texture != -1) {
+		gr_set_screen_scale(canvas_w, canvas_h, target_w, target_h);
+	}
+	else {
+		if (reticle_follow) {
+			nx = HUD_nose_x;
+			ny = HUD_nose_y;
+
+			gr_resize_screen_pos(&nx, &ny);
+			gr_set_screen_scale(base_w, base_h);
+			gr_unsize_screen_pos(&nx, &ny);
+		}
+		else {
+			gr_set_screen_scale(base_w, base_h);
+		}
+	}
+
+	gr_aabitmap(x1 + nx, y1 + ny, x2 - x1, y2 - y1);
+
+	gr_reset_screen_scale();
+}
+
 void HudGauge::renderBitmapEx(int frame, int x, int y, int w, int h, int sx, int sy)
 {
 	int nx = 0, ny = 0; 
@@ -2319,6 +2354,12 @@ int hud_anim_render(hud_anim *ha, float frametime, int draw_alpha, int loop, int
  */
 void hud_num_make_mono(char *num_str, int font_num)
 {
+	// Only do that if we have an old font
+	if (font::FontManager::getFont(font_num)->getType() != font::VFNT_FONT)
+	{
+		return;
+	}
+
 	int len, i;
 	ubyte sc;
 

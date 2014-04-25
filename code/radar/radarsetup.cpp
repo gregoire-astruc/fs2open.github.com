@@ -436,28 +436,13 @@ void HudGaugeRadar::initialize()
 		Radar_flicker_on[i]=0;
 	}
 
-	int w,h;
 	font::set_font(font::FONT1);
-
-	Small_blip_string[0] = ubyte(SMALL_BLIP_CHAR);
-	Small_blip_string[1] = 0;
-	gr_get_string_size( &w, &h, Small_blip_string );
-	Small_blip_offset_x = -w/2;
-	Small_blip_offset_y = -h/2;
-
-	Large_blip_string[0] = ubyte(LARGE_BLIP_CHAR);
-	Large_blip_string[1] = 0;
-	gr_get_string_size( &w, &h, Large_blip_string );
-	Large_blip_offset_x = -w/2;
-	Large_blip_offset_y = -h/2;
 
 	HudGauge::initialize();
 }
 
 void HudGaugeRadar::drawRange()
 {
-	char buf[32];
-
 	// hud_set_bright_color();
 	setGaugeColor(HUD_C_BRIGHT);
 
@@ -472,8 +457,8 @@ void HudGaugeRadar::drawRange()
 		break;
 
 	case RR_INFINITY:
-		sprintf(buf, NOX("%c"), Lcl_special_chars);
-		renderPrintf(position[0] + Radar_dist_offsets[RR_INFINITY][0], position[1] + Radar_dist_offsets[RR_INFINITY][1], buf);
+		// Use the UTF-8 character for infinity here
+		renderString(position[0] + Radar_dist_offsets[RR_INFINITY][0], position[1] + Radar_dist_offsets[RR_INFINITY][1], "\xE2\x88\x9E");
 		break;
 
 	default:
