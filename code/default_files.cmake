@@ -1,4 +1,6 @@
 
+
+
 SET(DEF_OUT_FILES)
 FOREACH(file ${file_root_def_files})
 	FILE(RELATIVE_PATH FILE_NAME ${CMAKE_CURRENT_SOURCE_DIR} ${file})
@@ -15,9 +17,18 @@ FOREACH(file ${file_root_def_files})
 	STRING(REPLACE "." "_" FILENAME ${FILENAME})
 	STRING(REPLACE "#" "_" FILENAME ${FILENAME})
 	
+	list(FIND file_root_def_files_binary ${file} file_index)
+	
+	SET(OPTIONS)
+	if (file_index EQUAL -1)
+		set(OPTIONS -text)
+	else(file_index EQUAL -1)
+		SET(OPTIONS)
+	endif(file_index EQUAL -1)
+	
 	ADD_CUSTOM_COMMAND(
 		OUTPUT ${OUTPUT}
-		COMMAND embedfile -text "${file}" "${OUTPUT}" "Default_${FILENAME}"
+		COMMAND embedfile ${OPTIONS} "${file}" "${OUTPUT}" "Default_${FILENAME}"
 		DEPENDS ${file}
 		COMMENT "Generating string file for ${file}"
 		)

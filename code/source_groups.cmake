@@ -116,7 +116,7 @@ set (file_root_debugconsole
 	debugconsole/timerbar.h
 )
 
-SET(file_root_def_files
+SET(file_root_def_files_text
 	${CMAKE_CURRENT_SOURCE_DIR}/def_files/ai_profiles.tbl
 	${CMAKE_CURRENT_SOURCE_DIR}/def_files/autopilot.tbl
 	${CMAKE_CURRENT_SOURCE_DIR}/def_files/blur-f.sdr
@@ -139,7 +139,14 @@ SET(file_root_def_files
 	${CMAKE_CURRENT_SOURCE_DIR}/def_files/post_processing.tbl
 	${CMAKE_CURRENT_SOURCE_DIR}/def_files/species_defs.tbl
 	${CMAKE_CURRENT_SOURCE_DIR}/def_files/video-f.sdr
-	${CMAKE_CURRENT_SOURCE_DIR}/def_files/video-v.sdr)
+	${CMAKE_CURRENT_SOURCE_DIR}/def_files/video-v.sdr
+)
+
+SET(file_root_def_files_binary
+	${CMAKE_CURRENT_SOURCE_DIR}/def_files/selection_indicator.png
+)
+
+set(file_root_def_files ${file_root_def_files_text} ${file_root_def_files_binary})
 
 # DirectX files
 set (file_root_directx
