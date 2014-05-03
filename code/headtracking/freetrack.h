@@ -41,10 +41,10 @@ namespace headtracking
 			float y4;
 		};
 
-		typedef bool (WINAPI *FTGetData_PTR)(FreeTrackData * data);
-		typedef char *(WINAPI *FTGetDllVersion_PTR)(void);
-		typedef void (WINAPI *FTReportID_PTR)(int name);
-		typedef char *(WINAPI *FTProvider_PTR)(void);
+		typedef bool (__stdcall *FTGetData_PTR)(FreeTrackData * data);
+		typedef char *(__stdcall *FTGetDllVersion_PTR)(void);
+		typedef void(__stdcall *FTReportID_PTR)(int name);
+		typedef char *(__stdcall *FTProvider_PTR)(void);
 
 		class FreeTrackLibrary : public SCP_ExternalCode
 		{

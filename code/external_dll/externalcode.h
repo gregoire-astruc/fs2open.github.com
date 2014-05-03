@@ -3,10 +3,7 @@
 
 #include "globalincs/pstypes.h"
 
-/* We must have windows.h anywhere SCP_ExternalCode is used under windows */
-#ifdef _WIN32
-#include <windows.h>
-#endif
+#include <SDL_loadso.h>
 
 /* This class loads external libraries for FSO use.
  * Different platforms have different ways of doing this, so use your ifdefs!
@@ -15,48 +12,55 @@ class SCP_ExternalCode
 {
 public:
 	SCP_ExternalCode( )
-#ifdef _WIN32
-		: m_dll( NULL )
-#endif
+		: m_library(NULL)
 	{
 	}
 
 	virtual ~SCP_ExternalCode( )
 	{
-#ifdef _WIN32
-		if ( m_dll )
-			::FreeLibrary( m_dll );
-#endif
+		if (m_library)
+			SDL_UnloadObject(m_library);
 	}
 
 protected:
-	BOOL LoadExternal( const char* externlib )
+	bool LoadExternal( const char* externlib )
 	{
 		if ( !externlib )
 			return FALSE;
 		
-#ifdef _WIN32
-		m_dll = ::LoadLibrary( externlib );
-		
-		if ( m_dll )
-			return TRUE;
+		m_library = SDL_LoadObject(externlib);
+
+#ifndef NDEBUG
+		if (m_library == NULL)
+		{
+			mprintf(("Failed to load library '%s': '%s'\n", externlib, SDL_GetError()));
+		}
 #endif
 
-		return FALSE;
+		return m_library != NULL;
 	}
 
 	void* LoadFunction( const char* functionname )
 	{
-#ifdef _WIN32
-		if ( m_dll != NULL && functionname != NULL )
-			return ::GetProcAddress( m_dll, functionname );
+		if (m_library != NULL && functionname != NULL)
+		{
+			void* func = SDL_LoadFunction(m_library, functionname);
+
+#ifndef NDEBUG
+			if (func == NULL)
+			{
+				mprintf(("Failed to load function '%s': '%s'\n", functionname, SDL_GetError()));
+			}
 #endif
+
+			return func;
+		}
+
 		return NULL;
 	}
+
 private:
-#ifdef _WIN32
-	HMODULE m_dll;
-#endif
+	void* m_library;
 };
 
 /* These are available if you're compiling an external DLL
