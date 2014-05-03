@@ -4,6 +4,8 @@
 #include "external_dll/externalcode.h"
 #include "globalincs/pstypes.h"
 
+#include <SDL_syswm.h>
+
 #define TRACKIRBRIDGEDLLNAME "scptrackir.dll"
 
 #define SCP_INITRESULT_SUCCESS 0
@@ -83,10 +85,29 @@ public:
 	}
 
 	/* Returns 0 on success */
-	int Init( HWND hwnd )
+	int Init( SDL_Window* window )
 	{
-		if ( m_Init )
-			return m_Init( hwnd );
+		if (m_Init)
+		{
+#ifdef WIN32
+			SDL_SysWMinfo info;
+			SDL_VERSION(&info.version); // initialize info structure with SDL version info
+
+			if (SDL_GetWindowWMInfo(window, &info)) { // the call returns true on success
+				// success
+
+				return m_Init(info.info.win.window);
+			}
+			else {
+				// call failed
+				mprintf(("Couldn't get window information: %s\n", SDL_GetError()));
+				return 0;
+			}
+#else
+			return 0;
+#endif
+		}
+
 		return 0;
 	}
 

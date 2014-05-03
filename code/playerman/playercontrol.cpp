@@ -13,7 +13,7 @@
 #include "io/joy_ff.h"
 #include "io/mouse.h"
 #include "io/timer.h"
-#include "external_dll/trackirpublic.h"
+#include "headtracking/headtracking.h"
 #include "object/object.h"
 #include "hud/hud.h"
 #include "hud/hudtargetbox.h"
@@ -123,14 +123,17 @@ void view_modify(angles *ma, angles *da, float max_p, float max_h, float frame_t
 		} else {
 			return;
 		}
-	} else if ( gTirDll_TrackIR.Enabled( ) ) {
-		gTirDll_TrackIR.Query();
-		ma->h = -PI2*(gTirDll_TrackIR.GetYaw());
-		ma->p = PI2*(gTirDll_TrackIR.GetPitch());
+	} else if ( headtracking::isEnabled() ) {
+		headtracking::query();
 
-		trans.xyz.x = -0.4f*gTirDll_TrackIR.GetX();
-		trans.xyz.y = 0.4f*gTirDll_TrackIR.GetY();
-		trans.xyz.z = -gTirDll_TrackIR.GetZ();
+		headtracking::HeadTrackingStatus* status = headtracking::getStatus();
+
+		ma->h = -PI2*(status->yaw);
+		ma->p = PI2*(status->pitch);
+
+		trans.xyz.x = -0.4f*status->x;
+		trans.xyz.y = 0.4f*status->y;
+		trans.xyz.z = -status->z;
 
 		if(trans.xyz.z < 0)
 			trans.xyz.z = 0.0f;

@@ -293,6 +293,19 @@ set (file_root_graphics_softwaregr
 	graphics/line.h
 )
 
+# HeadTracking files
+set (file_root_headtracking
+	headtracking/headtracking_internal.h
+	headtracking/headtracking.h
+	headtracking/headtracking.cpp
+	
+	headtracking/freetrack.h
+	headtracking/freetrack.cpp
+	
+	headtracking/trackir.h
+	headtracking/trackir.cpp
+)
+
 # Hud files
 set (file_root_hud
 	hud/hud.cpp
@@ -944,6 +957,7 @@ source_group("Graphics\\OpenGLGr"                 FILES ${file_root_graphics_ope
 source_group("Graphics\\OpenGLGr\\OpenGL CPPs"    FILES ${file_root_graphics_openglgr_opengl_cpps})
 source_group("Graphics\\OpenGLGr\\OpenGL Headers" FILES ${file_root_graphics_openglgr_opengl_headers})
 source_group("Graphics\\SoftwareGr"               FILES ${file_root_graphics_softwaregr})
+source_group("HeadTracking"                       FILES ${file_root_headtracking})
 source_group("Hud"                                FILES ${file_root_hud})
 source_group("iff_defs"                           FILES ${file_root_iff_defs})
 source_group("InetFile"                           FILES ${file_root_inetfile})
@@ -1018,6 +1032,7 @@ set (file_root
 	${file_root_graphics_openglgr_opengl_cpps}
 	${file_root_graphics_openglgr_opengl_headers}
 	${file_root_graphics_softwaregr}
+	${file_root_headtracking}
 	${file_root_hud}
 	${file_root_iff_defs}
 	${file_root_inetfile}
