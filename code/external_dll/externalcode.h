@@ -59,6 +59,12 @@ protected:
 		return NULL;
 	}
 
+	template<class FuncType>
+	FuncType LoadFunction(const char* functionname)
+	{
+		return reinterpret_cast<FuncType>(LoadFunction(functionname));
+	}
+
 private:
 	void* m_library;
 };
