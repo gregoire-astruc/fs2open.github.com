@@ -59,7 +59,7 @@ namespace headtracking
 		public:
 			FreeTrackLibrary();
 
-			~FreeTrackLibrary() {}
+			virtual ~FreeTrackLibrary() {}
 
 			bool GetData(FreeTrackData * data);
 
@@ -80,6 +80,18 @@ namespace headtracking
 			FreeTrackData* data;
 
 		public:
+			FreeTrackProvider() : library(FreeTrackLibrary()), data(nullptr) {}
+
+			~FreeTrackProvider()
+			{
+				// If shutdown hasn't been called, free the memory
+				if (data != nullptr)
+				{
+					delete data;
+					data = nullptr;
+				}
+			}
+
 			virtual bool init();
 
 			virtual void shutdown();

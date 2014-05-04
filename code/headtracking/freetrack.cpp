@@ -9,6 +9,12 @@ namespace
 {
 	const char* const LIBRARY_NAME = "FreeTrackClient.dll";
 
+	/**
+	 * @brief Find the location of the FreeTrack library
+	 * 
+	 * For windows there is a registry entry at HKEY_CURRENT_USER\Software\FreeTrack\FreeTrackClient
+	 * that specifies where the dll is located.
+	 */
 	SCP_string getLibraryLocation()
 	{
 #ifdef WIN32
@@ -78,10 +84,10 @@ namespace headtracking
 			if (!LoadExternal(getLibraryLocation().c_str()))
 				return;
 
-			mFTGetData = reinterpret_cast<FTGetData_PTR>(LoadFunction("FTGetData"));
-			mFTGetDllVersion = reinterpret_cast<FTGetDllVersion_PTR>(LoadFunction("FTGetDllVersion"));
-			mFTReportID = reinterpret_cast<FTReportID_PTR>(LoadFunction("FTReportName"));
-			mFTProvider = reinterpret_cast<FTProvider_PTR>(LoadFunction("FTProvider"));
+			mFTGetData = LoadFunction<FTGetData_PTR>("FTGetData");
+			mFTGetDllVersion = LoadFunction<FTGetDllVersion_PTR>("FTGetDllVersion");
+			mFTReportID = LoadFunction<FTReportID_PTR>("FTReportName");
+			mFTProvider = LoadFunction<FTProvider_PTR>("FTProvider");
 
 			mEnabled = true;
 		}
@@ -124,6 +130,7 @@ namespace headtracking
 				return false;
 			}
 
+			// I have no idea what a correct value for this function is so I used this random value
 			library.ReportID(7919);
 
 			mprintf(("Found FreeTrack provider '%s' with version %s.\n", library.Provider(), library.GetDllVersion()));
