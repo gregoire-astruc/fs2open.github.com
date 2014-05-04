@@ -613,7 +613,7 @@ void key_mark( uint code, int state, uint latency )
 			Current_key_down |= KEY_CTRLED;
 		}
 
-		Script_system.SetHookVar("Key", 's', textify_scancode(Current_key_down));
+		Script_system.SetHookVar("Key", 's', const_cast<char*>(textify_scancode(Current_key_down).c_str()));
 		Script_system.RunCondition(CHA_KEYRELEASED);
 		Script_system.RemHookVar("Key");
 	} else {
@@ -641,7 +641,7 @@ void key_mark( uint code, int state, uint latency )
 				Current_key_down |= KEY_CTRLED;
 			}
 
-			Script_system.SetHookVar("Key", 's', textify_scancode(Current_key_down));
+			Script_system.SetHookVar("Key", 's', const_cast<char*>(textify_scancode(Current_key_down).c_str()));
 			Script_system.RunCondition(CHA_KEYPRESSED);
 			Script_system.RemHookVar("Key");
 		} else if (!keyd_repeat) {

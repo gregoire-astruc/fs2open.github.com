@@ -1552,7 +1552,7 @@ void control_config_do_frame(float frametime)
 					Assert(!(z & JOY_AXIS));
 					control_config_bind_key(z, k);
 
-					strcpy_s(bound_string, textify_scancode(k));
+					strcpy_s(bound_string, textify_scancode(k).c_str());
 					font::force_fit_string(bound_string, 39, Conflict_wnd_coords[gr_screen.res][CONTROL_W_COORD]);
 					bound_timestamp = timestamp(2500);
 					control_config_conflict_check();
@@ -2008,7 +2008,7 @@ void control_config_do_frame(float frametime)
 
 			} else {
 				if (k >= 0) {
-					strcpy_s(buf, textify_scancode(k));
+					strcpy_s(buf, textify_scancode(k).c_str());
 					if (Conflicts[z].key >= 0) {
 						if (c == &Color_text_normal)
 							gr_set_color_fast(&Color_text_error);

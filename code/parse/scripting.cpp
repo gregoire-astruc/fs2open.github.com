@@ -442,7 +442,7 @@ bool ConditionedHook::ConditionsValid(int action, object *objp, int more_data)
 					if(Current_key_down == 0)
 						return false;
 					//WMC - could be more efficient, but whatever.
-					if(stricmp(textify_scancode(Current_key_down), scp->data.name))
+					if (stricmp(textify_scancode(Current_key_down).c_str(), scp->data.name))
 						return false;
 					break;
 				}

@@ -19,6 +19,8 @@
 #include "globalincs/systemvars.h"
 #include "globalincs/def_files.h"
 
+#include <utf8.h>
+
 #define TARGET_TAB			0
 #define SHIP_TAB				1
 #define WEAPON_TAB			2
@@ -465,7 +467,7 @@ int translate_key_to_index(const char *key, bool find_override)
 char *translate_key(char *key)
 {
 	int index = -1, key_code = -1, joy_code = -1;
-	char *key_text = NULL;
+	SCP_string key_text = NULL;
 	char *joy_text = NULL;
 
 	static char text[40] = {"None"};
@@ -490,13 +492,13 @@ char *translate_key(char *key)
 
 	// both key and joystick button are mapped to this control
 	if ((key_code >= 0 ) && (joy_code >= 0) ) {
-		strcpy_s(text, key_text);
+		strcpy_s(text, key_text.c_str());
 		strcat_s(text, " or ");
 		strcat_s(text, joy_text);
 	}
 	// if we only have one
 	else if (key_code >= 0 ) {
-		strcpy_s(text, key_text);
+		strcpy_s(text, key_text.c_str());
 	}
 	else if (joy_code >= 0) {
 		strcpy_s(text, joy_text);
@@ -508,37 +510,68 @@ char *translate_key(char *key)
 	return text;
 }
 
-char *textify_scancode(int code)
+extern SCP_map<int, int> SDLtoFS2;
+SCP_string textify_scancode(int code)
 {
-	static char text[40];
+	SCP_string text;
 
 	if (code < 0)
 		return "None";
 
 	int keycode = code & KEY_MASK;
 
-	*text = 0;
 	if (code & KEY_ALTED && !(keycode == KEY_LALT || keycode == KEY_RALT)) {
 		if(Lcl_gr){		
-			strcat_s(text, "Alt-");
+			text.append("Alt-");
 		} else if(Lcl_fr){		
-			strcat_s(text, "Alt-");
+			text.append("Alt-");
 		} else {		
-			strcat_s(text, "Alt-");
-		}		
+			text.append("Alt-");
+		}
+
+
 	}
 
 	if (code & KEY_SHIFTED && !(keycode == KEY_LSHIFT || keycode == KEY_RSHIFT)) {		
 		if(Lcl_gr){
-			strcat_s(text, "Shift-");
+			text.append("Shift-");
 		} else if(Lcl_fr){		
-			strcat_s(text, "Maj.-");
+			text.append("Maj.-");
 		} else {		
-			strcat_s(text, "Shift-");
+			text.append("Shift-");
 		}
 	}
 
-	strcat_s(text, Scan_code_text[keycode]);
+	SDL_Scancode sdlCode = SDL_SCANCODE_UNKNOWN;
+	for (auto& pair : SDLtoFS2)
+	{
+		if (pair.second == keycode)
+		{
+			sdlCode = static_cast<SDL_Scancode>(pair.first);
+		}
+	}
+
+	Assert(sdlCode != SDL_SCANCODE_UNKNOWN);
+
+	SDL_Keycode SDLkeyCode = SDL_GetKeyFromScancode(sdlCode);
+
+	if (SDLkeyCode == SDLK_BACKSPACE
+		|| SDLkeyCode == SDLK_DELETE
+		|| SDLkeyCode & SDLK_SCANCODE_MASK)
+	{
+		text.append(Scan_code_text[keycode]);
+	}
+	else
+	{
+		size_t currentLength = text.length();
+		text.resize(text.length() + 4); // We encode a unicode codepoint which can take up to 4 bytes.
+
+		auto result = utf8::append(SDLkeyCode, text.begin() + currentLength);
+
+		size_t newLength = std::distance(text.begin(), result);
+		text.resize(newLength);
+	}
+
 	return text;
 }
 //XSTR:ON

@@ -5546,7 +5546,7 @@ sexp_list_item *sexp_tree::get_listing_opf_keypress()
 
 	for (i=0; i<CCFG_MAX; i++) {
 		if (Control_config[i].key_default > 0 && !Control_config[i].disabled) {
-			head.add_data_dup(textify_scancode(Control_config[i].key_default));
+			head.add_data_dup(textify_scancode(Control_config[i].key_default).c_str());
 		}
 	}
 
