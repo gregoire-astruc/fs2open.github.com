@@ -653,6 +653,17 @@ void parse_wi_flags(weapon_info *weaponp, int wi_flags, int wi_flags2, int wi_fl
 			weaponp->wi_flags3 |= WIF3_NO_LINKED_PENALTY;
 		else if (!stricmp(NOX("no homing speed ramp"), weapon_strings[i]))
 			weaponp->wi_flags3 |= WIF3_NO_HOMING_SPEED_RAMP;
+		else if (!stricmp(NOX("aspect seekers home"), weapon_strings[i]))
+		{
+			if (!weaponp->wi_flags & WIF_CMEASURE)
+			{
+				Warning(LOCATION, "\"aspect seekers home\" may only be used for countermeasures!");
+			}
+			else
+			{
+				weaponp->wi_flags3 |= WIF3_CMEASURE_ASPECT_HOME_ON;
+			}
+		}
 		else
 			Warning(LOCATION, "Bogus string in weapon flags: %s\n", weapon_strings[i]);
 	}
@@ -4208,8 +4219,12 @@ void weapon_home(object *obj, int num, float frame_time)
 		}
 		break;
 	case OBJ_WEAPON:
+		bool home_on_cmeasure = The_mission.ai_profile->flags2 & AIPF2_ASPECT_LOCK_COUNTERMEASURE
+			|| Weapon_info[Weapons[hobjp->instance].weapon_info_index].wi_flags3 & WIF3_CMEASURE_ASPECT_HOME_ON;
+
 		// don't home on countermeasures or non-bombs, that's handled elsewhere
-		if ( ((Weapon_info[Weapons[hobjp->instance].weapon_info_index].wi_flags & WIF_CMEASURE) && !(The_mission.ai_profile->flags2 & AIPF2_ASPECT_LOCK_COUNTERMEASURE)) || !(Weapon_info[Weapons[hobjp->instance].weapon_info_index].wi_flags & WIF_BOMB) )
+		if ( ((Weapon_info[Weapons[hobjp->instance].weapon_info_index].wi_flags & WIF_CMEASURE) && !home_on_cmeasure)
+			|| !(Weapon_info[Weapons[hobjp->instance].weapon_info_index].wi_flags & WIF_BOMB) )
 			break;
 
 		if (wip->wi_flags & WIF_LOCKED_HOMING) {
