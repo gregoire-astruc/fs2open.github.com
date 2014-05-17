@@ -655,7 +655,7 @@ void parse_wi_flags(weapon_info *weaponp, int wi_flags, int wi_flags2, int wi_fl
 			weaponp->wi_flags3 |= WIF3_NO_HOMING_SPEED_RAMP;
 		else if (!stricmp(NOX("pulls aspect seekers"), weapon_strings[i]))
 		{
-			if (!weaponp->wi_flags & WIF_CMEASURE)
+			if (!(weaponp->wi_flags & WIF_CMEASURE))
 			{
 				Warning(LOCATION, "\"pulls aspect seekers\" may only be used for countermeasures!");
 			}
@@ -4150,8 +4150,36 @@ void weapon_home(object *obj, int num, float frame_time)
 	if (wip->wi_flags & WIF_LOCKED_HOMING) {
 		if ( wp->target_sig > 0 ) {
 			if ( wp->homing_object->signature != wp->target_sig ) {
-				wp->homing_object = &obj_used_list;
-				return;
+				if (wp->homing_object->type == OBJ_WEAPON)
+				{
+					weapon* targetp = &Weapons[wp->homing_object->instance];
+					weapon_info* wip = &Weapon_info[targetp->weapon_info_index];
+
+					if (wip->wi_flags & WIF_CMEASURE)
+					{
+						// Check if we can home on this countermeasure
+						bool home_on_cmeasure = The_mission.ai_profile->flags2 & AIPF2_ASPECT_LOCK_COUNTERMEASURE
+							|| wip->wi_flags3 & WIF3_CMEASURE_ASPECT_HOME_ON;
+
+						if (!home_on_cmeasure)
+						{
+							wp->homing_object = &obj_used_list;
+							return;
+						}
+					}
+					else
+					{
+
+						wp->homing_object = &obj_used_list;
+						return;
+					}
+				}
+				else
+				{
+
+					wp->homing_object = &obj_used_list;
+					return;
+				}
 			}
 		}
 	}
@@ -4203,7 +4231,8 @@ void weapon_home(object *obj, int num, float frame_time)
 	case OBJ_NONE:
 		if (wip->wi_flags & WIF_LOCKED_HOMING) {
 			find_homing_object_by_sig(obj, wp->target_sig);
-		} else {
+		}
+		else {
 			find_homing_object(obj, num);
 		}
 		return;
@@ -4212,27 +4241,36 @@ void weapon_home(object *obj, int num, float frame_time)
 		if (hobjp->signature != wp->target_sig) {
 			if (wip->wi_flags & WIF_LOCKED_HOMING) {
 				find_homing_object_by_sig(obj, wp->target_sig);
-			} else {
+			}
+			else {
 				find_homing_object(obj, num);
 			}
 			return;
 		}
 		break;
 	case OBJ_WEAPON:
+	{
 		bool home_on_cmeasure = The_mission.ai_profile->flags2 & AIPF2_ASPECT_LOCK_COUNTERMEASURE
 			|| Weapon_info[Weapons[hobjp->instance].weapon_info_index].wi_flags3 & WIF3_CMEASURE_ASPECT_HOME_ON;
 
 		// don't home on countermeasures or non-bombs, that's handled elsewhere
-		if ( ((Weapon_info[Weapons[hobjp->instance].weapon_info_index].wi_flags & WIF_CMEASURE) && !home_on_cmeasure)
-			|| !(Weapon_info[Weapons[hobjp->instance].weapon_info_index].wi_flags & WIF_BOMB) )
+		if (((Weapon_info[Weapons[hobjp->instance].weapon_info_index].wi_flags & WIF_CMEASURE) && !home_on_cmeasure))
+		{
 			break;
+		}
+		else if (!(Weapon_info[Weapons[hobjp->instance].weapon_info_index].wi_flags & WIF_BOMB))
+		{
+			break;
+		}
 
 		if (wip->wi_flags & WIF_LOCKED_HOMING) {
 			find_homing_object_by_sig(obj, wp->target_sig);
-		} else {
+		}
+		else {
 			find_homing_object(obj, num);
 		}
 		break;
+	}
 	default:
 		return;
 	}
