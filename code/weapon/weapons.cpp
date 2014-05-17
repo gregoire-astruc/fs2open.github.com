@@ -653,11 +653,11 @@ void parse_wi_flags(weapon_info *weaponp, int wi_flags, int wi_flags2, int wi_fl
 			weaponp->wi_flags3 |= WIF3_NO_LINKED_PENALTY;
 		else if (!stricmp(NOX("no homing speed ramp"), weapon_strings[i]))
 			weaponp->wi_flags3 |= WIF3_NO_HOMING_SPEED_RAMP;
-		else if (!stricmp(NOX("aspect seekers home"), weapon_strings[i]))
+		else if (!stricmp(NOX("pulls aspect seekers"), weapon_strings[i]))
 		{
 			if (!weaponp->wi_flags & WIF_CMEASURE)
 			{
-				Warning(LOCATION, "\"aspect seekers home\" may only be used for countermeasures!");
+				Warning(LOCATION, "\"pulls aspect seekers\" may only be used for countermeasures!");
 			}
 			else
 			{
