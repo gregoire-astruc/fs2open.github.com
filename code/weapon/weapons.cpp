@@ -4075,6 +4075,32 @@ void find_homing_object_by_sig(object *weapon_objp, int sig)
 	}
 }
 
+bool aspect_should_lose_target(weapon* wp)
+{
+	Assert(wp != NULL);
+	
+	if (wp->homing_object->signature != wp->target_sig) {
+		if (wp->homing_object->type == OBJ_WEAPON)
+		{
+			weapon_info* target_info = &Weapon_info[Weapons[wp->homing_object->instance].weapon_info_index];
+
+			if (target_info->wi_flags & WIF_CMEASURE)
+			{
+				// Check if we can home on this countermeasure
+				bool home_on_cmeasure = The_mission.ai_profile->flags2 & AIPF2_ASPECT_LOCK_COUNTERMEASURE
+					|| target_info->wi_flags3 & WIF3_CMEASURE_ASPECT_HOME_ON;
+
+				if (!home_on_cmeasure)
+				{
+					return true;
+				}
+			}
+		}
+	}
+
+	return false;
+}
+
 /**
  * Make weapon num home.  It's also object *obj.
  */
@@ -4149,37 +4175,10 @@ void weapon_home(object *obj, int num, float frame_time)
 	// WCS - or javelin
 	if (wip->wi_flags & WIF_LOCKED_HOMING) {
 		if ( wp->target_sig > 0 ) {
-			if ( wp->homing_object->signature != wp->target_sig ) {
-				if (wp->homing_object->type == OBJ_WEAPON)
-				{
-					weapon* targetp = &Weapons[wp->homing_object->instance];
-					weapon_info* wip = &Weapon_info[targetp->weapon_info_index];
-
-					if (wip->wi_flags & WIF_CMEASURE)
-					{
-						// Check if we can home on this countermeasure
-						bool home_on_cmeasure = The_mission.ai_profile->flags2 & AIPF2_ASPECT_LOCK_COUNTERMEASURE
-							|| wip->wi_flags3 & WIF3_CMEASURE_ASPECT_HOME_ON;
-
-						if (!home_on_cmeasure)
-						{
-							wp->homing_object = &obj_used_list;
-							return;
-						}
-					}
-					else
-					{
-
-						wp->homing_object = &obj_used_list;
-						return;
-					}
-				}
-				else
-				{
-
-					wp->homing_object = &obj_used_list;
-					return;
-				}
+			if (aspect_should_lose_target(wp))
+			{ 
+				wp->homing_object = &obj_used_list;
+				return;
 			}
 		}
 	}
