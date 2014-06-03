@@ -160,7 +160,10 @@ static int Fiction_viewer_fontnum = -1;
 
 static char Fiction_viewer_filename[MAX_FILENAME_LEN];
 static char Fiction_viewer_font_filename[MAX_FILENAME_LEN];
+static char Fiction_viewer_voice_filename[MAX_FILENAME_LEN];
 static char *Fiction_viewer_text = NULL;
+static int Fiction_viewer_voice = -1;
+static int Fiction_viewer_voice_handle = -1;
 
 static int Fiction_viewer_ui = -1;
 
@@ -333,6 +336,11 @@ void fiction_viewer_init()
 			&fiction_viewer_scroll_down,
 			&fiction_viewer_scroll_capture);
 	}
+
+	if (Fiction_viewer_voice >= 0)
+	{
+		Fiction_viewer_voice_handle = snd_play_raw(Fiction_viewer_voice, 0.0f);
+	}
 	
 	Fiction_viewer_inited = 1;
 }
@@ -342,6 +350,11 @@ void fiction_viewer_close()
 {
 	if (!Fiction_viewer_inited)
 		return;
+
+	if (Fiction_viewer_voice_handle >= 0)
+	{
+		snd_stop(Fiction_viewer_voice_handle);
+	}
 
 	// free the fiction
 	fiction_viewer_reset();
@@ -439,14 +452,19 @@ int mission_has_fiction()
 		return (Fiction_viewer_text != NULL);
 }
 
-char *fiction_file()
+const char *fiction_file()
 {
 	return Fiction_viewer_filename;
 }
 
-char *fiction_font()
+const char *fiction_font()
 {
 	return Fiction_viewer_font_filename;
+}
+
+const char *fiction_voice()
+{
+	return Fiction_viewer_voice_filename;
 }
 
 void fiction_viewer_reset()
@@ -457,14 +475,23 @@ void fiction_viewer_reset()
 
 	*Fiction_viewer_filename = 0;
 	*Fiction_viewer_font_filename = 0;
+	*Fiction_viewer_voice_filename = 0;
 
 	Top_fiction_viewer_text_line = 0;
+
+	if (Fiction_viewer_voice >= 0)
+	{
+		snd_unload(Fiction_viewer_voice);
+		Fiction_viewer_voice = -1;
+	}
 }
 
-void fiction_viewer_load(char *filename, char *font_filename)
+void fiction_viewer_load(const char *filename, const char *font_filename, const char *voice_filename)
 {
 	int file_length;
-	Assert(filename && font_filename);
+	Assertion(filename, "Invalid fictionviewer filename pointer given!");
+	Assertion(font_filename, "Invalid fictionviewer font filename pointer given!");
+	Assertion(voice_filename, "Invalid fictionviewer voice filename pointer given!");
 
 	// just to be sure
 	if (Fiction_viewer_text != NULL)
@@ -476,11 +503,18 @@ void fiction_viewer_load(char *filename, char *font_filename)
 	// save our filenames
 	strcpy_s(Fiction_viewer_filename, filename);
 	strcpy_s(Fiction_viewer_font_filename, font_filename);
+	strcpy_s(Fiction_viewer_voice_filename, voice_filename);
 
 	// see if we have a matching font
 	Fiction_viewer_fontnum = gr_get_fontnum(Fiction_viewer_font_filename);
 	if (Fiction_viewer_fontnum < 0 && !Fred_running)
 		strcpy_s(Fiction_viewer_font_filename, "");
+
+	game_snd tmp_gs;
+	strcpy_s(tmp_gs.filename, Fiction_viewer_voice_filename);
+	Fiction_viewer_voice = snd_load(&tmp_gs, 0);
+	if (Fiction_viewer_voice < 0 && !Fred_running)
+		strcpy_s(Fiction_viewer_voice_filename, "");
 
 	if (!strlen(filename))
 		return;
