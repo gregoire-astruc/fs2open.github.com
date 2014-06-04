@@ -4,7 +4,7 @@
 
 #include <new>
 
-#include "globalincs/scp_defines.h"
+#include "scp_defines.h"
 
 // throw
 extern void * operator new (size_t size);
