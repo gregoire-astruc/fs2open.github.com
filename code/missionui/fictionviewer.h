@@ -22,4 +22,7 @@ const char *fiction_voice();
 void fiction_viewer_reset();
 void fiction_viewer_load(const char *filename, const char *font_filename, const char* voice_filename);
 
+void fiction_viewer_pause();
+void fiction_viewer_unpause();
+
 #endif

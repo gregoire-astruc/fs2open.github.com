@@ -18,6 +18,7 @@
 #include "io/key.h"
 #include "freespace2/freespace.h"
 #include "globalincs/alphacolors.h"
+#include "sound/audiostr.h"
 
 
 
@@ -163,7 +164,6 @@ static char Fiction_viewer_font_filename[MAX_FILENAME_LEN];
 static char Fiction_viewer_voice_filename[MAX_FILENAME_LEN];
 static char *Fiction_viewer_text = NULL;
 static int Fiction_viewer_voice = -1;
-static int Fiction_viewer_voice_handle = -1;
 
 static int Fiction_viewer_ui = -1;
 
@@ -339,7 +339,7 @@ void fiction_viewer_init()
 
 	if (Fiction_viewer_voice >= 0)
 	{
-		Fiction_viewer_voice_handle = snd_play_raw(Fiction_viewer_voice, 0.0f);
+		audiostream_play(Fiction_viewer_voice, Master_voice_volume, 0);
 	}
 	
 	Fiction_viewer_inited = 1;
@@ -350,12 +350,7 @@ void fiction_viewer_close()
 {
 	if (!Fiction_viewer_inited)
 		return;
-
-	if (Fiction_viewer_voice_handle >= 0)
-	{
-		snd_stop(Fiction_viewer_voice_handle);
-	}
-
+	
 	// free the fiction
 	fiction_viewer_reset();
 
@@ -444,6 +439,22 @@ void fiction_viewer_do_frame(float frametime)
 	gr_flip();
 }
 
+void fiction_viewer_pause()
+{
+	if (Fiction_viewer_voice >= 0)
+	{
+		audiostream_pause(Fiction_viewer_voice);
+	}
+}
+
+void fiction_viewer_unpause()
+{
+	if (Fiction_viewer_voice >= 0)
+	{
+		audiostream_unpause(Fiction_viewer_voice);
+	}
+}
+
 int mission_has_fiction()
 {
 	if (Fred_running)
@@ -481,7 +492,7 @@ void fiction_viewer_reset()
 
 	if (Fiction_viewer_voice >= 0)
 	{
-		snd_unload(Fiction_viewer_voice);
+		audiostream_close_file(Fiction_viewer_voice);
 		Fiction_viewer_voice = -1;
 	}
 }
@@ -510,9 +521,7 @@ void fiction_viewer_load(const char *filename, const char *font_filename, const 
 	if (Fiction_viewer_fontnum < 0 && !Fred_running)
 		strcpy_s(Fiction_viewer_font_filename, "");
 
-	game_snd tmp_gs;
-	strcpy_s(tmp_gs.filename, Fiction_viewer_voice_filename);
-	Fiction_viewer_voice = snd_load(&tmp_gs, 0);
+	Fiction_viewer_voice = audiostream_open(Fiction_viewer_voice_filename, ASF_VOICE);
 	if (Fiction_viewer_voice < 0 && !Fred_running)
 		strcpy_s(Fiction_viewer_voice_filename, "");
 
