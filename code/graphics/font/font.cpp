@@ -76,7 +76,7 @@ namespace
 		}
 		else
 		{
-			Warning(LOCATION, "Illegal type value \"%s\".", value);
+			Warning(LOCATION, "Illegal type value \"%s\".", value.c_str());
 			type = TEXTURE;
 		}
 
@@ -416,7 +416,7 @@ namespace font
 
 			if (ss.fail())
 			{
-				int fontNum = FontManager::getFontIndex(input);
+				fontNum = FontManager::getFontIndex(input);
 
 				if (fontNum < 0)
 				{
