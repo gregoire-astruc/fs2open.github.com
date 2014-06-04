@@ -18,6 +18,8 @@
 
 #include "cmdline/cmdline.h"
 
+#include "osapi/osapi.h"
+
 #include "parse/encrypt.h"
 
 #include <boost/bind.hpp>

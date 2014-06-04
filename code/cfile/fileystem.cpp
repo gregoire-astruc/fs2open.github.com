@@ -6,8 +6,16 @@
 
 #include <boost/filesystem.hpp>
 
+// sigh...
+#undef strcpy_s
+#undef strcat_s
+
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string_regex.hpp>
+
+
+#define strcpy_s( ... ) scp_strcpy_s( __FILE__, __LINE__, __VA_ARGS__ )
+#define strcat_s( ... ) scp_strcat_s( __FILE__, __LINE__, __VA_ARGS__ )
 
 #include <boost/bind.hpp>
 
