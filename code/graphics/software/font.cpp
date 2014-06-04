@@ -74,7 +74,7 @@ namespace
 		}
 		else
 		{
-			Warning(LOCATION, "Illegal type value \"%s\".", value);
+			Warning(LOCATION, "Illegal type value \"%s\".", value.c_str());
 			type = TEXTURE;
 		}
 
