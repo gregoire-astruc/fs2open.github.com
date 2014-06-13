@@ -14,8 +14,6 @@
 #include "globalincs/pstypes.h"
 #include "graphics/gropengl.h"
 
-#include <boost/unordered_map.hpp>
-
 #include <string>
 
 namespace opengl
@@ -84,8 +82,8 @@ namespace opengl
 			int flags;
 			int flags2;
 
-			boost::unordered_map<const char*, Uniform> uniforms;
-			boost::unordered_map<const char*, Attribute> attributes;
+			SCP_hash_map<const char*, Uniform> uniforms;
+			SCP_hash_map<const char*, Attribute> attributes;
 
 			static Uniform invalidUniform;
 			static Attribute invalidAttribute;
@@ -120,7 +118,7 @@ namespace opengl
 
 			inline Attribute& getAttribute(const char* attribute_name)
 			{
-				boost::unordered_map<const char*, Attribute>::iterator iter = attributes.find(attribute_name);
+				SCP_hash_map<const char*, Attribute>::iterator iter = attributes.find(attribute_name);
 
 				if (iter == attributes.end())
 				{
@@ -135,7 +133,7 @@ namespace opengl
 
 			inline Uniform& getUniform(const char* uniform_name)
 			{
-				boost::unordered_map<const char*, Uniform>::iterator iter = uniforms.find(uniform_name);
+				SCP_hash_map<const char*, Uniform>::iterator iter = uniforms.find(uniform_name);
 
 				if (iter == uniforms.end())
 				{
