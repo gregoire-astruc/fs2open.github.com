@@ -18,6 +18,7 @@
 
 
 #include "ai/ai.h"
+#include "debugconsole/console.h"
 #include "globalincs/linklist.h"
 #include "object/object.h"
 #include "physics/physics.h"
@@ -6014,6 +6015,11 @@ int check_ok_to_fire(int objnum, int target_objnum, weapon_info *wip)
 			}
 		}
 	}
+	else
+	{
+		// We have no valid target object, we should not fire at it...
+		return 0;
+	}
 
 	return 1;
 }
@@ -6130,7 +6136,9 @@ void render_all_ship_bay_paths(object *objp)
 	if ( pm->ship_bay == NULL )
 		return;
 
-	for ( i = 0; i < pm->ship_bay->num_paths; i++ ) {
+	memset(&v, 0, sizeof(v));
+    
+    for ( i = 0; i < pm->ship_bay->num_paths; i++ ) {
 		mp = &pm->paths[pm->ship_bay->path_indexes[i]];
 
 		for ( j = 0; j < mp->nverts; j++ ) {
@@ -6172,6 +6180,8 @@ void render_all_subsys_paths(object *objp)
 
 	if ( pm->ship_bay == NULL )
 		return;
+    
+    memset(&v, 0, sizeof(v));
 
 	for ( i = 0; i < pm->n_paths; i++ ) {
 		mp = &pm->paths[i];
@@ -6233,6 +6243,8 @@ void render_path_points(object *objp)
 
 		for (i=0; i<num_points; i++) {
 			vertex	v0;
+            
+            memset(&v0, 0, sizeof(v0));
 
 			g3_rotate_vertex( &v0, &pp->pos );
 
@@ -11362,16 +11374,14 @@ float get_wing_largest_radius(object *objp, int formation_object_flag)
 
 float Wing_y_scale = 2.0f;
 float Wing_scale = 1.0f;
-DCF(wing_y_scale, "")
+DCF(wing_y_scale, "Adjusts the wing formation scale along the Y axis (Default is 2.0)")
 {
-	dc_get_arg(ARG_FLOAT);
-	Wing_y_scale = Dc_arg_float;
+	dc_stuff_float(&Wing_y_scale);
 }
 
-DCF(wing_scale, "")
+DCF(wing_scale, "Adjusts the wing formation scale. (Default is 1.0f)")
 {
-	dc_get_arg(ARG_FLOAT);
-	Wing_scale = Dc_arg_float;
+	dc_stuff_float(&Wing_scale);
 }
 
 /**
@@ -12639,6 +12649,8 @@ int ai_acquire_emerge_path(object *pl_objp, int parent_objnum, int allowed_path_
 	{
 		int i, num_allowed_paths = 0, allowed_bay_paths[MAX_SHIP_BAY_PATHS];
 
+		memset(allowed_bay_paths, 0, sizeof(allowed_bay_paths));
+        
 		for (i = 0; i < bay->num_paths; i++)
 		{
 			if (allowed_path_mask & (1 << i))
@@ -12862,8 +12874,10 @@ int ai_acquire_depart_path(object *pl_objp, int parent_objnum, int allowed_path_
 
 	if ( parent_objnum < 0 )
 	{
+		Warning(LOCATION, "In ai_acquire_depart_path(), specified a negative object number for the parent ship!  (Departing ship is %s.)  Looking for another ship...", shipp->ship_name);
+
 		// try to locate a capital ship on the same team:
-		int shipnum = ship_get_ship_with_dock_bay(shipp->team);
+		int shipnum = ship_get_ship_for_departure(shipp->team);
 
 		if (shipnum >= 0)
 			parent_objnum = Ships[shipnum].objnum;
@@ -12934,22 +12948,9 @@ void ai_bay_depart()
 
 	// check if parent ship valid; if not, abort depart
 	anchor_shipnum = ship_name_lookup(Parse_names[Ships[Pl_objp->instance].departure_anchor]);
-	if (anchor_shipnum >= 0)
+	if (anchor_shipnum < 0 || !ship_useful_for_departure(anchor_shipnum, Ships[Pl_objp->instance].departure_path_mask))
 	{
-		// make sure not dying or departing
-		if ( Ships[anchor_shipnum].flags & (SF_DYING | SF_DEPARTING))
-		{
-			anchor_shipnum = -1;
-		}
-		// make sure fighterbays not destroyed
-		else if ( ship_fighterbays_all_destroyed(&Ships[anchor_shipnum]) )
-		{
-			anchor_shipnum = -1;
-		}
-	}
-
-	if (anchor_shipnum < 0)
-	{
+		mprintf(("Aborting bay departure!\n"));
 		aip->mode = AIM_NONE;
 		
 		Ships[Pl_objp->instance].flags &= ~SF_DEPART_DOCKBAY;
@@ -13313,8 +13314,13 @@ void ai_maybe_depart(object *objp)
 		if ( timestamp_elapsed(aip->warp_out_timestamp) ) {
 			ai_process_mission_orders( OBJ_INDEX(objp), aip );
 			if ( (aip->support_ship_objnum == -1) && (get_hull_pct(objp) < 0.25f) ) {
-				if (!(shipp->flags & SF_DEPARTING))
-					mission_do_departure(objp);
+				if (!(shipp->flags & SF_DEPARTING)) {
+					if (!mission_do_departure(objp)) {
+						// if departure failed, try again at a later point
+						// (timestamp taken from ai_do_objects_repairing_stuff)
+						aip->warp_out_timestamp = timestamp((int) ((30 + 10*frand()) * 1000));
+					}
+				}
 			}
 		}
 	}
@@ -14015,8 +14021,12 @@ void ai_frame(int objnum)
 				if (target_objnum != -1) {
 					if (aip->target_objnum != target_objnum)
 						aip->aspect_locked_time = 0.0f;
-					set_target_objnum(aip, target_objnum);
-					En_objp = &Objects[target_objnum];
+					target_objnum = set_target_objnum(aip, target_objnum);
+
+					if (target_objnum >= 0)
+					{
+						En_objp = &Objects[target_objnum];
+					}
 				}
 			}
 		}
@@ -14518,20 +14528,6 @@ void init_aip_from_class_and_profile(ai_info *aip, ai_class *aicp, ai_profile_t 
 	aip->ai_profile_flags2 = combine_flags(profile->flags2, aicp->ai_profile_flags2, aicp->ai_profile_flags2_set);
 }
 
-void ai_set_default_behavior(object *obj, int classnum)
-{
-	ai_info	*aip;
-
-	Assert(obj != NULL);
-	Assert(obj->instance != -1);
-	Assert(Ships[obj->instance].ai_index != -1);
-
-	aip = &Ai_info[Ships[obj->instance].ai_index];
-
-	aip->behavior = AIM_NONE;
-
-}
-
 void ai_do_default_behavior(object *obj)
 {
 	Assert(obj != NULL);
@@ -14793,14 +14789,17 @@ int firing_aspect_seeking_bomb(object *objp)
 
 	bank_index = swp->current_secondary_bank;
 
-	if (bank_index != -1)
-		if (swp->secondary_bank_ammo[bank_index] > 0) {
-			if (Weapon_info[swp->secondary_bank_weapons[bank_index]].wi_flags & WIF_BOMB) {
-				if (Weapon_info[swp->secondary_bank_weapons[bank_index]].wi_flags & WIF_HOMING_ASPECT) {
-					return 1;
+	if (bank_index != -1) {
+		if (swp->secondary_bank_weapons[bank_index] > 0) {
+			if (swp->secondary_bank_ammo[bank_index] > 0) {
+				if (Weapon_info[swp->secondary_bank_weapons[bank_index]].wi_flags & WIF_BOMB) {
+					if (Weapon_info[swp->secondary_bank_weapons[bank_index]].wi_flags & WIF_HOMING_ASPECT) {
+						return 1;
+					}
 				}
 			}
 		}
+	}
 
 	return 0;
 }

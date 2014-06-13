@@ -22,7 +22,9 @@ static const ubyte PLR_VERSION = 1;
 //   0 - initial version
 //   1 - re-add recent missions
 //   2 - separate single/multi squad name & pic
-static const ubyte CSG_VERSION = 2;
+//   3 - remove separate detail settings for campaigns
+//   4 - add CPV rollback for Red Alert missions
+static const ubyte CSG_VERSION = 4;
 
 
 class pilotfile {

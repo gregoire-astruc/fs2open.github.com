@@ -26,10 +26,14 @@
 #include "external_dll/trackirpublic.h"
 #include "jumpnode/jumpnode.h"
 #include "lighting/lighting.h"
+#include "menuui/credits.h"
 #include "mission/missioncampaign.h"
 #include "mission/missiongoals.h"
 #include "mission/missionload.h"
 #include "mission/missionlog.h"
+#include "mission/missionmessage.h"
+#include "mission/missiontraining.h"
+#include "missionui/missionbrief.h"
 #include "model/model.h"
 #include "network/multi.h"
 #include "network/multimsgs.h"
@@ -522,7 +526,7 @@ ADE_FUNC(getRvec, l_Matrix, NULL, "Returns the vector that points to the right (
 //that any new enumerations have indexes of NEXT INDEX (see below)
 //or after. Don't forget to increment NEXT INDEX after you're done.
 //=====================================
-static const int ENUM_NEXT_INDEX = 71; // <<<<<<<<<<<<<<<<<<<<<<
+static const int ENUM_NEXT_INDEX = 74; // <<<<<<<<<<<<<<<<<<<<<<
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 static flag_def_list Enumerations[] = {
 	#define LE_ALPHABLEND_FILTER			14
@@ -734,6 +738,15 @@ static flag_def_list Enumerations[] = {
 
 	#define LE_VM_FREECAMERA				68
 	{		"VM_FREECAMERA",				LE_VM_FREECAMERA,				0},
+
+	#define LE_MESSAGE_PRIORITY_LOW			71
+	{		"MESSAGE_PRIORITY_LOW",			LE_MESSAGE_PRIORITY_LOW,		0},
+
+	#define LE_MESSAGE_PRIORITY_NORMAL		72
+	{		"MESSAGE_PRIORITY_NORMAL",		LE_MESSAGE_PRIORITY_NORMAL,		0},
+
+	#define LE_MESSAGE_PRIORITY_HIGH		73
+	{		"MESSAGE_PRIORITY_HIGH",		LE_MESSAGE_PRIORITY_HIGH,		0},
 };
 
 //DO NOT FORGET to increment NEXT INDEX: !!!!!!!!!!!!!
@@ -3052,7 +3065,20 @@ ADE_FUNC(delete, l_SEXPVariable, NULL, "Deletes a SEXP Variable", "boolean", "Tr
 //**********HANDLE: Shields
 ade_obj<object_h> l_Shields("shields", "Shields handle");
 
-ADE_INDEXER(l_Shields, "enumeration/number", "Gets or sets shield quadrant strength. Use \"SHIELD_*\" enumeration or 1-4 for a specific quadrant, or NONE for the entire shield", "number", "Quadrant/shield strength, or 0 if handle is invalid")
+ADE_FUNC(__len, l_Shields, NULL, "Number of shield segments", "number", "Number of shield segments or 0 if handle is invalid")
+{
+	object_h *objh;
+
+	if(!ade_get_args(L, "o", l_Shields.GetPtr(&objh)))
+		return ade_set_error(L, "i", -1);
+
+	if(!objh->IsValid())
+		return ade_set_error(L, "i", -1);
+
+	return ade_set_args(L, "i", objh->objp->n_quadrants);
+}
+
+ADE_INDEXER(l_Shields, "enumeration/number", "Gets or sets shield segment strength. Use \"SHIELD_*\" enumerations (for standard 4-quadrant shields) or index of a specific segment, or NONE for the entire shield", "number", "Segment/shield strength, or 0 if handle is invalid")
 {
 	object_h *objh;
 	float nval = -1.0f;
@@ -3075,7 +3101,7 @@ ADE_INDEXER(l_Shields, "enumeration/number", "Gets or sets shield quadrant stren
 		int qdi;
 		if(qd == NULL)
 			qdx = -1;
-		else if((qdi = atoi(qd)) > 0 && qdi < 5)
+		else if((qdi = atoi(qd)) > 0 && qdi <= objp->n_quadrants)
 			qdx = qdi-1;	//LUA->FS2
 		else
 			return ade_set_error(L, "f", 0.0f);
@@ -3130,7 +3156,7 @@ ADE_INDEXER(l_Shields, "enumeration/number", "Gets or sets shield quadrant stren
 //WMC - Not sure if I want this to be a variable. It'd make more sense
 //as a function, since it modifies all quadrant variables
 //WMC - Ehh, screw it.
-ADE_VIRTVAR(CombinedLeft, l_Shields, "number", "Total shield hitpoints left (for all quadrants combined)", "number", "Combined shield strength, or 0 if handle is invalid")
+ADE_VIRTVAR(CombinedLeft, l_Shields, "number", "Total shield hitpoints left (for all segments combined)", "number", "Combined shield strength, or 0 if handle is invalid")
 {
 	object_h *objh;
 	float nval = -1.0f;
@@ -3147,7 +3173,7 @@ ADE_VIRTVAR(CombinedLeft, l_Shields, "number", "Total shield hitpoints left (for
 	return ade_set_args(L, "f", shield_get_strength(objh->objp));
 }
 
-ADE_VIRTVAR(CombinedMax, l_Shields, "number", "Maximum shield hitpoints (for all quadrants combined)", "number", "Combined maximum shield strength, or 0 if handle is invalid")
+ADE_VIRTVAR(CombinedMax, l_Shields, "number", "Maximum shield hitpoints (for all segments combined)", "number", "Combined maximum shield strength, or 0 if handle is invalid")
 {
 	object_h *objh;
 	float nval = -1.0f;
@@ -5327,7 +5353,7 @@ ADE_FUNC(startRendering, l_CockpitDisplay, "[boolean setClip = true]", "Starts r
 	if (bm_is_valid(bm_handle) && setClip)
 	{
 		cockpit_display *cd = cdh->Get();
-		gr_set_clip(cd->offset[0], cd->offset[1], cd->size[0], cd->size[1], false);
+		gr_set_clip(cd->offset[0], cd->offset[1], cd->size[0], cd->size[1], GR_RESIZE_NONE);
 	}
 
 	return ade_set_args(L, "o", l_Texture.Set(bm_handle));
@@ -6035,7 +6061,7 @@ ADE_FUNC(renderTechModel, l_Shipclass, "X1, Y1, X2, Y2, [Rotation %, Pitch %, Ba
 	vm_rotate_matrix_by_angles(&orient, &rot_angles);
 
 	//Clip
-	gr_set_clip(x1,y1,x2-x1,y2-y1,false);
+	gr_set_clip(x1,y1,x2-x1,y2-y1,GR_RESIZE_NONE);
 
 	//Handle 3D init stuff
 	g3_start_frame(1);
@@ -6106,7 +6132,7 @@ ADE_FUNC(renderTechModel2, l_Shipclass, "X1, Y1, X2, Y2, orientation Orientation
 	matrix *orient = mh->GetMatrix();
 
 	//Clip
-	gr_set_clip(x1,y1,x2-x1,y2-y1,false);
+	gr_set_clip(x1,y1,x2-x1,y2-y1,GR_RESIZE_NONE);
 
 	//Handle 3D init stuff
 	g3_start_frame(1);
@@ -7549,7 +7575,7 @@ struct order_h
 		if (objh.objp == NULL || aigp == NULL)
 			return false;
 
-		return (this != NULL && objh.IsValid() && objh.objp->type == OBJ_SHIP && odx > -1 && odx < MAX_AI_GOALS && sig == Ai_info[Ships[objh.objp->instance].ai_index].goals[odx].signature);
+		return objh.IsValid() && objh.objp->type == OBJ_SHIP && odx > -1 && odx < MAX_AI_GOALS && sig == Ai_info[Ships[objh.objp->instance].ai_index].goals[odx].signature;
 	}
 };
 
@@ -8138,6 +8164,611 @@ ADE_FUNC(isValid, l_CockpitDisplays, NULL, "Detects whether this handle is valid
 		return ADE_RETURN_FALSE;
 
 	return ade_set_args(L, "b", cdh->isValid());
+}
+
+//**********HANDLE: SoundEntry
+struct sound_entry_h
+{
+	int idx;
+
+	sound_entry_h()
+	{
+		idx = -1;
+	}
+
+	sound_entry_h(int n_idx)
+	{
+		idx = n_idx;
+	}
+
+	game_snd *Get()
+	{
+		if (!this->IsValid())
+			return NULL;
+
+		return &Snds[idx];
+	}
+
+	bool IsValid()
+	{
+		if (idx < 0 || idx > (int) Snds.size())
+			return false;
+
+		return true;
+	}
+
+	int getId() 
+	{
+		if (!IsValid())
+			return -1;
+
+		game_snd *snd = Get();
+
+		if (snd == NULL)
+			return -1;
+
+		return snd->id;
+	}
+
+};
+
+//**********HANDLE: SoundEntry
+ade_obj<sound_entry_h> l_SoundEntry("soundentry", "sounds.tbl table entry handle");
+
+ADE_VIRTVAR(DefaultVolume, l_SoundEntry, "number", "The default volume of this game sound", "number", "Volume in the range from 1 to 0 or -1 on error")
+{
+	sound_entry_h *seh = NULL;
+	float newVal = -1.0f;
+
+	if (!ade_get_args(L, "o|f", l_SoundEntry.GetPtr(&seh), &newVal))
+		return ade_set_error(L, "f", -1.0f);
+
+	if (seh == NULL || !seh->IsValid())
+		return ade_set_error(L, "f", -1.0f);
+
+	if (ADE_SETTING_VAR)
+	{
+		if (seh->Get() != NULL)
+		{
+			CAP(newVal, 0.0f, 1.0f);
+
+			seh->Get()->default_volume = newVal;
+		}
+	}
+
+	return ade_set_args(L, "f", seh->Get()->default_volume);
+}
+
+ADE_FUNC(getFilename, l_SoundEntry, NULL, "Returns the filename of this sound", "string", "filename or empty string on error")
+{
+	sound_entry_h *seh = NULL;
+
+	if (!ade_get_args(L, "o", l_SoundEntry.GetPtr(&seh)))
+		return ade_set_error(L, "s", "");
+
+	if (seh == NULL || !seh->IsValid())
+		return ade_set_error(L, "s", "");
+
+	return ade_set_args(L, "s", seh->Get()->filename);
+}
+
+ADE_FUNC(getDuration, l_SoundEntry, NULL, "Gives the length of the sound in seconds.", "number", "the length, or -1 on error")
+{
+	sound_entry_h *seh = NULL;
+
+	if (!ade_get_args(L, "o", l_SoundEntry.GetPtr(&seh)))
+		return ade_set_error(L, "f", -1.0f);
+
+	if (seh == NULL || !seh->IsValid())
+		return ade_set_error(L, "f", -1.0f);
+
+	return ade_set_args(L, "f", (i2fl(snd_get_duration(seh->getId())) / 1000.0f));
+}
+
+ADE_FUNC(get3DValues, l_SoundEntry, "vector Postion[, number radius=0.0]", "Computes the volume and the panning of the sound when it would be played from the specified position.<br>"
+	"If range is given then the volume will diminish when the listener is withing that distance to the source.<br>"
+	"The position of the listener is always the the current viewing position.", "number, number", "The volume and the panning, in that sequence, or both -1 on error")
+{
+	sound_entry_h *seh = NULL;
+	vec3d *sourcePos = NULL;
+	float radius = 0.0f;
+
+	float vol = 0.0f;
+	float pan = 0.0f;
+
+	if (!ade_get_args(L, "oo|f", l_SoundEntry.GetPtr(&seh), l_Vector.GetPtr(&sourcePos), &radius))
+		return ade_set_error(L, "ff", -1.0f, -1.0f);
+
+	if (seh == NULL || !seh->IsValid())
+		return ade_set_error(L, "ff", -1.0f, -1.0f);
+
+	int result = snd_get_3d_vol_and_pan(seh->Get(), sourcePos, &vol, &pan, radius);
+
+	if (result < 0)
+	{
+		return ade_set_args(L, "ff", -1.0f, -1.0f);
+	}
+	else
+	{
+		return ade_set_args(L, "ff", vol, pan);
+	}
+}
+
+ADE_FUNC(isValid, l_SoundEntry, NULL, "Detects whether handle is valid", "boolean", "true if valid, false if handle is invalid, nil if a syntax/type error occurs")
+{
+	sound_entry_h *seh;
+	if(!ade_get_args(L, "o", l_SoundEntry.GetPtr(&seh)))
+		return ADE_RETURN_NIL;
+
+	return ade_set_args(L, "b", seh->IsValid());
+}
+
+//**********HANDLE: Sound
+struct sound_h : public sound_entry_h
+{
+	int sig;
+
+	sound_h():sound_entry_h()
+	{
+		sig=-1;
+	}
+
+	sound_h(int n_gs_idx, int n_sig) : sound_entry_h(n_gs_idx)
+	{
+		sig=n_sig;
+	}
+
+	int getSignature()
+	{
+		if (!IsValid())
+			return -1;
+
+		return sig;
+	}
+
+	bool IsSoundValid()
+	{
+		if(sig < 0 || ds_get_channel(sig) < 0)
+			return false;
+
+		return true;
+	}
+
+	bool IsValid()
+	{
+		if(!sound_entry_h::IsValid())
+			return false;
+
+		if(sig < 0 || ds_get_channel(sig) < 0)
+			return false;
+
+		return true;
+	}
+};
+
+ade_obj<sound_h> l_Sound("sound", "sound instance handle");
+
+ADE_VIRTVAR(Pitch, l_Sound, "number", "Pitch of sound, from 100 to 100000", "number", "Pitch, or 0 if handle is invalid")
+{
+	sound_h *sh;
+	int newpitch = 100;
+	if(!ade_get_args(L, "o|i", l_Sound.GetPtr(&sh), &newpitch))
+		return ade_set_error(L, "f", 0.0f);
+
+	if (!sh->IsSoundValid())
+		return ade_set_error(L, "f", 0.0f);
+
+	if(ADE_SETTING_VAR)
+	{
+		if(newpitch < 100)
+			newpitch = 100;
+		if(newpitch > 100000)
+			newpitch = 100000;
+
+		snd_set_pitch(sh->sig, newpitch);
+	}
+
+	return ade_set_args(L, "f", snd_get_pitch(sh->sig));
+}
+
+ADE_FUNC(getRemainingTime, l_Sound, NULL, "The remaining time of this sound handle", "number", "Remaining time, or -1 on error")
+{
+	sound_h *sh;
+	if(!ade_get_args(L, "o", l_Sound.GetPtr(&sh)))
+		return ade_set_error(L, "f", -1.0f);
+
+	if (!sh->IsSoundValid())
+		return ade_set_error(L, "f", -1.0f);
+
+	int remaining = snd_time_remaining(sh->getSignature());
+
+	return ade_set_args(L, "f", i2fl(remaining) / 1000.0f);
+}
+
+ADE_FUNC(setVolume, l_Sound, "number", "Sets the volume of this sound instance", "boolean", "true if succeeded, false otherwise")
+{
+	sound_h *sh;
+	float newVol = -1.0f;
+	if(!ade_get_args(L, "of", l_Sound.GetPtr(&sh), &newVol))
+		return ADE_RETURN_FALSE;
+
+	if (!sh->IsSoundValid())
+		return ADE_RETURN_FALSE;
+
+	CAP(newVol, 0.0f, 1.0f);
+
+	snd_set_volume(sh->getSignature(), newVol);
+
+	return ADE_RETURN_TRUE;
+}
+
+ADE_FUNC(setPanning, l_Sound, "number", "Sets the panning of this sound. Argument ranges from -1 for left to 1 for right", "boolean", "true if succeeded, false otherwise")
+{
+	sound_h *sh;
+	float newPan = -1.0f;
+	if(!ade_get_args(L, "of", l_Sound.GetPtr(&sh), &newPan))
+		return ADE_RETURN_FALSE;
+
+	if (!sh->IsSoundValid())
+		return ADE_RETURN_FALSE;
+
+	CAP(newPan, -1.0f, 1.0f);
+
+	snd_set_pan(sh->getSignature(), newPan);
+
+	return ADE_RETURN_TRUE;
+}
+
+
+ADE_FUNC(setPosition, l_Sound, "number[,boolean = true]", 
+		 "Sets the absolute position of the sound. If boolean argument is true then the value is given as a percentage<br>"
+		 "This operation fails if there is no backing soundentry!", 
+		 "boolean", "true if successfull, false otherwise")
+{
+	sound_h *sh;
+	float val = -1.0f;
+	bool percent = true;
+	if(!ade_get_args(L, "of|b", l_Sound.GetPtr(&sh), &val, &percent))
+		return ADE_RETURN_FALSE;
+
+	if (!sh->IsValid())
+		return ADE_RETURN_FALSE;
+
+	if (val <= 0.0f)
+		return ADE_RETURN_FALSE;
+
+	snd_set_pos(sh->getSignature(), sh->Get(), val, percent);
+
+	return ADE_RETURN_TRUE;
+}
+
+ADE_FUNC(rewind, l_Sound, "number", "Rewinds the sound by the given number of seconds<br>"
+		 "This operation fails if there is no backing soundentry!", "boolean", "true if succeeded, false otherwise")
+{
+	sound_h *sh;
+	float val = -1.0f;
+	if(!ade_get_args(L, "of", l_Sound.GetPtr(&sh), &val))
+		return ADE_RETURN_FALSE;
+
+	if (!sh->IsValid())
+		return ADE_RETURN_FALSE;
+
+	if (val <= 0.0f)
+		return ADE_RETURN_FALSE;
+
+	snd_rewind(sh->getSignature(), sh->Get(), val);
+
+	return ADE_RETURN_TRUE;
+}
+
+ADE_FUNC(skip, l_Sound, "number", "Skips the given number of seconds of the sound<br>"
+		 "This operation fails if there is no backing soundentry!", "boolean", "true if succeeded, false otherwise")
+{
+	sound_h *sh;
+	float val = -1.0f;
+	if(!ade_get_args(L, "of", l_Sound.GetPtr(&sh), &val))
+		return ADE_RETURN_FALSE;
+
+	if (!sh->IsValid())
+		return ADE_RETURN_FALSE;
+
+	if (val <= 0.0f)
+		return ADE_RETURN_FALSE;
+
+	snd_ffwd(sh->getSignature(), sh->Get(), val);
+
+	return ADE_RETURN_TRUE;
+}
+
+ADE_FUNC(isPlaying, l_Sound, NULL, "Specifies if this handle is currently playing", "boolean", "true if playing, false if otherwise")
+{
+	sound_h *sh;
+	if(!ade_get_args(L, "o", l_Sound.GetPtr(&sh)))
+		return ade_set_error(L, "b", false);
+
+	if (!sh->IsSoundValid())
+		return ade_set_error(L, "b", false);
+
+	return ade_set_args(L, "b", snd_is_playing(sh->getSignature()) == 1);
+}
+
+ADE_FUNC(stop, l_Sound, NULL, "Stops the sound of this handle", "boolean", "true if succeeded, false otherwise")
+{
+	sound_h *sh;
+	if(!ade_get_args(L, "o", l_Sound.GetPtr(&sh)))
+		return ade_set_error(L, "b", false);
+
+	if (!sh->IsSoundValid())
+		return ade_set_error(L, "b", false);
+
+	snd_stop(sh->getSignature());
+
+	return ADE_RETURN_TRUE;
+}
+
+ADE_FUNC(isValid, l_Sound, NULL, "Detects whether the whole handle is valid", "boolean", "true if valid, false if handle is invalid, nil if a syntax/type error occurs")
+{
+	sound_h *sh;
+	if(!ade_get_args(L, "o", l_Sound.GetPtr(&sh)))
+		return ADE_RETURN_NIL;
+
+	return ade_set_args(L, "b", sh->IsValid());
+}
+
+ADE_FUNC(isSoundValid, l_Sound, NULL, "Checks if only the sound is valid, should be used for non soundentry sounds",
+		 "boolean", "true if valid, false if handle is invalid, nil if a syntax/type error occurs")
+{
+	sound_h *sh;
+	if(!ade_get_args(L, "o", l_Sound.GetPtr(&sh)))
+		return ADE_RETURN_NIL;
+
+	return ade_set_args(L, "b", sh->IsSoundValid());
+}
+
+ade_obj<sound_h> l_Sound3D("3Dsound", "3D sound instance handle", &l_Sound);
+
+ADE_FUNC(updatePosition, l_Sound3D, "vector Position[, number radius = 0.0]", "Updates the given 3D sound with the specified position and an optional range value", "boolean", "true if succeesed, false otherwise")
+{
+	sound_h *sh;
+	vec3d *newPos = NULL;
+	float radius = 0.0f;
+
+	if(!ade_get_args(L, "oo|f", l_Sound.GetPtr(&sh), l_Vector.GetPtr(&newPos), &radius))
+		return ade_set_error(L, "b", false);
+
+	if (!sh->IsValid() || newPos == NULL)
+		return ade_set_error(L, "b", false);
+
+	snd_update_3d_pos(sh->getSignature(), sh->Get(), newPos, radius);
+
+	return ADE_RETURN_TRUE;
+}
+
+//**********HANDLE: Soundfile
+ade_obj<int> l_Soundfile("soundfile", "Handle to a sound file");
+
+ADE_VIRTVAR(Duration, l_Soundfile, "number", "The duration of the sound file, in seconds", "number", "The duration or -1 on error")
+{
+	int snd_idx = -1;
+
+	if (!ade_get_args(L, "o", l_Soundfile.Get(&snd_idx)))
+		return ade_set_error(L, "f", -1.0f);
+
+	if (snd_idx < 0)
+		return ade_set_error(L, "f", -1.0f);
+
+	int duration = snd_get_duration(snd_idx);
+
+	return ade_set_args(L, "f", i2fl(duration) / 1000.0f);
+}
+
+ADE_VIRTVAR(Filename, l_Soundfile, "string", "The filename of the file", "string", "The file name or empty string on error")
+{
+	int snd_idx = -1;
+
+	if (!ade_get_args(L, "o", l_Soundfile.Get(&snd_idx)))
+		return ade_set_error(L, "s", "");
+
+	if (snd_idx < 0)
+		return ade_set_error(L, "s", "");
+
+	const char* filename = snd_get_filename(snd_idx);
+
+	return ade_set_args(L, "s", filename);
+}
+
+
+ADE_FUNC(play, l_Soundfile, "[number volume = 1.0[, number panning = 0.0]]", "Plays the sound", "sound", "A sound handle or invalid handle on error")
+{
+	int snd_idx = -1;
+	float volume = 1.0f;
+	float panning = 0.0f;
+
+	if (!ade_get_args(L, "o|ff", l_Soundfile.Get(&snd_idx)))
+		return ade_set_error(L, "o", l_Sound.Set(sound_h()));
+
+	if (snd_idx < 0)
+		return ade_set_error(L, "o", l_Sound.Set(sound_h()));
+
+	if (volume < 0.0f)
+	{
+		LuaError(L, "Invalid volume value of %f specified!", volume);
+		return ade_set_error(L, "o", l_Sound.Set(sound_h()));
+	}
+
+	int handle = snd_play_raw(snd_idx, panning, volume);
+	
+	return ade_set_args(L, "o", l_Sound.Set(sound_h(-1, handle)));
+}
+
+ADE_FUNC(isValid, l_Soundfile, NULL, "Checks if the soundfile handle is valid", "boolean", "true if valid, false otherwise")
+{	
+	int idx = -1;
+	if (!ade_get_args(L, "o", l_Soundfile.Get(&idx)))
+		return ADE_RETURN_FALSE;
+
+	return ade_set_args(L, "b", idx >= 0);
+}
+
+//**********HANDLE: Persona
+ade_obj<int> l_Persona("persona", "Persona handle");
+
+ADE_VIRTVAR(Name, l_Persona, "string", "The name of the persona", "string", "The name or empty string on error")
+{
+	int idx = -1;
+
+	if (!ade_get_args(L, "o", l_Persona.Get(&idx)))
+		return ade_set_error(L, "s", "");
+
+	if (Personas == NULL)
+		return ade_set_error(L, "s", "");
+
+	if (idx < 0 || idx >= Num_personas)
+		return ade_set_error(L, "s", "");
+
+	return ade_set_args(L, "s", Personas[idx].name);
+}
+
+ADE_FUNC(isValid, l_Persona, NULL, "Detect if the handle is valid", "boolean", "true if valid, false otherwise")
+{
+	int idx = -1;
+
+	if (!ade_get_args(L, "o", l_Persona.Get(&idx)))
+		return ADE_RETURN_FALSE;
+
+	return ade_set_args(L, "b", idx >= 0 && idx < Num_personas);
+}
+
+//**********HANDLE: Message
+ade_obj<int> l_Message("message", "Handle to a mission message");
+
+ADE_VIRTVAR(Name, l_Message, "string", "The name of the message as specified in the mission file", "string", "The name or an empty string if handle is invalid")
+{
+	int idx = -1;
+	if (!ade_get_args(L, "o", l_Message.Get(&idx)))
+		return ade_set_error(L, "s", "");
+	
+	if (idx < 0 && idx >= (int) Messages.size())
+		return ade_set_error(L, "s", "");
+
+	return ade_set_args(L, "s", Messages[idx].name);
+}
+
+ADE_VIRTVAR(Message, l_Message, "string", "The unaltered text of the message, see getMessage() for options to replace variables<br>"
+			"<b>NOTE:</b> Changing the text will also change the text for messages not yet played but already in the message queue!",
+			"string", "The message or an empty string if handle is invalid")
+{
+	int idx = -1;
+	char* newText = NULL;
+	if (!ade_get_args(L, "o|s", l_Message.Get(&idx), &newText))
+		return ade_set_error(L, "s", "");
+	
+	if (idx < 0 && idx >= (int) Messages.size())
+		return ade_set_error(L, "s", "");
+
+	if (ADE_SETTING_VAR && newText != NULL)
+	{
+		if (strlen(newText) > MESSAGE_LENGTH)
+			LuaError(L, "New message text is too long, maximum is %d!", MESSAGE_LENGTH);
+		else
+			strcpy_s(Messages[idx].message, newText);
+	}
+
+	return ade_set_args(L, "s", Messages[idx].message);
+}
+
+// from mission/missionmessage.cpp
+extern int add_wave( const char *wave_name );
+ADE_VIRTVAR(VoiceFile, l_Message, "soundfile", "The voice file of the message", "soundfile", "The voice file handle or invalid handle when not present")
+{
+	int idx = -1;
+	int sndIdx = -1;
+
+	if (!ade_get_args(L, "o|o", l_Message.Get(&idx), l_Soundfile.Get(&sndIdx)))
+		return ade_set_error(L, "o", l_Soundfile.Set(-1));
+	
+	if (idx < 0 && idx >= (int) Messages.size())
+		return ade_set_error(L, "o", l_Soundfile.Set(-1));
+
+	MissionMessage* msg = &Messages[idx];
+
+	if (ADE_SETTING_VAR)
+	{
+		if (sndIdx >= 0)
+		{
+			const char* newFilename = snd_get_filename(sndIdx);
+
+			msg->wave_info.index = add_wave(newFilename);
+		}
+		else
+		{
+			msg->wave_info.index = -1;
+		}
+	}
+
+	if (msg->wave_info.index < 0)
+	{
+		return ade_set_args(L, "o", l_Soundfile.Set(-1));
+	}
+	else
+	{
+		int index = msg->wave_info.index;
+		// Load the sound before using it
+		message_load_wave(index, Message_waves[index].name);
+		
+		return ade_set_args(L, "o", l_Soundfile.Set(Message_waves[index].num));
+	}
+}
+
+ADE_VIRTVAR(Persona, l_Message, "persona", "The persona of the message", "persona", "The persona handle or invalid handle if not present")
+{
+	int idx = -1;
+	int newPersona = -1;
+
+	if (!ade_get_args(L, "o|o", l_Message.Get(&idx), l_Persona.Get(&newPersona)))
+		return ade_set_error(L, "o", l_Soundfile.Set(-1));
+	
+	if (idx < 0 && idx >= (int) Messages.size())
+		return ade_set_error(L, "o", l_Soundfile.Set(-1));
+	
+	if (ADE_SETTING_VAR && newPersona >= 0 && newPersona < Num_personas)
+	{
+		Messages[idx].persona_index = newPersona;
+	}
+
+	return ade_set_args(L, "o", l_Persona.Set(Messages[idx].persona_index));
+}
+
+ADE_FUNC(getMessage, l_Message, "[boolean replaceVars = true]", "Gets the text of the message and optionally replaces SEXP variables with their respective values.", "string", "The message or an empty string if handle is invalid")
+{
+	int idx = -1;
+	bool replace = true;
+	if (!ade_get_args(L, "o|b", l_Message.Get(&idx), &replace))
+		return ade_set_error(L, "s", "");
+	
+	if (idx < 0 && idx >= (int) Messages.size())
+		return ade_set_error(L, "s", "");
+
+	if (!replace)
+		return ade_set_args(L, "s", Messages[idx].message);
+	else
+	{
+		char temp_buf[MESSAGE_LENGTH];
+		strcpy_s(temp_buf, Messages[idx].message);
+
+		sexp_replace_variable_names_with_values(temp_buf, MESSAGE_LENGTH);
+
+		return ade_set_args(L, "s", temp_buf);
+	}
+}
+
+ADE_FUNC(isValid, l_Message, NULL, "Checks if the message handle is valid", "boolean", "true if valid, false otherwise")
+{	
+	int idx = -1;
+	if (!ade_get_args(L, "o", l_Message.Get(&idx)))
+		return ADE_RETURN_FALSE;
+
+	return ade_set_args(L, "b", idx >= 0 && idx < (int) Messages.size());
 }
 
 //**********HANDLE: Wing
@@ -9278,6 +9909,7 @@ ADE_FUNC(giveOrder, l_Ship, "enumeration Order, [object Target=nil, subsystem Ta
 				ai_mode = AI_GOAL_EVADE_SHIP;
 				ai_shipname = Ships[tgh->objp->instance].ship_name;
 			}
+			break;
 		}
 		case LE_ORDER_STAY_NEAR:
 		{
@@ -9679,7 +10311,7 @@ ADE_FUNC(EtsSetIndexes, l_Ship, "number Engine Index, number Shield Index, numbe
 	}
 }
 
-ADE_FUNC(getWing, l_Ship, NULL, "Returns the ship's wing", "Wing", "Wing handle, or invalid wing handle if ship is not part of a wing")
+ADE_FUNC(getWing, l_Ship, NULL, "Returns the ship's wing", "wing", "Wing handle, or invalid wing handle if ship is not part of a wing")
 {
 	object_h *objh = NULL;
 	ship *shipp = NULL;
@@ -9801,14 +10433,12 @@ ADE_VIRTVAR(Target, l_Weapon, "object", "Target of weapon. Value may also be a d
 		{
 			if(wp->target_sig != newh->sig)
 			{
-				wp->target_num = OBJ_INDEX(newh->objp);
-				wp->target_sig = newh->sig;
+				weapon_set_tracking_info(OBJ_INDEX(objh->objp), objh->objp->parent, OBJ_INDEX(newh->objp), 1);
 			}
 		}
 		else
 		{
-			wp->target_num = -1;
-			wp->target_sig = 0;
+			weapon_set_tracking_info(OBJ_INDEX(objh->objp), objh->objp->parent, -1);
 		}
 	}
 
@@ -9870,20 +10500,16 @@ ADE_VIRTVAR(HomingObject, l_Weapon, "object", "Object that weapon will home in o
 
 	if(ADE_SETTING_VAR)
 	{
-		if(newh != NULL && newh->IsValid())
+		if (newh != NULL && newh->IsValid())
 		{
-			if(wp->target_sig != newh->sig)
+			if (wp->target_sig != newh->sig)
 			{
-				wp->homing_object = newh->objp;
-				wp->homing_pos = newh->objp->pos;
-				wp->homing_subsys = NULL;
+				weapon_set_tracking_info(OBJ_INDEX(objh->objp), objh->objp->parent, OBJ_INDEX(newh->objp), 1);
 			}
 		}
 		else
 		{
-			wp->homing_object = NULL;
-			wp->homing_pos = vmd_zero_vector;
-			wp->homing_subsys = NULL;
+			weapon_set_tracking_info(OBJ_INDEX(objh->objp), objh->objp->parent, -1);
 		}
 	}
 
@@ -9893,7 +10519,8 @@ ADE_VIRTVAR(HomingObject, l_Weapon, "object", "Object that weapon will home in o
 		return ade_set_object_with_breed(L, OBJ_INDEX(wp->homing_object));
 }
 
-ADE_VIRTVAR(HomingPosition, l_Weapon, "vector", "Position that weapon will home in on (World vector)", "vector", "Homing point, or null vector if weapon handle is invalid")
+ADE_VIRTVAR(HomingPosition, l_Weapon, "vector", "Position that weapon will home in on (World vector), setting this without a homing object in place will not have any effect!",
+	"vector", "Homing point, or null vector if weapon handle is invalid")
 {
 	object_h *objh;
 	vec3d *v3;
@@ -9913,14 +10540,10 @@ ADE_VIRTVAR(HomingPosition, l_Weapon, "vector", "Position that weapon will home 
 	{
 		if(v3 != NULL)
 		{
-			wp->homing_object = NULL;
-			wp->homing_subsys = NULL;
 			wp->homing_pos = *v3;
 		}
 		else
 		{
-			wp->homing_object = NULL;
-			wp->homing_subsys = NULL;
 			wp->homing_pos = vmd_zero_vector;
 		}
 	}
@@ -10375,7 +10998,7 @@ ADE_FUNC(isValid, l_Player, NULL, "Detects whether handle is valid", "boolean", 
 	if(!ade_get_args(L, "o", l_Player.Get(&idx)))
 		return ADE_RETURN_NIL;
 
-	if(idx < 0 || idx >= Player_num)
+	if (idx < 0 || idx >= MAX_PLAYERS)
 		return ADE_RETURN_FALSE;
 
 	return ADE_RETURN_TRUE;
@@ -10387,7 +11010,7 @@ ADE_FUNC(getName, l_Player, NULL, "Gets current player name", "string", "Player 
 	if(!ade_get_args(L, "o", l_Player.Get(&idx)))
 		return ade_set_error(L, "s", "");
 
-	if(idx < 0 || idx >= Player_num)
+	if (idx < 0 || idx >= MAX_PLAYERS)
 		return ade_set_error(L, "s", "");
 
 	return ade_set_args(L, "s", Players[idx].callsign);
@@ -10399,7 +11022,7 @@ ADE_FUNC(getCampaignFilename, l_Player, NULL, "Gets current player campaign file
 	if(!ade_get_args(L, "o", l_Player.Get(&idx)))
 		return ade_set_error(L, "s", "");
 
-	if(idx < 0 || idx >= Player_num)
+	if (idx < 0 || idx >= MAX_PLAYERS)
 		return ade_set_error(L, "s", "");
 
 	return ade_set_args(L, "s", Players[idx].current_campaign);
@@ -10411,7 +11034,7 @@ ADE_FUNC(getImageFilename, l_Player, NULL, "Gets current player image filename",
 	if(!ade_get_args(L, "o", l_Player.Get(&idx)))
 		return ade_set_error(L, "s", "");
 
-	if(idx < 0 || idx >= Player_num)
+	if (idx < 0 || idx >= MAX_PLAYERS)
 		return ade_set_error(L, "s", "");
 
 	return ade_set_args(L, "s", Players[idx].image_filename);
@@ -10450,7 +11073,7 @@ ADE_FUNC(getSquadronName, l_Player, NULL, "Gets current player squad name", "str
 	if(!ade_get_args(L, "o", l_Player.Get(&idx)))
 		return ade_set_error(L, "s", "");
 
-	if(idx < 0 || idx >= Player_num)
+	if (idx < 0 || idx >= MAX_PLAYERS)
 		return ade_set_error(L, "s", "");
 
 	return ade_set_args(L, "s", Players[idx].s_squad_name);
@@ -10462,7 +11085,7 @@ ADE_FUNC(getMultiSquadronName, l_Player, NULL, "Gets current player multi squad 
 	if(!ade_get_args(L, "o", l_Player.Get(&idx)))
 		return ade_set_error(L, "s", "");
 
-	if(idx < 0 || idx >= Player_num)
+	if (idx < 0 || idx >= MAX_PLAYERS)
 		return ade_set_error(L, "s", "");
 
 	return ade_set_args(L, "s", Players[idx].m_squad_name);
@@ -10714,9 +11337,9 @@ ADE_FUNC(setFOV, l_Camera, "[number FOV, number Zoom Time, number Zoom Accelerat
 ADE_FUNC(setOrientation, l_Camera, "[world orientation Orientation, number Rotation Time, number Acceleration Time, number Deceleration time]",
 		"Sets camera orientation and velocity data."
 		"<br>Orientation is the final orientation for the camera, after it has finished moving. If not specified, the camera will simply stop at its current orientation."
-		"<br>Rotation time is how long total, including acceleration, the camera should take to rotate. If it is not specified, the camera will jump to the specified orientation."
-		"<br>Acceleration time is how long it should take the camera to get 'up to speed'. If not specified, the camera will instantly start moving."
-		"<br>Deceleration time is how long it should take the camera to slow down. If not specified, the camera will instantly stop moving.",
+		"<br>Rotation time (seconds) is how long total, including acceleration, the camera should take to rotate. If it is not specified, the camera will jump to the specified orientation."
+		"<br>Acceleration time (seconds) is how long it should take the camera to get 'up to speed'. If not specified, the camera will instantly start moving."
+		"<br>Deceleration time (seconds) is how long it should take the camera to slow down. If not specified, the camera will instantly stop moving.",
 		"boolean", "true if successful, false or nil otherwise")
 {
 	camid cid;
@@ -10747,9 +11370,9 @@ ADE_FUNC(setOrientation, l_Camera, "[world orientation Orientation, number Rotat
 ADE_FUNC(setPosition, l_Camera, "[wvector Position, number Translation Time, number Acceleration Time, number Deceleration Time]",
 		"Sets camera position and velocity data."
 		"<br>Position is the final position for the camera. If not specified, the camera will simply stop at its current position."
-		"<br>Translation time is how long total, including acceleration, the camera should take to move. If it is not specified, the camera will jump to the specified position."
-		"<br>Acceleration time is how long it should take the camera to get 'up to speed'. If not specified, the camera will instantly start moving."
-		"<br>Deceleration time is how long it should take the camera to slow down. If not specified, the camera will instantly stop moving.",
+		"<br>Translation time (seconds) is how long total, including acceleration, the camera should take to move. If it is not specified, the camera will jump to the specified position."
+		"<br>Acceleration time (seconds) is how long it should take the camera to get 'up to speed'. If not specified, the camera will instantly start moving."
+		"<br>Deceleration time (seconds) is how long it should take the camera to slow down. If not specified, the camera will instantly stop moving.",
 		"boolean", "true if successful, false or nil otherwise")
 {
 	camid cid;
@@ -10764,363 +11387,6 @@ ADE_FUNC(setPosition, l_Camera, "[wvector Position, number Translation Time, num
 		return ADE_RETURN_NIL;
 
 	cid.getCamera()->set_position(pos, time, acc_time, dec_time);
-
-	return ADE_RETURN_TRUE;
-}
-
-//**********HANDLE: SoundEntry
-struct sound_entry_h
-{
-	int type;
-	int idx;
-
-	sound_entry_h()
-	{
-		type = -1;
-		idx = -1;
-	}
-
-	sound_entry_h(int n_type, int n_idx)
-	{
-		type = n_type;
-		idx = n_idx;
-	}
-
-	game_snd *Get()
-	{
-		if (!this->IsValid())
-			return NULL;
-
-		return &Snds[idx];
-	}
-
-	bool IsValid()
-	{
-		if (idx < 0 || idx > (int) Snds.size())
-			return false;
-
-		return true;
-	}
-
-	int getId() 
-	{
-		if (!IsValid())
-			return -1;
-
-		game_snd *snd = Get();
-
-		if (snd == NULL)
-			return -1;
-
-		return snd->id;
-	}
-
-};
-
-ade_obj<sound_entry_h> l_SoundEntry("soundentry", "sounds.tbl table entry handle");
-
-ADE_VIRTVAR(DefaultVolume, l_SoundEntry, "number", "The default volume of this game sound", "number", "Volume in the range from 1 to 0 or -1 on error")
-{
-	sound_entry_h *seh = NULL;
-	float newVal = -1.0f;
-
-	if (!ade_get_args(L, "o|f", l_SoundEntry.GetPtr(&seh), &newVal))
-		return ade_set_error(L, "f", -1.0f);
-
-	if (seh == NULL || !seh->IsValid())
-		return ade_set_error(L, "f", -1.0f);
-
-	if (ADE_SETTING_VAR)
-	{
-		if (seh->Get() != NULL)
-		{
-			CAP(newVal, 0.0f, 1.0f);
-
-			seh->Get()->default_volume = newVal;
-		}
-	}
-
-	return ade_set_args(L, "f", seh->Get()->default_volume);
-}
-
-ADE_FUNC(getFilename, l_SoundEntry, NULL, "Returns the filename of this sound", "string", "filename or empty string on error")
-{
-	sound_entry_h *seh = NULL;
-
-	if (!ade_get_args(L, "o", l_SoundEntry.GetPtr(&seh)))
-		return ade_set_error(L, "s", "");
-
-	if (seh == NULL || !seh->IsValid())
-		return ade_set_error(L, "s", "");
-
-	return ade_set_args(L, "s", seh->Get()->filename);
-}
-
-ADE_FUNC(getDuration, l_SoundEntry, NULL, "Gives the length of the sound in seconds.", "number", "the length, or -1 on error")
-{
-	sound_entry_h *seh = NULL;
-
-	if (!ade_get_args(L, "o", l_SoundEntry.GetPtr(&seh)))
-		return ade_set_error(L, "f", -1.0f);
-
-	if (seh == NULL || !seh->IsValid())
-		return ade_set_error(L, "f", -1.0f);
-
-	return ade_set_args(L, "f", (i2fl(snd_get_duration(seh->getId())) / 1000.0f));
-}
-
-ADE_FUNC(get3DValues, l_SoundEntry, "vector Position[, number radius=0.0]", "Computes the volume and the panning of the sound when it would be played from the specified position.<br>"
-	"If range is given then the volume will diminish when the listener is withing that distance to the source.<br>"
-	"The position of the listener is always the the current viewing position.", "number, number", "The volume and the panning, in that sequence, or both -1 on error")
-{
-	sound_entry_h *seh = NULL;
-	vec3d *sourcePos = NULL;
-	float radius = 0.0f;
-
-	float vol = 0.0f;
-	float pan = 0.0f;
-
-	if (!ade_get_args(L, "oo|f", l_SoundEntry.GetPtr(&seh), l_Vector.GetPtr(&sourcePos), &radius))
-		return ade_set_error(L, "ff", -1.0f, -1.0f);
-
-	if (seh == NULL || !seh->IsValid())
-		return ade_set_error(L, "ff", -1.0f, -1.0f);
-
-	int result = snd_get_3d_vol_and_pan(seh->Get(), sourcePos, &vol, &pan, radius);
-
-	if (result < 0)
-	{
-		return ade_set_args(L, "ff", -1.0f, -1.0f);
-	}
-	else
-	{
-		return ade_set_args(L, "ff", vol, pan);
-	}
-}
-
-ADE_FUNC(isValid, l_SoundEntry, NULL, "Detects whether handle is valid", "boolean", "true if valid, false if handle is invalid, nil if a syntax/type error occurs")
-{
-	sound_entry_h *seh;
-	if(!ade_get_args(L, "o", l_SoundEntry.GetPtr(&seh)))
-		return ADE_RETURN_NIL;
-
-	return ade_set_args(L, "b", seh->IsValid());
-}
-
-//**********HANDLE: Sound
-struct sound_h : public sound_entry_h
-{
-	int sig;
-
-	sound_h():sound_entry_h()
-	{
-		sig=-1;
-	}
-
-	sound_h(int n_gs_type, int n_gs_idx, int n_sig) : sound_entry_h(n_gs_type, n_gs_idx)
-	{
-		sig=n_sig;
-	}
-
-	int getSignature()
-	{
-		if (!IsValid())
-			return -1;
-
-		return sig;
-	}
-
-	bool IsValid()
-	{
-		if(!sound_entry_h::IsValid())
-			return false;
-
-		if(sig < 0 || ds_get_channel(sig) < 0)
-			return false;
-
-		return true;
-	}
-};
-
-ade_obj<sound_h> l_Sound("sound", "sound instance handle");
-
-ADE_VIRTVAR(Pitch, l_Sound, "number", "Pitch of sound, from 100 to 100000", "number", "Pitch, or 0 if handle is invalid")
-{
-	sound_h *sh;
-	int newpitch = 100;
-	if(!ade_get_args(L, "o|i", l_Sound.GetPtr(&sh), &newpitch))
-		return ade_set_error(L, "f", 0.0f);
-
-	if (!sh->IsValid())
-		return ade_set_error(L, "f", 0.0f);
-
-	if(ADE_SETTING_VAR)
-	{
-		if(newpitch < 100)
-			newpitch = 100;
-		if(newpitch > 100000)
-			newpitch = 100000;
-
-		snd_set_pitch(sh->sig, newpitch);
-	}
-
-	return ade_set_args(L, "f", snd_get_pitch(sh->sig));
-}
-
-ADE_FUNC(getRemainingTime, l_Sound, NULL, "The remaining time of this sound handle", "number", "Remaining time, or -1 on error")
-{
-	sound_h *sh;
-	if(!ade_get_args(L, "o", l_Sound.GetPtr(&sh)))
-		return ade_set_error(L, "f", -1.0f);
-
-	if (!sh->IsValid())
-		return ade_set_error(L, "f", -1.0f);
-
-	int remaining = snd_time_remaining(sh->getSignature());
-
-	return ade_set_args(L, "f", i2fl(remaining) / 1000.0f);
-}
-
-ADE_FUNC(setVolume, l_Sound, "number", "Sets the volume of this sound instance", "boolean", "true if succeeded, false otherwise")
-{
-	sound_h *sh;
-	float newVol = -1.0f;
-	if(!ade_get_args(L, "of", l_Sound.GetPtr(&sh), &newVol))
-		return ADE_RETURN_FALSE;
-
-	if (!sh->IsValid())
-		return ADE_RETURN_FALSE;
-
-	CAP(newVol, 0.0f, 1.0f);
-
-	snd_set_volume(sh->getSignature(), newVol);
-
-	return ADE_RETURN_TRUE;
-}
-
-ADE_FUNC(setPanning, l_Sound, "number", "Sets the panning of this sound. Argument ranges from -1 for left to 1 for right", "boolean", "true if succeeded, false otherwise")
-{
-	sound_h *sh;
-	float newPan = -1.0f;
-	if(!ade_get_args(L, "of", l_Sound.GetPtr(&sh), &newPan))
-		return ADE_RETURN_FALSE;
-
-	if (!sh->IsValid())
-		return ADE_RETURN_FALSE;
-
-	CAP(newPan, -1.0f, 1.0f);
-
-	snd_set_pan(sh->getSignature(), newPan);
-
-	return ADE_RETURN_TRUE;
-}
-
-
-ADE_FUNC(setPosition, l_Sound, "number[,boolean = true]", "Sets the absolute position of the sound. If boolean argument is true then the value is given as a percentage", "boolean", "true if successfull, false otherwise")
-{
-	sound_h *sh;
-	float val = -1.0f;
-	bool percent = true;
-	if(!ade_get_args(L, "of|b", l_Sound.GetPtr(&sh), &val, &percent))
-		return ADE_RETURN_FALSE;
-
-	if (!sh->IsValid())
-		return ADE_RETURN_FALSE;
-
-	if (val <= 0.0f)
-		return ADE_RETURN_FALSE;
-
-	snd_set_pos(sh->getSignature(), sh->Get(), val, percent);
-
-	return ADE_RETURN_TRUE;
-}
-
-ADE_FUNC(rewind, l_Sound, "number", "Rewinds the sound by the given number of seconds", "boolean", "true if succeeded, false otherwise")
-{
-	sound_h *sh;
-	float val = -1.0f;
-	if(!ade_get_args(L, "of", l_Sound.GetPtr(&sh), &val))
-		return ADE_RETURN_FALSE;
-
-	if (!sh->IsValid())
-		return ADE_RETURN_FALSE;
-
-	if (val <= 0.0f)
-		return ADE_RETURN_FALSE;
-
-	snd_rewind(sh->getSignature(), sh->Get(), val);
-
-	return ADE_RETURN_TRUE;
-}
-
-ADE_FUNC(skip, l_Sound, "number", "Skips the given number of seconds of the sound", "boolean", "true if succeeded, false otherwise")
-{
-	sound_h *sh;
-	float val = -1.0f;
-	if(!ade_get_args(L, "of", l_Sound.GetPtr(&sh), &val))
-		return ADE_RETURN_FALSE;
-
-	if (!sh->IsValid())
-		return ADE_RETURN_FALSE;
-
-	if (val <= 0.0f)
-		return ADE_RETURN_FALSE;
-
-	snd_ffwd(sh->getSignature(), sh->Get(), val);
-
-	return ADE_RETURN_TRUE;
-}
-
-ADE_FUNC(isPlaying, l_Sound, NULL, "Specifies if this handle is currently playing", "boolean", "true if playing, false if otherwise")
-{
-	sound_h *sh;
-	if(!ade_get_args(L, "o", l_Sound.GetPtr(&sh)))
-		return ade_set_error(L, "b", false);
-
-	if (!sh->IsValid())
-		return ade_set_error(L, "b", false);
-
-	return ade_set_args(L, "b", snd_is_playing(sh->getSignature()) == 1);
-}
-
-ADE_FUNC(stop, l_Sound, NULL, "Stops the sound of this handle", "boolean", "true if succeeded, false otherwise")
-{
-	sound_h *sh;
-	if(!ade_get_args(L, "o", l_Sound.GetPtr(&sh)))
-		return ade_set_error(L, "b", false);
-
-	if (!sh->IsValid())
-		return ade_set_error(L, "b", false);
-
-	snd_stop(sh->getSignature());
-
-	return ADE_RETURN_TRUE;
-}
-
-ADE_FUNC(isValid, l_Sound, NULL, "Detects whether handle is valid", "boolean", "true if valid, false if handle is invalid, nil if a syntax/type error occurs")
-{
-	sound_h *sh;
-	if(!ade_get_args(L, "o", l_Sound.GetPtr(&sh)))
-		return ADE_RETURN_NIL;
-
-	return ade_set_args(L, "b", sh->IsValid());
-}
-
-ade_obj<sound_h> l_Sound3D("3Dsound", "3D sound instance handle", &l_Sound);
-
-ADE_FUNC(updatePosition, l_Sound3D, "vector Position[, number radius = 0.0]", "Updates the given 3D sound with the specified position and an optional range value", "boolean", "true if succeesed, false otherwise")
-{
-	sound_h *sh;
-	vec3d *newPos = NULL;
-	float radius = 0.0f;
-
-	if(!ade_get_args(L, "oo|f", l_Sound.GetPtr(&sh), l_Vector.GetPtr(&newPos), &radius))
-		return ade_set_error(L, "b", false);
-
-	if (!sh->IsValid() || newPos == NULL)
-		return ade_set_error(L, "b", false);
-
-	snd_update_3d_pos(sh->getSignature(), sh->Get(), newPos, radius);
 
 	return ADE_RETURN_TRUE;
 }
@@ -11653,8 +11919,22 @@ ADE_FUNC(getSoundentry, l_Audio, "string/number", "Return a sound entry matching
 	}
 	else
 	{
-		return ade_set_args(L, "o", l_SoundEntry.Set(sound_entry_h(0, index)));
+		return ade_set_args(L, "o", l_SoundEntry.Set(sound_entry_h(index)));
 	}
+}
+
+ADE_FUNC(loadSoundfile, l_Audio, "string filename", "Loads the specified sound file", "soundfile", "A soundfile handle")
+{
+	char* fileName = NULL;
+
+	if (!ade_get_args(L, "s", &fileName))
+		return ade_set_error(L, "o", l_Soundfile.Set(-1));
+
+	game_snd tmp_gs;
+	strcpy_s( tmp_gs.filename, fileName );
+	int n = snd_load( &tmp_gs, 0 );
+
+	return ade_set_error(L, "o", l_Soundfile.Set(n));
 }
 
 ADE_FUNC(playSound, l_Audio, "soundentry", "Plays the specified sound entry handle", "sound", "A handle to the playing sound")
@@ -11675,7 +11955,7 @@ ADE_FUNC(playSound, l_Audio, "soundentry", "Plays the specified sound entry hand
 	}
 	else
 	{
-		return ade_set_args(L, "o", l_Sound.Set(sound_h(0, seh->idx, handle)));
+		return ade_set_args(L, "o", l_Sound.Set(sound_h(seh->idx, handle)));
 	}
 }
 
@@ -11697,7 +11977,7 @@ ADE_FUNC(playLoopingSound, l_Audio, "soundentry", "Plays the specified sound as 
 	}
 	else
 	{
-		return ade_set_args(L, "o", l_Sound.Set(sound_h(0, seh->idx, handle)));
+		return ade_set_args(L, "o", l_Sound.Set(sound_h(seh->idx, handle)));
 	}
 }
 
@@ -11721,7 +12001,7 @@ ADE_FUNC(play3DSound, l_Audio, "soundentry[, vector source[, vector listener]]",
 	}
 	else
 	{
-		return ade_set_args(L, "o", l_Sound3D.Set(sound_h(0, seh->idx, handle)));
+		return ade_set_args(L, "o", l_Sound3D.Set(sound_h(seh->idx, handle)));
 	}
 }
 
@@ -11780,20 +12060,35 @@ ADE_FUNC(playMusic, l_Audio, "string Filename, [float volume = 1.0, bool looping
 	return ade_set_args(L, "i", ah);
 }
 
-ADE_FUNC(stopMusic, l_Audio, "int audiohandle, [bool fade = false]", "Stops a playing music file, provided audiohandle is valid", NULL, NULL)
+ADE_FUNC(stopMusic, l_Audio, "int audiohandle, [bool fade = false], [string 'briefing|credits|mainhall']", "Stops a playing music file, provided audiohandle is valid. If the 3rd arg is set to one of briefing,credits,mainhall then that music will be stopped despite the audiohandle given.", NULL, NULL)
 {
 	int ah;
 	bool fade = false;
-	if(!ade_get_args(L, "i|b", &ah, &fade))
+	char *music_type = NULL;
+
+	if(!ade_get_args(L, "i|bs", &ah, &fade, &music_type))
 		return ADE_RETURN_NIL;
 
-	if (ah >= MAX_AUDIO_STREAMS || ah < 0 ) 
+	if (ah >= MAX_AUDIO_STREAMS || ah < 0 )
 		return ADE_RETURN_NIL;
 
-	audiostream_close_file(ah, fade);
+	if (music_type == NULL) {
+		audiostream_close_file(ah, fade);
+	} else {
+		if (!stricmp(music_type, "briefing"))	{
+			briefing_stop_music(fade);
+		} else if (!stricmp(music_type, "credits")) {
+			credits_stop_music(fade);
+		} else if (!stricmp(music_type, "mainhall")) {
+			main_hall_stop_music(fade);
+		} else {
+			LuaError(L, "Invalid music type (%s) passed to stopMusic", music_type);
+		}
+	}
+
 	return ADE_RETURN_NIL;
-	
 }
+
 
 //**********LIBRARY: Base
 ade_lib l_Base("Base", NULL, "ba", "Base FreeSpace 2 functions");
@@ -11856,7 +12151,7 @@ ADE_FUNC(getFrametime, l_Base, "[Do not adjust for time compression (Boolean)]",
 	return ade_set_args(L, "f", b ? flRealframetime : flFrametime);
 }
 
-ADE_FUNC(getCurrentGameState, l_Base, "[Depth (number)]", "Gets current FreeSpace state; if a depth is specified, the state at that depth is returned. (IE at the in-game options game, a depth of 1 would give you the game state, while the function defaults to 0, which would be the options screen.", "state", "Current game state at specified depth, or invalid handle if no game state is active yet")
+ADE_FUNC(getCurrentGameState, l_Base, "[Depth (number)]", "Gets current FreeSpace state; if a depth is specified, the state at that depth is returned. (IE at the in-game options game, a depth of 1 would give you the game state, while the function defaults to 0, which would be the options screen.", "gamestate", "Current game state at specified depth, or invalid handle if no game state is active yet")
 {
 	int depth = 0;
 	ade_get_args(L, "|i", &depth);
@@ -11882,6 +12177,11 @@ ADE_FUNC(getCurrentMPStatus, l_Base, "NIL", "Gets this computers current MP stat
 		return ade_set_args(L, "s", "MULTIPLAYER_STANDALONE");
 
 	return ade_set_args(L, "s", "SINGLEPLAYER");
+}
+
+ADE_FUNC(getCurrentPlayer, l_Base, NULL, "Gets a handle of the currently used player.<br><b>Note:</b> If there is no current player then the first player will be returned, check the game state to make sure you have a valid player handle.", "player", "Player handle")
+{
+	return ade_set_args(L, "o", l_Player.Set(Player_num));
 }
 
 ADE_FUNC(setControlMode, l_Base, "NIL or enumeration LE_*_CONTROL", "Sets the current control mode for the game.", "string", "Current control mode")
@@ -12419,6 +12719,24 @@ ADE_VIRTVAR(HUDDrawn, l_HUD, "boolean", "Current HUD draw status", "boolean", "I
 		return ADE_RETURN_FALSE;
 }
 
+ADE_VIRTVAR(HUDDisabledExceptMessages, l_HUD, "boolean", "Specifies if only the messages gauges of the hud are drawn", "boolean", "true if only the message gauges are drawn, false otherwise")
+{
+	bool to_draw = false;
+
+	if (!ade_get_args(L, "*|b", &to_draw))
+		return ADE_RETURN_NIL;
+
+	if (ADE_SETTING_VAR)
+	{
+		hud_disable_except_messages(to_draw);
+	}
+
+	if (hud_disabled_except_messages())
+		return ADE_RETURN_TRUE;
+	else
+		return ADE_RETURN_FALSE;
+}
+
 ADE_FUNC(setHUDGaugeColor, l_HUD, "number (index number of the gauge), [number red, number green, number blue, number alpha]", "Color used to draw the gauge", "boolean", "If the operation was successful")
 {
 	int idx = -1; 
@@ -12705,6 +13023,14 @@ ADE_FUNC(createCamera, l_Graphics,
 	return ade_set_args(L, "o", l_Camera.Set(cid));
 }
 
+ADE_FUNC(isMenuStretched, l_Graphics, NULL, "Returns whether the standard interface is stretched", "boolean", "True if stretched, false if aspect ratio is maintained")
+{
+	if(!Gr_inited)
+		return ade_set_error(L, "b", 0);
+
+	return ade_set_args(L, "b", Cmdline_stretch_menu);
+}
+
 ADE_FUNC(getScreenWidth, l_Graphics, NULL, "Gets screen width", "number", "Width in pixels, or 0 if graphics are not initialized yet")
 {
 	if(!Gr_inited)
@@ -12881,9 +13207,9 @@ ADE_FUNC(drawCircle, l_Graphics, "number Radius, number X, number Y, [boolean Fi
 
 	if (fill) {
 		//WMC - Circle takes...diameter.
-		gr_circle(x,y, ra*2, false);
+		gr_circle(x,y, ra*2, GR_RESIZE_NONE);
 	} else {
-		gr_unfilled_circle(x,y, ra*2, false);
+		gr_unfilled_circle(x,y, ra*2, GR_RESIZE_NONE);
 	}
 
 	return ADE_RETURN_NIL;
@@ -12902,7 +13228,7 @@ ADE_FUNC(drawArc, l_Graphics, "number Radius, number X, number Y, number StartAn
 		return ADE_RETURN_NIL;
 	}
 
-	gr_arc(x,y, ra, angle_start, angle_end, fill, false);
+	gr_arc(x,y, ra, angle_start, angle_end, fill, GR_RESIZE_NONE);
 
 	return ADE_RETURN_NIL;
 }
@@ -12919,7 +13245,7 @@ ADE_FUNC(drawCurve, l_Graphics, "number X, number Y, number Radius", "Draws a cu
 
 	//WMC - direction should be settable at a certain point via enumerations.
 	//Not gonna deal with it now.
-	gr_curve(x,y,ra,0);
+	gr_curve(x,y,ra,0,GR_RESIZE_FULL);
 
 	return ADE_RETURN_NIL;
 }
@@ -12934,7 +13260,7 @@ ADE_FUNC(drawGradientLine, l_Graphics, "number X1, number Y1, number X2, number 
 	if(!ade_get_args(L, "iiii", &x1, &y1, &x2, &y2))
 		return ADE_RETURN_NIL;
 
-	gr_gradient(x1,y1,x2,y2,false);
+	gr_gradient(x1,y1,x2,y2,GR_RESIZE_NONE);
 
 	return ADE_RETURN_NIL;
 }
@@ -12949,7 +13275,7 @@ ADE_FUNC(drawLine, l_Graphics, "number X1, number Y1, number X2, number Y2", "Dr
 	if(!ade_get_args(L, "iiii", &x1, &y1, &x2, &y2))
 		return ADE_RETURN_NIL;
 
-	gr_line(x1,y1,x2,y2,false);
+	gr_line(x1,y1,x2,y2,GR_RESIZE_NONE);
 
 	return ADE_RETURN_NIL;
 }
@@ -12964,12 +13290,12 @@ ADE_FUNC(drawPixel, l_Graphics, "number X, number Y", "Sets pixel to CurrentColo
 	if(!ade_get_args(L, "ii", &x, &y))
 		return ADE_RETURN_NIL;
 
-	gr_pixel(x,y,false);
+	gr_pixel(x,y,GR_RESIZE_NONE);
 
 	return ADE_RETURN_NIL;
 }
 
-ADE_FUNC(drawPolygon, l_Graphics, "texture Texture, [vector Position={0,0,0}, orientation Orientation=null, number Width=1.0, number Height=1.0]", "Draws a polygon", NULL, NULL)
+ADE_FUNC(drawPolygon, l_Graphics, "texture Texture, [vector Position={0,0,0}, orientation Orientation=null, number Width=1.0, number Height=1.0]", "Draws a polygon. May not work properly in hooks other than On Object Render.", NULL, NULL)
 {
 	int tdx = -1;
 	vec3d pos = vmd_zero_vector;
@@ -13013,20 +13339,21 @@ ADE_FUNC(drawRectangle, l_Graphics, "number X1, number Y1, number X2, number Y2,
 
 	if(f)
 	{
-		gr_rect(x1, y1, x2-x1, y2-y1, false);
+		gr_set_bitmap(0);  // gr_rect will use the last bitmaps info, so set to zero to flush any previous alpha state
+		gr_rect(x1, y1, x2-x1, y2-y1, GR_RESIZE_NONE);
 	}
 	else
 	{
-		gr_line(x1,y1,x2,y1,false);	//Top
-		gr_line(x1,y2,x2,y2,false); //Bottom
-		gr_line(x1,y1,x1,y2,false);	//Left
-		gr_line(x2,y1,x2,y2,false);	//Right
+		gr_line(x1,y1,x2,y1,GR_RESIZE_NONE);	//Top
+		gr_line(x1,y2,x2,y2,GR_RESIZE_NONE); //Bottom
+		gr_line(x1,y1,x1,y2,GR_RESIZE_NONE);	//Left
+		gr_line(x2,y1,x2,y2,GR_RESIZE_NONE);	//Right
 	}
 
 	return ADE_RETURN_NIL;
 }
 
-ADE_FUNC(drawSphere, l_Graphics, "[number Radius = 1.0, vector Position]", "Draws a sphere with radius Radius at world vector Position", "boolean", "True if successful, false or nil otherwise")
+ADE_FUNC(drawSphere, l_Graphics, "[number Radius = 1.0, vector Position]", "Draws a sphere with radius Radius at world vector Position. May not work properly in hooks other than On Object Render.", "boolean", "True if successful, false or nil otherwise")
 {
 	float rad = 1.0f;
 	vec3d pos = vmd_zero_vector;
@@ -13092,7 +13419,7 @@ ADE_FUNC(drawModel, l_Graphics, "model, position, orientation", "Draws the given
 	matrix *orient = mh->GetMatrix();
 
 	//Clip
-	gr_set_clip(0, 0, gr_screen.max_w, gr_screen.max_h, false);
+	gr_set_clip(0, 0, gr_screen.max_w, gr_screen.max_h, GR_RESIZE_NONE);
 
 	//Handle 3D init stuff
 	g3_start_frame(1);
@@ -13135,7 +13462,7 @@ ADE_FUNC(drawModel, l_Graphics, "model, position, orientation", "Draws the given
 }
 
 // Wanderer
-ADE_FUNC(drawModelOOR, l_Graphics, "model Model, vector Position, matrix Orientation, integer Flags", "Draws the given model with the specified position and orientation - Use with extreme care, designer to operate properly only in On Object Render hook.", "int", "Zero if successful, otherwise an integer error code")
+ADE_FUNC(drawModelOOR, l_Graphics, "model Model, vector Position, matrix Orientation, integer Flags", "Draws the given model with the specified position and orientation - Use with extreme care, designed to operate properly only in On Object Render hooks.", "int", "Zero if successful, otherwise an integer error code")
 {
 	model_h *mdl = NULL;
 	vec3d *v = &vmd_zero_vector;
@@ -13384,6 +13711,8 @@ ADE_FUNC(drawOffscreenIndicator, l_Graphics, "object Object, [boolean draw=true,
 				offscreengauge->renderOffscreenIndicator(&outpoint, dir, distance, tri_separation, true);
 			}
 
+			offscreengauge->resize(&outpoint.x, &outpoint.y);
+
 			break;
 		}
 	}
@@ -13442,7 +13771,7 @@ ADE_FUNC(drawString, l_Graphics, "string Message, [number X1, number Y1, number 
 	if(x2 < 0)
 	{
 		num_lines = 1;
-		gr_string(x,y,s,false);
+		gr_string(x,y,s,GR_RESIZE_NONE);
 
 		int height = 0;
 		gr_get_string_size(NULL, &height, s);
@@ -13475,7 +13804,7 @@ ADE_FUNC(drawString, l_Graphics, "string Message, [number X1, number Y1, number 
 			buf[len] = '\0';
 
 			//Draw the string
-			gr_string(x,y2,buf,false);
+			gr_string(x,y2,buf,GR_RESIZE_NONE);
 
 			//Free the string we made
 			delete[] buf;
@@ -13612,7 +13941,7 @@ ADE_FUNC(drawImage, l_Graphics, "string Filename/texture Texture, [number X1=0, 
 
 	gr_set_bitmap(idx, lua_Opacity_type, GR_BITBLT_MODE_NORMAL, alpha);
 	bitmap_rect_list brl = bitmap_rect_list(x1, y1, w, h, uv_x1, uv_y1, uv_x2, uv_y2);
-	gr_bitmap_list(&brl, 1, false);
+	gr_bitmap_list(&brl, 1, GR_RESIZE_NONE);
 
 	return ADE_RETURN_TRUE;
 }
@@ -13668,7 +13997,7 @@ ADE_FUNC(drawMonochromeImage, l_Graphics, "string Filename/texture Texture, numb
 		h = y2-y;
 
 	gr_set_bitmap(idx, lua_Opacity_type, GR_BITBLT_MODE_NORMAL,alpha);
-	gr_aabitmap_ex(x, y, w, h, sx, sy, false, m);
+	gr_aabitmap_ex(x, y, w, h, sx, sy, GR_RESIZE_NONE, m);
 
 	return ADE_RETURN_TRUE;
 }
@@ -13828,7 +14157,7 @@ ADE_FUNC(setClip, l_Graphics, "x, y, width, height", "Sets the clipping region t
 	if (!ade_get_args(L, "iiii", &x, &y, &width, &height))
 		return ADE_RETURN_FALSE;
 
-	gr_set_clip(x, y, width, height, false);
+	gr_set_clip(x, y, width, height, GR_RESIZE_NONE);
 
 	return ADE_RETURN_TRUE;
 }
@@ -13966,6 +14295,10 @@ ADE_FUNC(getObjectFromSignature, l_Mission, "number Signature", "Gets a handle o
 	int objnum;
 	if(!ade_get_args(L, "i", &sig))
 		return ade_set_error(L, "o", l_Object.Set(object_h()));
+
+	if (sig == -1) {
+		return ade_set_error(L, "o", l_Object.Set(object_h()));
+	}
 
 	objnum = obj_get_by_signature(sig);
 
@@ -14355,6 +14688,28 @@ ADE_FUNC(__len, l_Mission_Beams, NULL, "Number of beam objects in mission. Note 
 	return ade_set_args(L, "i", Beam_count);
 }
 
+//****SUBLIBRARY: Campaign
+ade_lib l_Campaign("Campaign", NULL, "ca", "Campaign Library");
+
+ADE_FUNC(getNextMissionFilename, l_Campaign, NULL, "Gets next mission filename", "string", "Next mission filename, or nil if the next mission is invalid")
+{
+	if (Campaign.next_mission < 0 || Campaign.next_mission >= MAX_CAMPAIGN_MISSIONS) {
+		return ADE_RETURN_NIL;
+	}
+	return ade_set_args(L, "s", Campaign.missions[Campaign.next_mission].name);
+}
+
+ADE_FUNC(getPrevMissionFilename, l_Campaign, NULL, "Gets previous mission filename", "string", "Previous mission filename, or nil if the previous mission is invalid")
+{
+	if (Campaign.prev_mission < 0 || Campaign.prev_mission >= MAX_CAMPAIGN_MISSIONS) {
+		return ADE_RETURN_NIL;
+	}
+	return ade_set_args(L, "s", Campaign.missions[Campaign.prev_mission].name);
+}
+
+// TODO: add a proper indexer type that returns a handle
+// something like ca.Mission[filename/index]
+
 //****SUBLIBRARY: Mission/Wings
 ade_lib l_Mission_Wings("Wings", &l_Mission, NULL, NULL);
 
@@ -14381,6 +14736,293 @@ ADE_INDEXER(l_Mission_Wings, "number Index/string WingName", "Wings in the missi
 ADE_FUNC(__len, l_Mission_Wings, NULL, "Number of wings in mission", "number", "Number of wings in mission")
 {
 	return ade_set_args(L, "i", Num_wings);
+}
+
+//****SUBLIBRARY: Mission/Teams
+ade_lib l_Mission_Teams("Teams", &l_Mission, NULL, NULL);
+
+ADE_INDEXER(l_Mission_Teams, "number Index/string TeamName", "Teams in the mission", "team", "Team handle or invalid team handle if the requested team could not be found")
+{
+	char *name;
+	if(!ade_get_args(L, "*s", &name))
+		return ade_set_error(L, "o", l_Team.Set(-1));
+
+	int idx = iff_lookup(name);
+	
+	if(idx < 0)
+	{
+		idx = atoi(name);
+
+		idx--;	//Lua->FS2
+	}
+
+	if(idx < 0 || idx >= Num_iffs)
+		return ade_set_error(L, "o", l_Team.Set(-1));
+
+	return ade_set_args(L, "o", l_Team.Set(idx));
+}
+
+ADE_FUNC(__len, l_Mission_Teams, NULL, "Number of teams in mission", "number", "Number of teams in mission")
+{
+	return ade_set_args(L, "i", Num_iffs);
+}
+
+//****SUBLIBRARY: Mission/Messages
+ade_lib l_Mission_Messages("Messages", &l_Mission, NULL, NULL);
+
+ADE_INDEXER(l_Mission_Messages, "number Index/string messageName", "Messages of the mission", "message", "Message handle or invalid handle on error")
+{
+	int idx = -1;
+
+	if (lua_isnumber(L, 2))
+	{
+		if (!ade_get_args(L, "*i", &idx))
+			return ade_set_args(L, "o", l_Message.Set(-1));
+
+		idx--; // Lua --> FS2
+
+		idx += Num_builtin_messages;
+	}
+	else
+	{
+		char* name = NULL;
+
+		if (!ade_get_args(L, "*s", &name))
+			return ade_set_args(L, "o", l_Message.Set(-1));
+
+		if (name == NULL)
+			return ade_set_args(L, "o", l_Message.Set(-1));
+
+		for (int i = Num_builtin_messages; i < (int) Messages.size(); i++)
+		{
+			if (!stricmp(Messages[i].name, name))
+			{
+				idx = i;
+				break;
+			}
+		}
+	}
+
+	if (idx < Num_builtin_messages || idx >= (int) Messages.size())
+		return ade_set_args(L, "o", l_Message.Set(-1));
+	else
+		return ade_set_args(L, "o", l_Message.Set(idx));
+}
+
+ADE_FUNC(__len, l_Mission_Messages, NULL, "Number of messages in the mission", "number", "Number of messages in mission")
+{
+	return ade_set_args(L, "i", (int) Messages.size() - Num_builtin_messages);
+}
+
+//****SUBLIBRARY: Mission/BuiltinMessages
+ade_lib l_Mission_BuiltinMessages("BuiltinMessages", &l_Mission, NULL, NULL);
+
+ADE_INDEXER(l_Mission_BuiltinMessages, "number Index/string messageName", "Built-in messages of the mission", "message", "Message handle or invalid handle on error")
+{
+	int idx = -1;
+
+	if (lua_isnumber(L, 2))
+	{
+		if (!ade_get_args(L, "*i", &idx))
+			return ade_set_args(L, "o", l_Message.Set(-1));
+
+		idx--; // Lua --> FS2
+	}
+	else
+	{
+		char* name = NULL;
+
+		if (!ade_get_args(L, "*s", &name))
+			return ade_set_args(L, "o", l_Message.Set(-1));
+
+		if (name == NULL)
+			return ade_set_args(L, "o", l_Message.Set(-1));
+
+		for (int i = 0; i < Num_builtin_messages; i++)
+		{
+			if (!stricmp(Messages[i].name, name))
+			{
+				idx = i;
+				break;
+			}
+		}
+	}
+
+	if (idx < 0 || idx >= Num_builtin_messages)
+		return ade_set_args(L, "o", l_Message.Set(-1));
+	else
+		return ade_set_args(L, "o", l_Message.Set(idx));
+}
+
+ADE_FUNC(__len, l_Mission_BuiltinMessages, NULL, "Number of built-in messages in the mission", "number", "Number of messages in mission")
+{
+	return ade_set_args(L, "i", Num_builtin_messages);
+}
+
+//****SUBLIBRARY: Mission/Personas
+ade_lib l_Mission_Personas("Personas", &l_Mission, NULL, NULL);
+
+ADE_INDEXER(l_Mission_Personas, "number Index/string name", "Personas of the mission", "persona", "Persona handle or invalid handle on error")
+{
+	int idx = -1;
+
+	if (lua_isnumber(L, 2))
+	{
+		if (!ade_get_args(L, "*i", &idx))
+			return ade_set_args(L, "o", l_Persona.Set(-1));
+
+		idx--; // Lua --> FS2
+	}
+	else
+	{
+		char* name = NULL;
+
+		if (!ade_get_args(L, "*s", &name))
+			return ade_set_args(L, "o", l_Persona.Set(-1));
+
+		if (name == NULL)
+			return ade_set_args(L, "o", l_Persona.Set(-1));
+
+		idx = message_persona_name_lookup(name);
+	}
+
+	if (idx < 0 || idx >= Num_personas)
+		return ade_set_args(L, "o", l_Persona.Set(-1));
+	else
+		return ade_set_args(L, "o", l_Persona.Set(idx));
+}
+
+ADE_FUNC(__len, l_Mission_Personas, NULL, "Number of personas in the mission", "number", "Number of messages in mission")
+{
+	return ade_set_args(L, "i", Num_personas);
+}
+
+ADE_FUNC(addMessage, l_Mission, "string name, string text[, persona persona]", "Adds a message", "message", "The new message or invalid handle on error")
+{
+	char* name = NULL;
+	char* text = NULL;
+	int personaIdx = -1;
+
+	if (!ade_get_args(L, "ss|o", &name, &text, l_Persona.Get(&personaIdx)))
+		return ade_set_error(L, "o", l_Message.Set(-1));
+
+	if (name == NULL || text == NULL)
+		return ade_set_error(L, "o", l_Message.Set(-1));
+
+	if (personaIdx < 0 || personaIdx >= Num_personas)
+		personaIdx = -1;
+
+	add_message(name, text, personaIdx, 0);
+
+	return ade_set_error(L, "o", l_Message.Set((int) Messages.size() - 1));
+}
+
+ADE_FUNC(sendMessage, l_Mission, "string sender, message message[, number delay=0.0[, enumeration priority = MESSAGE_PRIORITY_NORMAL[, boolean fromCommand = false]]]",
+		 "Sends a message from the given source (not from a ship!) with the given priority or optionally sends it from the missions command source.<br>"
+		 "If delay is specified the message will be delayed by the specified time in seconds<br>"
+		 "If you pass <i>nil</i> as the sender then the message will not have a sender.",
+		 "boolean", "true if successfull, false otherwise")
+{
+	char* sender = NULL;
+	int messageIdx = -1;
+	int priority = MESSAGE_PRIORITY_NORMAL;
+	bool fromCommand = false;
+	int messageSource = MESSAGE_SOURCE_SPECIAL;
+	float delay = 0.0f;
+
+	enum_h* ehp = NULL;
+
+	// if first is nil then use no source
+	if (lua_isnil(L, 1))
+	{
+		if (!ade_get_args(L, "*o|fob", l_Message.Get(&messageIdx), &delay, l_Enum.GetPtr(&ehp), &fromCommand))
+			return ADE_RETURN_FALSE;
+
+		messageSource = MESSAGE_SOURCE_NONE;
+	}
+	else
+	{
+		if (!ade_get_args(L, "so|fob", &sender, l_Message.Get(&messageIdx), &delay, l_Enum.GetPtr(&ehp), &fromCommand))
+			return ADE_RETURN_FALSE;
+
+		if (sender == NULL)
+			return ADE_RETURN_FALSE;
+	}
+
+	if (fromCommand)
+		messageSource = MESSAGE_SOURCE_COMMAND;
+
+	if (messageIdx < 0 || messageIdx >= (int) Messages.size())
+		return ADE_RETURN_FALSE;
+
+	if (messageIdx < Num_builtin_messages)
+	{
+		LuaError(L, "Cannot send built-in messages!");
+		return ADE_RETURN_FALSE;
+	}
+
+	if (delay < 0.0f)
+	{
+		LuaError(L, "Invalid negative delay of %f!", delay);
+		return ADE_RETURN_FALSE;
+	}
+
+	if (ehp != NULL)
+	{
+		switch(ehp->index)
+		{
+		case LE_MESSAGE_PRIORITY_HIGH:
+			priority = MESSAGE_PRIORITY_HIGH;
+			break;
+		case LE_MESSAGE_PRIORITY_NORMAL:
+			priority = MESSAGE_PRIORITY_NORMAL;
+			break;
+		case LE_MESSAGE_PRIORITY_LOW:
+			priority = MESSAGE_PRIORITY_LOW;
+			break;
+		default:
+			LuaError(L, "Invalid enumeration used! Must be one of MESSAGE_PRIORITY_*.");
+			return ADE_RETURN_FALSE;
+		}
+	}
+
+	if (messageSource == MESSAGE_SOURCE_NONE)
+		message_send_unique_to_player(Messages[messageIdx].name, NULL, MESSAGE_SOURCE_NONE, priority, 0, fl2i(delay * 1000.0f));
+	else
+		message_send_unique_to_player(Messages[messageIdx].name, (void*) sender, messageSource, priority, 0, fl2i(delay * 1000.0f));
+
+	return ADE_RETURN_TRUE;
+}
+
+ADE_FUNC(sendTrainingMessage, l_Mission, "message message, number time[, number delay=0.0]",
+		 "Sends a training message to the player. <i>time</i> is the amount in seconds to display the message, only whole seconds are used!",
+		 "boolean", "true if successfull, false otherwise")
+{
+	int messageIdx = -1;
+	float delay = 0.0f;
+	int time = -1;
+
+	if (!ade_get_args(L, "oi|f", l_Message.Get(&messageIdx), &time, &delay))
+		return ADE_RETURN_FALSE;
+
+	if (messageIdx < 0 || messageIdx >= (int) Messages.size())
+		return ADE_RETURN_FALSE;
+
+	if (delay < 0.0f)
+	{
+		LuaError(L, "Got invalid delay of %f seconds!", delay);
+		return ADE_RETURN_FALSE;
+	}
+
+	if (time < 0)
+	{
+		LuaError(L, "Got invalid time of %d seconds!", time);
+		return ADE_RETURN_FALSE;
+	}
+
+	message_training_queue(Messages[messageIdx].name, timestamp(fl2i(delay * 1000.0f)), time);
+
+	return ADE_RETURN_TRUE;
 }
 
 ADE_FUNC(createShip, l_Mission, "[string Name, shipclass Class=Shipclass[1], orientation Orientation=null, vector Position={0,0,0}]", "Creates a ship and returns a handle to it using the specified name, class, world orientation, and world position", "ship", "Ship handle, or invalid ship handle if ship couldn't be created")
@@ -14709,7 +15351,7 @@ ade_lib l_Tables("Tables", NULL, "tb", "Tables library");
 
 //*****SUBLIBRARY: Tables/ShipClasses
 ade_lib l_Tables_ShipClasses("ShipClasses", &l_Tables, NULL, NULL);
-ADE_INDEXER(l_Tables_ShipClasses, "number Index/string Name", "Array of ship classes", "ship", "Ship handle, or invalid ship handle if index is invalid")
+ADE_INDEXER(l_Tables_ShipClasses, "number Index/string Name", "Array of ship classes", "shipclass", "Ship handle, or invalid ship handle if index is invalid")
 {
 	if(!ships_inited)
 		return ade_set_error(L, "o", l_Shipclass.Set(-1));
@@ -14799,14 +15441,14 @@ ADE_FUNC(avdTest, l_Testing, NULL, "Test the AVD Physics code", NULL, NULL)
 		float Pc, Vc;
 		avd.get((float)i/1000.0f, &Pc, &Vc);
 		gr_set_color(0, 255, 0);
-		gr_pixel(i/10, gr_screen.clip_bottom - (int)(Pc*10.0f), false);
+		gr_pixel(i/10, gr_screen.clip_bottom - (int)(Pc*10.0f), GR_RESIZE_NONE);
 		gr_set_color(255, 0, 0);
-		gr_pixel(i/10, gr_screen.clip_bottom - (int)(Vc*10.0f), false);
+		gr_pixel(i/10, gr_screen.clip_bottom - (int)(Vc*10.0f), GR_RESIZE_NONE);
 
 		avd.get(&Pc, &Vc);
 		gr_set_color(255, 255, 255);
-		gr_pixel((timestamp()%3000)/10, gr_screen.clip_bottom - (int)(Pc*10.0f), false);
-		gr_pixel((timestamp()%3000)/10, gr_screen.clip_bottom - (int)(Vc*10.0f), false);
+		gr_pixel((timestamp()%3000)/10, gr_screen.clip_bottom - (int)(Pc*10.0f), GR_RESIZE_NONE);
+		gr_pixel((timestamp()%3000)/10, gr_screen.clip_bottom - (int)(Vc*10.0f), GR_RESIZE_NONE);
 	}
 
 	return ADE_RETURN_NIL;
@@ -16208,7 +16850,7 @@ void ade_table_entry::OutputMeta(FILE *fp)
 						fprintf(fp, "<dd>%s</dd>\n", Description);
 
 					//***Also settable with: Arguments
-					if(Arguments != NULL)
+					if(ReturnDescription != NULL)
 						fprintf(fp, "<dd><b>Value:</b> %s</b></dd>\n", ReturnDescription);
 				}
 				break;

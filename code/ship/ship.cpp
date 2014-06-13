@@ -80,6 +80,8 @@
 #include "graphics/gropenglshader.h"
 #include "model/model.h"
 #include "mod_table/mod_table.h"
+#include "debugconsole/console.h"
+#include "debugconsole/console.h"
 
 
 #define NUM_SHIP_SUBSYSTEM_SETS			20		// number of subobject sets to use (because of the fact that it's a linked list,
@@ -892,7 +894,9 @@ void init_ship_entry(ship_info *sip)
 	sip->selection_effect = Default_ship_select_effect;
 
 	sip->bii_index_ship = -1;
+	sip->bii_index_ship_with_cargo = -1;
 	sip->bii_index_wing = -1;
+	sip->bii_index_wing_with_cargo = -1;
 
 	sip->score = 0;
 
@@ -1381,7 +1385,7 @@ void parse_weapon_bank(ship_info *sip, bool is_primary, int *num_banks, int *ban
 }
 
 /**
- * Common method for parsing briefing icon info, even though we only do it twice.
+ * Common method for parsing briefing icon info.
  */
 int parse_and_add_briefing_icon_info()
 {
@@ -2909,8 +2913,18 @@ int parse_ship_values(ship_info* sip, bool isTemplate, bool first_time, bool rep
 	// read in briefing stuff
 	if ( optional_string("$Briefing icon:") )
 		sip->bii_index_ship = parse_and_add_briefing_icon_info();
+	if ( optional_string("$Briefing icon with cargo:") )
+		sip->bii_index_ship_with_cargo = parse_and_add_briefing_icon_info();
 	if ( optional_string("$Briefing wing icon:") )
 		sip->bii_index_wing = parse_and_add_briefing_icon_info();
+	if ( optional_string("$Briefing wing icon with cargo:") )
+		sip->bii_index_wing_with_cargo = parse_and_add_briefing_icon_info();
+
+	// check for inconsistencies
+	if ((sip->bii_index_wing_with_cargo >= 0) && (sip->bii_index_wing < 0 || sip->bii_index_ship_with_cargo < 0))
+		Warning(LOCATION, "Ship '%s' has a wing-with-cargo briefing icon but is missing a wing briefing icon or a ship-with-cargo briefing icon!", sip->name);
+	if ((sip->bii_index_wing_with_cargo < 0) && (sip->bii_index_wing >= 0) && (sip->bii_index_ship_with_cargo >= 0))
+		Warning(LOCATION, "Ship '%s' has both a wing briefing icon and a ship-with-cargo briefing icon but does not have a wing-with-cargo briefing icon!", sip->name);
 
 	if ( optional_string("$Score:") ){
 		stuff_int( &sip->score );
@@ -6804,12 +6818,12 @@ int ship_start_render_cockpit_display(int cockpit_display_num)
 	
 	if ( display->source >= 0 ) {
 		gr_set_bitmap(display->source);
-		gr_bitmap(0, 0, false);
+		gr_bitmap(0, 0, GR_RESIZE_NONE);
 	}
 
 	if ( display->background >= 0 ) {
 		gr_set_bitmap(display->background);
-		gr_bitmap_ex(display->offset[0], display->offset[1], display->size[0], display->size[1], 0, 0, false);
+		gr_bitmap_ex(display->offset[0], display->offset[1], display->size[0], display->size[1], 0, 0, GR_RESIZE_NONE);
 	}
 
 	gr_set_cull(cull);
@@ -6839,7 +6853,7 @@ void ship_end_render_cockpit_display(int cockpit_display_num)
 	if ( display->foreground >= 0 ) {
 		gr_reset_clip();
 		gr_set_bitmap(display->foreground);
-		gr_bitmap_ex(display->offset[0], display->offset[1], display->size[0], display->size[1], 0, 0, false);
+		gr_bitmap_ex(display->offset[0], display->offset[1], display->size[0], display->size[1], 0, 0, GR_RESIZE_NONE);
 	}
 
 	gr_set_cull(cull);
@@ -8356,10 +8370,14 @@ int ship_subsys_disrupted(ship *sp, int type)
 }
 
 float Decay_rate = 1.0f / 120.0f;
-DCF(lethality_decay, "time in sec to return from 100 to 0")
+DCF(lethality_decay, "Sets ship lethality_decay, or the time in sec to go from 100 to 0 health (default is 1/120)")
 {
-	dc_get_arg(ARG_FLOAT);
-	Decay_rate = Dc_arg_float;
+	if (dc_optional_string_either("status", "--status") || dc_optional_string_either("?", "--?")) {
+		dc_printf("Decay rate is currently %f\n", Decay_rate);
+		return;
+	}
+	
+	dc_stuff_float(&Decay_rate);
 }
 
 float min_lethality = 0.0f;
@@ -9778,7 +9796,7 @@ send_countermeasure_fired:
 /**
  * See if enough time has elapsed to play fail sound again
  */
-int ship_maybe_play_primary_fail_sound()
+void ship_maybe_play_primary_fail_sound()
 {
 	ship_weapon *swp = &Player_ship->weapons;
 	int stampval;
@@ -9798,9 +9816,7 @@ int ship_maybe_play_primary_fail_sound()
 		}
 		Laser_energy_out_snd_timer = timestamp(stampval);
 		snd_play( &Snds[ship_get_sound(Player_obj, SND_OUT_OF_WEAPON_ENERGY)]);
-		return 1;
 	}
-	return 0;
 }
 
 /**
@@ -9865,31 +9881,44 @@ float t_len = 10.0f;
 float t_vel = 0.2f;
 float t_min = 150.0f;
 float t_max = 300.0f;
-DCF(t_rad, "")
+DCF(t_rad, "Sets weapon tracer radius")
 {
-	dc_get_arg(ARG_FLOAT);
-	t_rad = Dc_arg_float;
+	if (dc_optional_string_either("status", "--status") || dc_optional_string_either("?", "--?")) {
+		dc_printf("t_rad : %f\n", t_rad);
+		return;
+	}
+	
+	dc_stuff_float(&t_rad);
 }
-DCF(t_len, "")
+DCF(t_len, "Sets weapon tracer length")
 {
-	dc_get_arg(ARG_FLOAT);
-	t_len = Dc_arg_float;
+	if (dc_optional_string_either("status", "--status") || dc_optional_string_either("?", "--?")) {
+		dc_printf("t_len : %f\n", t_len);
+		return;
+	}
+
+	dc_stuff_float(&t_len);
 }
-DCF(t_vel, "")
+DCF(t_vel, "Sets weapon tracer velocity")
 {
-	dc_get_arg(ARG_FLOAT);
-	t_vel = Dc_arg_float;
+	if (dc_optional_string_either("status", "--status") || dc_optional_string_either("?", "--?")) {
+		dc_printf("t_vel : %f\n", t_vel);
+		return;
+	}
+
+	dc_stuff_float(&t_vel);
 }
+/*
+ TODO: These two DCF's (and variables) are unused
 DCF(t_min, "")
 {
-	dc_get_arg(ARG_FLOAT);
-	t_min = Dc_arg_float;
+	dc_stuff_float(&t_min);
 }
 DCF(t_max, "")
 {
-	dc_get_arg(ARG_FLOAT);
-	t_max = Dc_arg_float;
+	dc_stuff_float(&t_max);
 }
+*/
 void ship_fire_tracer(int weapon_objnum)
 {
 	particle_info pinfo;
@@ -10266,8 +10295,7 @@ int ship_fire_primary(object * obj, int stream_weapons, int force)
 		// functional, which should be cool.  		
 		if ( ship_weapon_maybe_fail(shipp) && !force) {
 			if ( obj == Player_obj ) {
-				if ( ship_maybe_play_primary_fail_sound() ) {
-				}
+				ship_maybe_play_primary_fail_sound();
 			}
 			ship_stop_fire_primary_bank(obj, bank_to_fire);
 			continue;
@@ -10343,11 +10371,7 @@ int ship_fire_primary(object * obj, int stream_weapons, int force)
 					swp->next_primary_fire_stamp[bank_to_fire] = timestamp((int)(next_fire_delay));
 					if ( obj == Player_obj )
 					{
-						if ( ship_maybe_play_primary_fail_sound() )
-						{
-							// I guess they just deleted the commented HUD message here (they left
-							// it in in other routines)
-						}
+						ship_maybe_play_primary_fail_sound();
 					}
 					ship_stop_fire_primary_bank(obj, bank_to_fire);
 					continue;
@@ -10428,11 +10452,7 @@ int ship_fire_primary(object * obj, int stream_weapons, int force)
 					swp->next_primary_fire_stamp[bank_to_fire] = timestamp((int)(next_fire_delay));
 					if ( obj == Player_obj )
 					{
-						if ( ship_maybe_play_primary_fail_sound() )
-						{
-							// I guess they just deleted the commented HUD message here (they left
-							// it in in other routines)
-						}
+						ship_maybe_play_primary_fail_sound();
 					}
 					ship_stop_fire_primary_bank(obj, bank_to_fire);
 					continue;
@@ -10468,10 +10488,7 @@ int ship_fire_primary(object * obj, int stream_weapons, int force)
 					{
 						if ( obj == Player_obj )
 						{
-							if ( ship_maybe_play_primary_fail_sound() )
-							{
-//								HUD_sourced_printf(HUD_SOURCE_HIDDEN, "No %s ammunition left in bank", Weapon_info[swp->primary_bank_weapons[bank_to_fire]].name);
-							}
+							ship_maybe_play_primary_fail_sound();
 						}
 						else
 						{
@@ -11904,9 +11921,9 @@ int get_available_secondary_weapons(object *objp, int *outlist, int *outbanklist
 void wing_bash_ship_name(char *ship_name, const char *wing_name, int index)
 {
 	// if wing name has a hash symbol, create the ship name a particular way
-	// (but don't do this for names that have the hash as the last character)
+	// (but don't do this for names that have the hash as the first or last character)
 	const char *p = get_pointer_to_first_hash_symbol(wing_name);
-	if ((p != NULL) && (*(p+1) != '\0'))
+	if ((p != NULL) && (p != wing_name) && (*(p+1) != '\0'))
 	{
 		size_t len = (p - wing_name);
 		strncpy(ship_name, wing_name, len);
@@ -13611,26 +13628,25 @@ void ship_assign_sound_all()
  */
 DCF(set_shield,"Change player ship shield strength")
 {
-	if ( Dc_command )	{
-		dc_get_arg(ARG_FLOAT|ARG_NONE);
+	float value;
 
-		if ( Dc_arg_type & ARG_FLOAT ) {
-            CLAMP(Dc_arg_float, 0.0f, 1.0f);
-			shield_set_strength(Player_obj, Dc_arg_float * Player_ship->ship_max_shield_strength);
-			dc_printf("Shields set to %.2f\n", shield_get_strength(Player_obj) );
-		}
-	}
-
-	if ( Dc_help ) {
+	if (dc_optional_string_either("help", "--help")) {
 		dc_printf ("Usage: set_shield [num]\n");
 		dc_printf ("[num] --  shield percentage 0.0 -> 1.0 of max\n");
-		dc_printf ("with no parameters, displays shield strength\n");
-		Dc_status = 0;
+		return;
 	}
 
-	if ( Dc_status )	{
+	if (dc_optional_string_either("status", "--status") || dc_optional_string_either("?", "--?")) {
 		dc_printf( "Shields are currently %.2f", shield_get_strength(Player_obj) );
+		return;
 	}
+
+	dc_stuff_float(&value);
+
+	CLAMP(value, 0.0f, 1.0f);
+
+	shield_set_strength(Player_obj, value * Player_ship->ship_max_shield_strength);
+	dc_printf("Shields set to %.2f\n", shield_get_strength(Player_obj) );
 }
 
 /**
@@ -13638,26 +13654,24 @@ DCF(set_shield,"Change player ship shield strength")
  */
 DCF(set_hull, "Change player ship hull strength")
 {
-	if ( Dc_command )	{
-		dc_get_arg(ARG_FLOAT|ARG_NONE);
-
-		if ( Dc_arg_type & ARG_FLOAT ) {
-			CLAMP(Dc_arg_float, 0.0f, 1.0f);
-			Player_obj->hull_strength = Dc_arg_float * Player_ship->ship_max_hull_strength;
-			dc_printf("Hull set to %.2f\n", Player_obj->hull_strength );
-		}
-	}
-
-	if ( Dc_help ) {
+	float value;
+	
+	if (dc_optional_string_either("help", "--help")) {
 		dc_printf ("Usage: set_hull [num]\n");
 		dc_printf ("[num] --  hull percentage 0.0 -> 1.0 of max\n");
-		dc_printf ("with no parameters, displays hull strength\n");
-		Dc_status = 0;
+		return;
 	}
 
-	if ( Dc_status )	{
+	if (dc_optional_string_either("status", "--status") || dc_optional_string_either("?", "--?")) {
 		dc_printf( "Hull is currently %.2f", Player_obj->hull_strength );
+		return;
 	}
+
+	dc_stuff_float(&value);
+
+	CLAMP(value, 0.0f, 1.0f);
+	Player_obj->hull_strength = value * Player_ship->ship_max_hull_strength;
+	dc_printf("Hull set to %.2f\n", Player_obj->hull_strength );
 }
 
 /**
@@ -13666,70 +13680,69 @@ DCF(set_hull, "Change player ship hull strength")
 //XSTR:OFF
 DCF(set_subsys, "Set the strength of a particular subsystem on player ship" )
 {
-	if ( Dc_command )	{
-		dc_get_arg(ARG_STRING);
-		if ( !subsystem_stricmp( Dc_arg, "weapons" ))	{
-			dc_get_arg(ARG_FLOAT);
-			if ( (Dc_arg_float < 0.0f) || (Dc_arg_float > 1.0f) )	{
-				Dc_help = 1;
-			} else {
-				ship_set_subsystem_strength( Player_ship, SUBSYSTEM_WEAPONS, Dc_arg_float );
-			} 
-		} else if ( !subsystem_stricmp( Dc_arg, "engine" ))	{
-			dc_get_arg(ARG_FLOAT);
-			if ( (Dc_arg_float < 0.0f) || (Dc_arg_float > 1.0f) )	{
-				Dc_help = 1;
-			} else {
-				ship_set_subsystem_strength( Player_ship, SUBSYSTEM_ENGINE, Dc_arg_float );
-				if ( Dc_arg_float < ENGINE_MIN_STR )	{
-					Player_ship->flags |= SF_DISABLED;				// add the disabled flag
-				} else {
-					Player_ship->flags &= (~SF_DISABLED);				// add the disabled flag
-				}
-			} 
-		} else if ( !subsystem_stricmp( Dc_arg, "sensors" ))	{
-			dc_get_arg(ARG_FLOAT);
-			if ( (Dc_arg_float < 0.0f) || (Dc_arg_float > 1.0f) )	{
-				Dc_help = 1;
-			} else {
-				ship_set_subsystem_strength( Player_ship, SUBSYSTEM_SENSORS, Dc_arg_float );
-			} 
-		} else if ( !subsystem_stricmp( Dc_arg, "communication" ))	{
-			dc_get_arg(ARG_FLOAT);
-			if ( (Dc_arg_float < 0.0f) || (Dc_arg_float > 1.0f) )	{
-				Dc_help = 1;
-			} else {
-				ship_set_subsystem_strength( Player_ship, SUBSYSTEM_COMMUNICATION, Dc_arg_float );
-			} 
-		} else if ( !subsystem_stricmp( Dc_arg, "navigation" ))	{
-			dc_get_arg(ARG_FLOAT);
-			if ( (Dc_arg_float < 0.0f) || (Dc_arg_float > 1.0f) )	{
-				Dc_help = 1;
-			} else {
-				ship_set_subsystem_strength( Player_ship, SUBSYSTEM_NAVIGATION, Dc_arg_float );
-			} 
-		} else if ( !subsystem_stricmp( Dc_arg, "radar" ))	{
-			dc_get_arg(ARG_FLOAT);
-			if ( (Dc_arg_float < 0.0f) || (Dc_arg_float > 1.0f) )	{
-				Dc_help = 1;
-			} else {
-				ship_set_subsystem_strength( Player_ship, SUBSYSTEM_RADAR, Dc_arg_float );
-			} 
-		} else {
-			// print usage
-			Dc_help = 1;
-		}
+	SCP_string arg;
+	int subsystem = SUBSYSTEM_NONE;
+	float val_f;
+	
+	if (dc_optional_string_either("help", "--help")) {
+		dc_printf( "Usage: set_subsys <type> [--status] <strength>\n");
+		dc_printf("<type> is any of the following:\n");
+		dc_printf("\tweapons\n");
+		dc_printf("\tengine\n");
+		dc_printf("\tsensors\n");
+		dc_printf("\tcommunication\n");
+		dc_printf("\tnavigation\n");
+		dc_printf("\tradar\n\n");
+
+		dc_printf("[--status] will display status of that subsystem\n\n");
+		
+		dc_printf("<strength> is any value between 0 and 1.0\n");
+		return;
 	}
 
-	if ( Dc_help )	{
-		dc_printf( "Usage: set_subsys type X\nWhere X is value between 0 and 1.0, and type can be:\n" );
-		dc_printf( "weapons\n" );
-		dc_printf( "engine\n" );
-		dc_printf( "sensors\n" );
-		dc_printf( "communication\n" );
-		dc_printf( "navigation\n" );
-		dc_printf( "radar\n" );
-		Dc_status = 0;	// don't print status if help is printed.  Too messy.
+	dc_stuff_string_white(arg);
+
+	if (arg == "weapons") {
+		subsystem = SUBSYSTEM_WEAPONS;
+	
+	} else if (arg == "engine") {
+		subsystem = SUBSYSTEM_ENGINE;	
+	
+	} else if (arg == "sensors") {
+		subsystem = SUBSYSTEM_SENSORS;
+
+	} else if (arg == "communication") {
+		subsystem = SUBSYSTEM_COMMUNICATION;
+
+	} else if (arg == "navigation") {
+		subsystem = SUBSYSTEM_NAVIGATION;
+
+	} else if (arg == "radar") {
+		subsystem = SUBSYSTEM_RADAR;
+
+	} else if ((arg == "status") || (arg == "--status") || (arg == "?") || (arg == "--?")) {
+		dc_printf("Error: Must specify a subsystem.\n");
+		return;
+
+	} else {
+		dc_printf("Error: Unknown argument '%s'\n", arg.c_str());
+		return;
+	}
+
+	if (dc_optional_string_either("status", "--status") || dc_optional_string_either("?", "--?")) {
+		dc_printf("Subsystem '%s' is at %f strength\n", arg.c_str(), ship_get_subsystem_strength(Player_ship, subsystem));
+
+	} else {
+		// Set the subsystem strength
+		dc_stuff_float(&val_f);
+
+		CLAMP(val_f, 0.0, 1.0);
+		ship_set_subsystem_strength( Player_ship, subsystem, val_f );
+		
+		if (subsystem == SUBSYSTEM_ENGINE) {
+			// If subsystem is an engine, set/clear the disabled flag
+			(val_f < ENGINE_MIN_STR) ? (Player_ship->flags |= SF_DISABLED) : (Player_ship->flags &= (~SF_DISABLED));
+		}
 	}
 }
 //XSTR:ON
@@ -15190,7 +15203,7 @@ void ship_maybe_tell_about_low_ammo(ship *sp)
 	swp = &sp->weapons;
 	
 	// stole the code for this from ship_maybe_tell_about_rearm()
-	if (sp->flags & SIF_BALLISTIC_PRIMARIES)
+	if (Ship_info[sp->ship_info_index].flags & SIF_BALLISTIC_PRIMARIES)
 	{
 		for (i = 0; i < swp->num_primary_banks; i++)
 		{
@@ -15271,7 +15284,7 @@ void ship_maybe_tell_about_rearm(ship *sp)
 		}
 
 		// also check ballistic primaries - Goober5000
-		if (sp->flags & SIF_BALLISTIC_PRIMARIES)
+		if (Ship_info[sp->ship_info_index].flags & SIF_BALLISTIC_PRIMARIES)
 		{
 			for (i = 0; i < swp->num_primary_banks; i++)
 			{
@@ -16420,11 +16433,11 @@ int ship_get_texture(int bitmap)
 // update artillery lock info
 #define CLEAR_ARTILLERY_AND_CONTINUE()	{ if(aip != NULL){ aip->artillery_objnum = -1; aip->artillery_sig = -1;	aip->artillery_lock_time = 0.0f;} continue; } 
 float artillery_dist = 10.0f;
-DCF(art, "")
+DCF(art, "Sets artillery disance")
 {
-	dc_get_arg(ARG_FLOAT);
-	artillery_dist = Dc_arg_float;
+	dc_stuff_float(&artillery_dist);
 }
+
 void ship_update_artillery_lock()
 {
 	ai_info *aip = NULL;
@@ -16714,7 +16727,7 @@ void wing_load_squad_bitmap(wing *w)
 
 // Goober5000 - needed by new hangar depart code
 // check whether this ship has a docking bay
-int ship_has_dock_bay(int shipnum)
+bool ship_has_dock_bay(int shipnum)
 {
 	Assert(shipnum >= 0 && shipnum < MAX_SHIPS);
 
@@ -16726,40 +16739,54 @@ int ship_has_dock_bay(int shipnum)
 	return ( pm->ship_bay && (pm->ship_bay->num_paths > 0) );
 }
 
+// Goober5000
+bool ship_useful_for_departure(int shipnum, int path_mask)
+{
+	Assert( shipnum >= 0 && shipnum < MAX_SHIPS );
+
+	// not valid if dying or departing
+	if (Ships[shipnum].flags & (SF_DYING | SF_DEPARTING))
+		return false;
+
+	// no dockbay, can't depart to it
+	if (!ship_has_dock_bay(shipnum))
+		return false;
+
+	// make sure that the bays are not all destroyed
+	if (ship_fighterbays_all_destroyed(&Ships[shipnum]))
+		return false;
+
+	// in the future, we might want to check bay paths against destroyed fighterbays,
+	// but that capability doesn't currently exist
+	// (note, a mask of 0 indicates all paths are valid)
+	//if (path_mask != 0)
+	//{
+	//}
+
+	// ship is valid
+	return true;
+}
+
 // Goober5000 - needed by new hangar depart code
 // get first ship in ship list with docking bay
-int ship_get_ship_with_dock_bay(int team)
+int ship_get_ship_for_departure(int team)
 {
-	int ship_with_bay = -1;
-	ship_obj *so;
-
-	so = GET_FIRST(&Ship_obj_list);
-	while(so != END_OF_LIST(&Ship_obj_list))
+	for (ship_obj *so = GET_FIRST(&Ship_obj_list); so != END_OF_LIST(&Ship_obj_list); so = GET_NEXT(so))
 	{
-		if ( ship_has_dock_bay(Objects[so->objnum].instance) && (Ships[Objects[so->objnum].instance].team == team) )
-		{
-			ship_with_bay = Objects[so->objnum].instance;
+		Assert(so->objnum >= 0);
+		int shipnum = Objects[so->objnum].instance;
+		Assert(shipnum >= 0);
 
-			// make sure not dying or departing
-			if (Ships[ship_with_bay].flags & (SF_DYING | SF_DEPARTING))
-				ship_with_bay = -1;
-
-			// also make sure that the bays are not all destroyed
-			if (ship_fighterbays_all_destroyed(&Ships[ship_with_bay]))
-				ship_with_bay = -1;
-
-			if (ship_with_bay >= 0)
-				break;
-		}
-		so = GET_NEXT(so);
+		if ( (Ships[shipnum].team == team) && ship_useful_for_departure(shipnum) )
+			return shipnum;
 	}
 
-	// return whatever we got
-	return ship_with_bay;
+	// we didn't find anything
+	return -1;
 }
 
 // Goober5000 - check if all fighterbays on a ship have been destroyed
-int ship_fighterbays_all_destroyed(ship *shipp)
+bool ship_fighterbays_all_destroyed(ship *shipp)
 {
 	Assert(shipp);
 	ship_subsys *subsys;
@@ -16776,11 +16803,11 @@ int ship_fighterbays_all_destroyed(ship *shipp)
 
 			// if fighterbay doesn't take damage, we're good
 			if (!ship_subsys_takes_damage(subsys))
-				return 0;
+				return false;
 
 			// if fighterbay isn't destroyed, we're good
 			if (subsys->current_hits > 0)
-				return 0;
+				return false;
 		}
 
 		// next item
@@ -16790,27 +16817,27 @@ int ship_fighterbays_all_destroyed(ship *shipp)
 	// if the ship has no fighterbay subsystems at all, it must be an unusual case,
 	// like the Faustus, so pretend it's okay...
 	if (num_fighterbay_subsystems == 0)
-		return 0;
+		return false;
 
 	// if we got this far, the ship has at least one fighterbay subsystem,
 	// and all the ones it has are destroyed
-	return 1;
+	return true;
 }
 
 // moved here by Goober5000
-int ship_subsys_is_fighterbay(ship_subsys *ss)
+bool ship_subsys_is_fighterbay(ship_subsys *ss)
 {
 	Assert(ss);
 
 	if ( !strnicmp(NOX("fighter"), ss->system_info->name, 7) ) {
-		return 1;
+		return true;
 	}
 
-	return 0;
+	return false;
 }
 
 // Goober5000
-int ship_subsys_takes_damage(ship_subsys *ss)
+bool ship_subsys_takes_damage(ship_subsys *ss)
 {
 	Assert(ss);
 

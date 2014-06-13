@@ -111,6 +111,7 @@ class waypoint_list;
 #define OPF_SHIP_FLAG			84		// Karajorma - The name of a ship flag
 #define OPF_TEAM_COLOR			85		// The E - Color settings as defined in Colors.tbl
 #define OPF_NEBULA_PATTERN		86		// Axem - Full Nebula Background Patterns, as defined in nebula.tbl
+#define OPF_SKYBOX_FLAGS		87		// niffiwan - valid skybox flags
 
 // Operand return types
 #define	OPR_NUMBER				1	// returns number
@@ -381,6 +382,7 @@ class waypoint_list;
 #define OP_GET_NUM_COUNTERMEASURES			(0x004b | OP_CATEGORY_STATUS | OP_NONCAMPAIGN_FLAG) // Karajorma
 #define OP_IS_IN_BOX					    (0x004c | OP_CATEGORY_STATUS | OP_NONCAMPAIGN_FLAG)	// Sushi
 #define OP_IS_IN_MISSION					(0x004d | OP_CATEGORY_STATUS | OP_NONCAMPAIGN_FLAG)	// Goober5000
+#define OP_ARE_SHIP_FLAGS_SET				(0x004e | OP_CATEGORY_STATUS | OP_NONCAMPAIGN_FLAG) // Karajorma
 
 
 // conditional sexpressions
@@ -647,8 +649,8 @@ class waypoint_list;
 #define OP_SHIP_SUBSYS_VANISHED				(0x00e1	| OP_CATEGORY_CHANGE | OP_NONCAMPAIGN_FLAG) // FUBAR
 #define OP_SHIP_SUBSYS_IGNORE_IF_DEAD		(0x00e2	| OP_CATEGORY_CHANGE | OP_NONCAMPAIGN_FLAG) // FUBAR
 #define OP_HUD_SET_DIRECTIVE				(0x00e3 | OP_CATEGORY_CHANGE | OP_NONCAMPAIGN_FLAG) // The E
-#define OP_HUD_GAUGE_SET_ACTIVE				(0x00e4 | OP_CATEGORY_CHANGE | OP_NONCAMPAIGN_FLAG) // The E
-#define OP_HUD_ACTIVATE_GAUGE_TYPE			(0x00e5 | OP_CATEGORY_CHANGE | OP_NONCAMPAIGN_FLAG) // The E
+#define OP_HUD_GAUGE_SET_ACTIVE				(0x00e4 | OP_CATEGORY_CHANGE | OP_NONCAMPAIGN_FLAG) // The E - slightly deprecated
+#define OP_HUD_ACTIVATE_GAUGE_TYPE			(0x00e5 | OP_CATEGORY_CHANGE | OP_NONCAMPAIGN_FLAG) // The E - slightly deprecated
 #define OP_SET_OBJECT_ORIENTATION			(0x00e6 | OP_CATEGORY_CHANGE | OP_NONCAMPAIGN_FLAG)	// Goober5000
 #define OP_STRING_CONCATENATE				(0x00e7 | OP_CATEGORY_CHANGE | OP_NONCAMPAIGN_FLAG)	// Goober5000
 #define OP_INT_TO_STRING					(0x00e8 | OP_CATEGORY_CHANGE | OP_NONCAMPAIGN_FLAG) // Goober5000
@@ -718,6 +720,9 @@ class waypoint_list;
 #define OP_GET_ETS_VALUE					(0x0022 | OP_CATEGORY_CHANGE2 | OP_NONCAMPAIGN_FLAG)	// niffiwan
 #define OP_SET_ETS_VALUES					(0x0023 | OP_CATEGORY_CHANGE2 | OP_NONCAMPAIGN_FLAG)	// niffiwan
 #define OP_CALL_SSM_STRIKE					(0x0024 | OP_CATEGORY_CHANGE2 | OP_NONCAMPAIGN_FLAG) // X3N0-Life-Form
+#define OP_SET_MOTION_DEBRIS				(0x0025 | OP_CATEGORY_CHANGE2 | OP_NONCAMPAIGN_FLAG)    // The E
+#define OP_HUD_SET_CUSTOM_GAUGE_ACTIVE		(0x0026 | OP_CATEGORY_CHANGE2 | OP_NONCAMPAIGN_FLAG) 	// The E, just revamped a bit by Axem
+#define OP_HUD_SET_RETAIL_GAUGE_ACTIVE		(0x0027 | OP_CATEGORY_CHANGE2 | OP_NONCAMPAIGN_FLAG) 	// The E, just revamped a bit by Axem
 
 // defined for AI goals
 #define OP_AI_CHASE							(0x0000 | OP_CATEGORY_AI | OP_NONCAMPAIGN_FLAG)
@@ -977,6 +982,7 @@ char *CTEXT(int n);
 #define SEXP_CHECK_INVALID_MISSION_MOOD			-155
 #define SEXP_CHECK_INVALID_SHIP_FLAG			-156
 #define SEXP_CHECK_INVALID_TEAM_COLOR			-157
+#define SEXP_CHECK_INVALID_SKYBOX_FLAG			-158
 
 #define TRAINING_CONTEXT_SPEED		(1<<0)
 #define TRAINING_CONTEXT_FLY_PATH	(1<<1)
@@ -1216,6 +1222,9 @@ extern char *Explosion_option[];
 //The E
 extern int Num_adjust_audio_options;
 extern char *Adjust_audio_options[];
+
+extern int Num_skybox_flags;
+extern char *Skybox_flags[];
 
 /** Global state variables for the hud-display-gauge sexp.
 They all should be named Sexp_hud_display_*;

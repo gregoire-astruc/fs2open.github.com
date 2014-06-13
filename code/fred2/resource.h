@@ -1115,6 +1115,7 @@
 #define IDC_USE_WING_ICON               1579
 #define IDC_DISABLE_BUILTIN_COMMAND_MSGS 1580
 #define IDC_LBL_OTHER_SUFFIX            1580
+#define IDC_USE_CARGO_ICON              1580
 #define IDC_PRIMARIES_LOCKED            1581
 #define IDC_EXPORT                      1581
 #define IDC_SECONDARIES_LOCKED          1582
@@ -1151,6 +1152,8 @@
 #define IDC_FONT_FILE                   1619
 #define IDC_FICTION_MUSIC               1620
 #define IDC_SOUND_ENVIRONMENT_LABEL     1621
+#define IDC_FONT_FILE2                  1621
+#define IDC_VOICE_FILE                  1621
 #define IDC_SOUND_ENVIRONMENT_VOLUME_LABEL 1622
 #define IDC_SOUND_ENVIRONENT_DAMPING_LABEL 1623
 #define IDC_SOUND_ENVIRONMENT_DECAY_LABEL 1624
@@ -1438,7 +1441,6 @@
 #define ID_FORMAT_FS1_RETAIL            33072
 #define ID_EDITORS_SET_GLOBAL_SHIP_FLAGS 33073
 #define ID_FILE_IMPORT_FSM              33074
-#define ID_FILE_IMPORT_WEAPONS          33075
 #define ID_VIEW_LIGHTING                33079
 #define ID_EDITORS_VOICE                33080
 #define ID_SHOW_IFF_0                   33081

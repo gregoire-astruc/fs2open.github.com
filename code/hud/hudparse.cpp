@@ -1102,13 +1102,12 @@ template<class T>
 T* gauge_load_common(int base_w, int base_h, int hud_font, bool scale_gauge, SCP_vector<int>* ship_idx, color *use_clr,
 					 float default_origin_x, float default_origin_y, int default_offset_x, int default_offset_y,
 					 bool default_position = false, int default_position_x = 0, int default_position_y = 0,
-					 bool set_position = true, bool set_colour = true, T* preAllocated = NULL)
+					 bool set_position = true, bool set_colour = true, bool slew = false, T* preAllocated = NULL)
 {
 	int coords[2] = {default_position_x, default_position_y};
 	float origin[2] = {default_origin_x, default_origin_y};
 	int offset[2] = {default_offset_x, default_offset_y};
 	int base_res[2];
-	bool slew = false;
 	int font_num = FONT1;
 	int colors[3] = {255, 255, 255};
 	bool lock_color = false;
@@ -1206,7 +1205,7 @@ T* gauge_load_common(int base_w, int base_h, int hud_font, bool scale_gauge, SCP
 		}
 	}
 
-	if(optional_string("$Font:")) {
+	if(optional_string("Font:")) {
 		stuff_int(&Hud_font);
 	} else {
 		if ( hud_font >=0 ) {
@@ -1454,7 +1453,11 @@ void load_gauge_mini_shields(int base_w, int base_h, int hud_font, bool scale_ga
 		Mini_2digit_offsets[1] = 7;
 	}
 
-	HudGaugeShieldMini* hud_gauge = gauge_load_common<HudGaugeShieldMini>(base_w, base_h, hud_font, scale_gauge, ship_idx, use_clr, origin[0], origin[1], offset[0], offset[1]);
+	HudGaugeShieldMini* hud_gauge = gauge_load_common<HudGaugeShieldMini>
+		(base_w, base_h, hud_font, scale_gauge, ship_idx, use_clr,
+		origin[0], origin[1], offset[0], offset[1],
+		false, 0, 0,
+		true, true, true);
 
 	if(optional_string("Filename:")) {
 		stuff_string(fname, F_NAME, MAX_FILENAME_LEN);
@@ -1534,7 +1537,11 @@ void load_gauge_weapon_energy(int base_w, int base_h, int hud_font, bool scale_g
 		Wenergy_h = 96;
 	}
 
-	HudGaugeWeaponEnergy* hud_gauge = gauge_load_common<HudGaugeWeaponEnergy>(base_w, base_h, hud_font, scale_gauge, ship_idx, use_clr, origin[0], origin[1], offset[0], offset[1]);
+	HudGaugeWeaponEnergy* hud_gauge = gauge_load_common<HudGaugeWeaponEnergy>
+		(base_w, base_h, hud_font, scale_gauge, ship_idx, use_clr,
+		origin[0], origin[1], offset[0], offset[1],
+		false, 0, 0,
+		true, true, true);
 
 	if(optional_string("Filename:")) {
 		stuff_string(fname, F_NAME, MAX_FILENAME_LEN);
@@ -1802,7 +1809,11 @@ void load_gauge_afterburner(int base_w, int base_h, int hud_font, bool scale_gau
 		energy_h = 96;
 	}
 
-	HudGaugeAfterburner *hud_gauge = gauge_load_common<HudGaugeAfterburner>(base_w, base_h, hud_font, scale_gauge, ship_idx, use_clr, origin[0], origin[1], offset[0], offset[1]);
+	HudGaugeAfterburner *hud_gauge = gauge_load_common<HudGaugeAfterburner>
+		(base_w, base_h, hud_font, scale_gauge, ship_idx, use_clr,
+		origin[0], origin[1], offset[0], offset[1],
+		false, 0, 0,
+		true, true, true);
 
 	if(optional_string("Filename:")) {
 		stuff_string(fname, F_NAME, MAX_FILENAME_LEN);
@@ -1945,7 +1956,11 @@ void load_gauge_threat_indicator(int base_w, int base_h, int hud_font, bool scal
 		}
 	}
 
-	HudGaugeThreatIndicator* hud_gauge = gauge_load_common<HudGaugeThreatIndicator>(base_w, base_h, hud_font, scale_gauge, ship_idx, use_clr, origin[0], origin[1], offset[0], offset[1]);
+	HudGaugeThreatIndicator* hud_gauge = gauge_load_common<HudGaugeThreatIndicator>
+		(base_w, base_h, hud_font, scale_gauge, ship_idx, use_clr,
+		origin[0], origin[1], offset[0], offset[1],
+		false, 0, 0,
+		true, true, true);
 
 	if(optional_string("Arc Filename:")) {
 		stuff_string(fname_arc, F_NAME, MAX_FILENAME_LEN);
@@ -2015,7 +2030,11 @@ void load_gauge_center_reticle(int base_w, int base_h, int hud_font, bool scale_
 		}
 	}
 
-	HudGaugeReticle* hud_gauge = gauge_load_common<HudGaugeReticle>(base_w, base_h, hud_font, scale_gauge, ship_idx, use_clr, origin[0], origin[1], offset[0], offset[1]);
+	HudGaugeReticle* hud_gauge = gauge_load_common<HudGaugeReticle>
+		(base_w, base_h, hud_font, scale_gauge, ship_idx, use_clr,
+		origin[0], origin[1], offset[0], offset[1],
+		false, 0, 0,
+		true, true, true);
 
 	if(optional_string("Filename:")) {
 		stuff_string(fname, F_NAME, MAX_FILENAME_LEN);
@@ -2144,7 +2163,11 @@ void load_gauge_throttle(int base_w, int base_h, int hud_font, bool scale_gauge,
 		}
 	}
 
-	HudGaugeThrottle* hud_gauge = gauge_load_common<HudGaugeThrottle>(base_w, base_h, hud_font, scale_gauge, ship_idx, use_clr, origin[0], origin[1], offset[0], offset[1]);
+	HudGaugeThrottle* hud_gauge = gauge_load_common<HudGaugeThrottle>
+		(base_w, base_h, hud_font, scale_gauge, ship_idx, use_clr,
+		origin[0], origin[1], offset[0], offset[1],
+		false, 0, 0,
+		true, true, true);
 
 	if(optional_string("Filename:")) {
 		stuff_string(fname, F_NAME, MAX_FILENAME_LEN);
@@ -3027,7 +3050,11 @@ void load_gauge_text_warnings(int base_w, int base_h, int hud_font, bool scale_g
 		offset[1] = -109;
 	}
 
-	HudGaugeTextWarnings* hud_gauge = gauge_load_common<HudGaugeTextWarnings>(base_w, base_h, hud_font, scale_gauge, ship_idx, use_clr, origin[0], origin[1], offset[0], offset[1]);
+	HudGaugeTextWarnings* hud_gauge = gauge_load_common<HudGaugeTextWarnings>
+		(base_w, base_h, hud_font, scale_gauge, ship_idx, use_clr,
+		origin[0], origin[1], offset[0], offset[1],
+		false, 0, 0,
+		true, true, true);
 
 	if(ship_idx->at(0) >= 0) {
 		for (SCP_vector<int>::iterator ship_index = ship_idx->begin(); ship_index != ship_idx->end(); ++ship_index) {
@@ -4372,7 +4399,11 @@ void load_gauge_weapon_linking(int base_w, int base_h, int hud_font, bool scale_
 		strcpy_s(fname_secondary_link_3, "2_rightarc6_fs1");
 	}
 
-	HudGaugeWeaponLinking* hud_gauge = gauge_load_common<HudGaugeWeaponLinking>(base_w, base_h, hud_font, scale_gauge, ship_idx, use_clr, origin[0], origin[1], offset[0], offset[1]);
+	HudGaugeWeaponLinking* hud_gauge = gauge_load_common<HudGaugeWeaponLinking>
+		(base_w, base_h, hud_font, scale_gauge, ship_idx, use_clr,
+		origin[0], origin[1], offset[0], offset[1],
+		false, 0, 0,
+		true, true, true);
 
 	if(optional_string("Arc Filename:")) {
 		stuff_string(fname_arc, F_NAME, MAX_FILENAME_LEN);
@@ -4754,7 +4785,11 @@ void load_gauge_hostile_tri(int base_w, int base_h, int hud_font, bool scale_gau
 		Radius = 166;
 	}
 
-	HudGaugeHostileTriangle* hud_gauge = gauge_load_common<HudGaugeHostileTriangle>(base_w, base_h, hud_font, scale_gauge, ship_idx, use_clr, origin[0], origin[1], offset[0], offset[1]);
+	HudGaugeHostileTriangle* hud_gauge = gauge_load_common<HudGaugeHostileTriangle>
+		(base_w, base_h, hud_font, scale_gauge, ship_idx, use_clr,
+		origin[0], origin[1], offset[0], offset[1],
+		false, 0, 0,
+		true, true, true);
 
 	if(optional_string("Radius:")) {
 		stuff_int(&Radius);
@@ -4806,7 +4841,11 @@ void load_gauge_target_tri(int base_w, int base_h, int hud_font, bool scale_gaug
 		Radius = 166;
 	}
 
-	HudGaugeTargetTriangle* hud_gauge = gauge_load_common<HudGaugeTargetTriangle>(base_w, base_h, hud_font, scale_gauge, ship_idx, use_clr, origin[0], origin[1], offset[0], offset[1]);
+	HudGaugeTargetTriangle* hud_gauge = gauge_load_common<HudGaugeTargetTriangle>
+		(base_w, base_h, hud_font, scale_gauge, ship_idx, use_clr,
+		origin[0], origin[1], offset[0], offset[1],
+		false, 0, 0,
+		true, true, true);
 
 	if(optional_string("Radius:")) {
 		stuff_int(&Radius);
@@ -4858,7 +4897,11 @@ void load_gauge_missile_tri(int base_w, int base_h, int hud_font, bool scale_gau
 		Radius = 166;
 	}
 
-	HudGaugeMissileTriangles* hud_gauge = gauge_load_common<HudGaugeMissileTriangles>(base_w, base_h, hud_font, scale_gauge, ship_idx, use_clr, origin[0], origin[1], offset[0], offset[1]);
+	HudGaugeMissileTriangles* hud_gauge = gauge_load_common<HudGaugeMissileTriangles>
+		(base_w, base_h, hud_font, scale_gauge, ship_idx, use_clr,
+		origin[0], origin[1], offset[0], offset[1],
+		false, 0, 0,
+		true, true, true);
 
 	if(optional_string("Radius:")) {
 		stuff_int(&Radius);
@@ -4964,7 +5007,11 @@ void load_gauge_orientation_tee(int base_w, int base_h, int hud_font, bool scale
 		Radius = 166;
 	}
 
-	HudGaugeOrientationTee* hud_gauge = gauge_load_common<HudGaugeOrientationTee>(base_w, base_h, hud_font, scale_gauge, ship_idx, use_clr, origin[0], origin[1], offset[0], offset[1]);
+	HudGaugeOrientationTee* hud_gauge = gauge_load_common<HudGaugeOrientationTee>
+		(base_w, base_h, hud_font, scale_gauge, ship_idx, use_clr,
+		origin[0], origin[1], offset[0], offset[1],
+		false, 0, 0,
+		true, true, true);
 
 	if(optional_string("Radius:")) {
 		stuff_int(&Radius);
@@ -4998,7 +5045,11 @@ void load_gauge_lead_sight(int base_w, int base_h, int hud_font, bool scale_gaug
 		offset[1] = 3;
 	}
 
-	HudGaugeLeadSight* hud_gauge = gauge_load_common<HudGaugeLeadSight>(base_w, base_h, hud_font, scale_gauge, ship_idx, use_clr, origin[0], origin[1], offset[0], offset[1]);
+	HudGaugeLeadSight* hud_gauge = gauge_load_common<HudGaugeLeadSight>
+		(base_w, base_h, hud_font, scale_gauge, ship_idx, use_clr,
+		origin[0], origin[1], offset[0], offset[1],
+		false, 0, 0,
+		true, true, true);
 
 	if(optional_string("Filename:")) {
 		stuff_string(fname, F_NAME, MAX_FILENAME_LEN);
@@ -5125,7 +5176,11 @@ void load_gauge_warhead_count(int base_w, int base_h, int hud_font, bool scale_g
 		offset[1] = -144;
 	}
 
-	HudGaugeWarheadCount* hud_gauge = gauge_load_common<HudGaugeWarheadCount>(base_w, base_h, hud_font, scale_gauge, ship_idx, use_clr, origin[0], origin[1], offset[0], offset[1]);
+	HudGaugeWarheadCount* hud_gauge = gauge_load_common<HudGaugeWarheadCount>
+		(base_w, base_h, hud_font, scale_gauge, ship_idx, use_clr,
+		origin[0], origin[1], offset[0], offset[1],
+		false, 0, 0,
+		true, true, true);
 
 	if ( optional_string("Filename:") ) {
 		stuff_string(fname, F_NAME, MAX_FILENAME_LEN);
