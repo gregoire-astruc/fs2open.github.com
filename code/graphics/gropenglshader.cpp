@@ -218,14 +218,14 @@ namespace opengl
 							for (k = 0; k < GL_Uniform_Reference_Particle[j].num_uniforms; k++) {
 								if (!shaderPtr->addUniform(GL_Uniform_Reference_Particle[j].uniforms[k]))
 								{
-									nprintf(("   WARNING: Failed to find uniform %s!\n", GL_Uniform_Reference_Particle[j].uniforms[k]));
+									mprintf(("   WARNING: Failed to find uniform %s!\n", GL_Uniform_Reference_Particle[j].uniforms[k]));
 								}
 							}
 
 							for (k = 0; k < GL_Uniform_Reference_Particle[j].num_attributes; k++) {
 								if (!shaderPtr->addAttribute(GL_Uniform_Reference_Particle[j].attributes[k]))
 								{
-									nprintf(("   WARNING: Failed to find attribute %s!\n", GL_Uniform_Reference_Particle[j].attributes[k]));
+									mprintf(("   WARNING: Failed to find attribute %s!\n", GL_Uniform_Reference_Particle[j].attributes[k]));
 								}
 							}
 
@@ -240,7 +240,7 @@ namespace opengl
 								for (int k = 0; k < GL_Uniform_Reference_Main[j].num_uniforms; k++) {
 									if (!shaderPtr->addUniform(GL_Uniform_Reference_Main[j].uniforms[k]))
 									{
-										nprintf(("   WARNING: Failed to find uniform %s!\n", GL_Uniform_Reference_Main[j].uniforms[k]));
+										mprintf(("   WARNING: Failed to find uniform %s!\n", GL_Uniform_Reference_Main[j].uniforms[k]));
 									}
 								}
 							}
@@ -249,7 +249,7 @@ namespace opengl
 								for (int k = 0; k < GL_Uniform_Reference_Main[j].num_attributes; k++) {
 									if (!shaderPtr->addAttribute(GL_Uniform_Reference_Main[j].attributes[k]))
 									{
-										nprintf(("   WARNING: Failed to find attribute %s!\n", GL_Uniform_Reference_Main[j].attributes[k]));
+										mprintf(("   WARNING: Failed to find attribute %s!\n", GL_Uniform_Reference_Main[j].attributes[k]));
 									}
 								}
 							}
