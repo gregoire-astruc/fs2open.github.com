@@ -14966,7 +14966,7 @@ ADE_FUNC(addBit, l_BitOps, "number, number (bit)", "Performs inclusive or (OR) o
 //**********LIBRARY: Chromium
 ade_lib l_Chromium("chromium", NULL, "ch", "Chromium interface");
 
-ADE_FUNC(createBrowser, l_Chromium, "number width, number height[, boolean tranparent = true]", "Creates a new browser. If <tt>transparent</tt> is <b>true</b> the browser will render"
+ADE_FUNC(createBrowser, l_Chromium, "number width, number height[, boolean transparent = true]", "Creates a new browser. If <tt>transparent</tt> is <b>true</b> the browser will render"
 	" transparent colors, if it's <b>false</b> the background is white.", "browser", "browser handle or invalid handle on failure")
 {
 	int width;

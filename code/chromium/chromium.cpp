@@ -4,6 +4,7 @@
 #include "chromium/chromium.h"
 #include "chromium/jsapi/jsapi.h"
 #include "chromium/ApplicationImpl.h"
+
 #include "mainloop/mainloop.h"
 #include "io/timer.h"
 #include "mod_table/mod_table.h"
@@ -27,6 +28,8 @@ namespace chromium
 
 	CefRefPtr<ApplicationImpl> application;
 
+	SCP_vector<boost::weak_ptr<Browser>> knownBrowsers;
+
 	bool doChromiumWork()
 	{
 		clock_t now = clock();
@@ -48,6 +51,8 @@ namespace chromium
 			// Just return here, leaving the chromium system uninited
 			return;
 		}
+
+		knownBrowsers.clear();
 
 		// TODO: implement code which works for other platforms (possible using argc and argv
 		// to determine the executable path)
@@ -85,6 +90,16 @@ namespace chromium
 	{
 		if (chromiumInited)
 		{
+			for (auto& browser : knownBrowsers)
+			{
+				if (!browser.expired())
+				{
+					browser.lock()->Close();
+				}
+			}
+
+			knownBrowsers.clear();
+
 			CefShutdown();
 		}
 	}
@@ -103,6 +118,11 @@ namespace chromium
 		{
 			application->RemoveCallback(name);
 		}
+	}
+
+	void addBrowserInstance(boost::weak_ptr<Browser> browser)
+	{
+		knownBrowsers.push_back(browser);
 	}
 
 	bool isInited()

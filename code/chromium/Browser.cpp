@@ -335,6 +335,8 @@ namespace chromium
 
 		browser->mClient = new ClientImpl(static_cast<int>(width), static_cast<int>(height));
 
+		addBrowserInstance(weak_ptr<Browser>(browser));
+
 		return browser;
 	}
 }

@@ -26,8 +26,6 @@ namespace chromium
 		void addEventHandler(SDL_EventType type, int weigth,
 			const std::function<bool(const SDL_Event&)>& listener);
 
-		void CreateBrowserWindow(HWND parentWindow);
-
 		Browser() : mClient(nullptr)
 		{
 		}
