@@ -25,6 +25,7 @@ target_link_libraries(chromiumprocess cef_cpp_wrapper)
 source_group(Resources FILES resources/fsoExtension.js)
 
 SET_TARGET_PROPERTIES(chromiumprocess PROPERTIES OUTPUT_NAME "chromiumprocess_${FSO_BINARY_SUFFIX}")
+SET_TARGET_PROPERTIES(chromiumprocess PROPERTIES DEBUG_POSTFIX "-DEBUG")
 
 IF(MSVC)
 	set_target_properties(chromiumprocess PROPERTIES

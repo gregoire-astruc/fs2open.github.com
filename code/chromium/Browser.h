@@ -17,10 +17,7 @@ namespace chromium
 
 		SCP_vector<size_t> mHandlerIdentifiers;
 
-		bool mOffscreen;
 		bool mTransparent;
-
-		HWND mBrowserAreaWindow;
 
 		bool MouseEvent(const SDL_Event& event);
 
@@ -31,7 +28,7 @@ namespace chromium
 
 		void CreateBrowserWindow(HWND parentWindow);
 
-		Browser() : mClient(nullptr), mOffscreen(false), mBrowserAreaWindow(nullptr)
+		Browser() : mClient(nullptr)
 		{
 		}
 	public:
@@ -58,8 +55,6 @@ namespace chromium
 
 	public:
 		static boost::shared_ptr<Browser> CreateOffScreenBrowser(size_t width, size_t height, bool transparent = true);
-
-		static boost::shared_ptr<Browser> CreateFullScreenBrowser();
 	};
 }
 

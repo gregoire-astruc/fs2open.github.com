@@ -13,6 +13,7 @@
 #endif
 
 #include "include/cef_app.h"
+#include "include/cef_sandbox_win.h"
 
 #include <boost/filesystem.hpp>
 
@@ -20,7 +21,7 @@ namespace chromium
 {
 	namespace fs = boost::filesystem;
 
-	std::clock_t lastUpdate = 0;
+	clock_t lastUpdate = 0;
 
 	bool chromiumInited = false;
 
@@ -28,9 +29,9 @@ namespace chromium
 
 	bool doChromiumWork()
 	{
-		std::clock_t now = std::clock();
+		clock_t now = clock();
 
-		if (lastUpdate == 0 || ((float)(now - lastUpdate) / CLOCKS_PER_SEC) > 0.016666f)
+		if (lastUpdate == 0 || (static_cast<float>(now - lastUpdate) / CLOCKS_PER_SEC) > 0.016666f)
 		{
 			// Try to limit it to 60 updates per second
 			CefDoMessageLoopWork();
@@ -50,10 +51,10 @@ namespace chromium
 
 		// TODO: implement code which works for other platforms (possible using argc and argv
 		// to determine the executable path)
-		CefMainArgs main_args(GetModuleHandle(NULL));
+		CefMainArgs main_args(GetModuleHandle(nullptr));
 
 		WCHAR moduleName[MAX_PATH];
-		DWORD result = GetModuleFileNameW(NULL, moduleName, MAX_PATH);
+		DWORD result = GetModuleFileNameW(nullptr, moduleName, MAX_PATH);
 
 		if (result == ERROR_INSUFFICIENT_BUFFER)
 		{
@@ -65,6 +66,7 @@ namespace chromium
 
 		settings.multi_threaded_message_loop = false;
 		settings.remote_debugging_port = 12345;
+		settings.windowless_rendering_enabled = true;
 
 		CefString(&settings.log_file).FromWString((fs::current_path() / "data" / "chromium.log").native());
 		
@@ -77,8 +79,6 @@ namespace chromium
 		jsapi::init();
 
 		chromiumInited = true;
-
-		return;
 	}
 
 	void shutdown()

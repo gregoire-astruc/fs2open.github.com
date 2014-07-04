@@ -224,74 +224,30 @@ namespace chromium
 		mHandlerIdentifiers.push_back(os::addEventListener(type, weigth, listener));
 	}
 
-	LRESULT CALLBACK ChildProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
-	{
-		return CallWindowProc(DefWindowProc, hWnd, message, wParam, lParam);
-	}
-
-	void Browser::CreateBrowserWindow(HWND parentWindow)
-	{
-		RECT rect;
-		GetClientRect(parentWindow, &rect);
-
-		WNDCLASSEX wcex = { 0 };
-
-		wcex.cbSize = sizeof(WNDCLASSEXW);
-		wcex.lpfnWndProc = &ChildProc;
-		wcex.hInstance = GetModuleHandle(NULL);
-		wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
-		wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
-		wcex.lpszClassName = TEXT("BrowserChildWindow");
-		
-		RegisterClassEx(&wcex);
-
-		mBrowserAreaWindow = CreateWindow(TEXT("BrowserChildWindow"),
-			TEXT("Child window"),
-			WS_CHILD | WS_VISIBLE,
-			rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top,
-			parentWindow,
-			nullptr,
-			GetModuleHandle(NULL),
-			nullptr);
-	}
-
 	bool Browser::Create(const CefString& url)
 	{
 		Assertion(mClient != nullptr, "Can't create browser from default constructed object!");
 
 		CefWindowInfo info;
 
-		if (mOffscreen)
+		SDL_SysWMinfo wmInfo;
+		SDL_VERSION(&wmInfo.version); // initialize info structure with SDL version info
+
+		if (!SDL_GetWindowWMInfo(os_get_window(), &wmInfo))
 		{
-			info.SetAsOffScreen(nullptr);
-		}
-		else
-		{
-			SDL_SysWMinfo wmInfo;
-			SDL_VERSION(&wmInfo.version); // initialize info structure with SDL version info
-
-			if (!SDL_GetWindowWMInfo(os_get_window(), &wmInfo))
-			{
-				// call failed
-				mprintf(("Couldn't get window information: %s\n", SDL_GetError()));
-				return false;
-			}
-
-			CreateBrowserWindow(wmInfo.info.win.window);
-
-			RECT rect;
-			GetClientRect(mBrowserAreaWindow, &rect);
-
-			info.SetAsChild(mBrowserAreaWindow, rect);
+			// call failed
+			mprintf(("Couldn't get window information: %s\n", SDL_GetError()));
+			return false;
 		}
 
-		info.SetTransparentPainting(mTransparent);
+		info.SetAsWindowless(wmInfo.info.win.window, mTransparent);
 
 		CefBrowserSettings settings;
 		settings.java = STATE_DISABLED;
 		settings.javascript_close_windows = STATE_DISABLED;
 		settings.javascript_open_windows = STATE_DISABLED;
 		settings.plugins = STATE_DISABLED;
+		settings.windowless_frame_rate = 60;
 		CefString(&settings.default_encoding).FromASCII("UTF-8");
 
 		return CefBrowserHost::CreateBrowser(info, mClient.get(), url, settings, nullptr);
@@ -347,22 +303,9 @@ namespace chromium
 
 	void Browser::Close()
 	{
-		// And another HACK: CEF closes the root ancestor of its window which is our game window
-		// by setting the parent to null before that happens we fix that
-		if (mBrowserAreaWindow != nullptr)
-		{
-			SetParent(mBrowserAreaWindow, nullptr);
-		}
-
 		if (GetClient()->getMainBrowser() != nullptr)
 		{
 			GetClient()->getMainBrowser()->GetHost()->CloseBrowser(true);
-		}
-
-		if (mBrowserAreaWindow != nullptr)
-		{
-			DestroyWindow(mBrowserAreaWindow);
-			mBrowserAreaWindow = nullptr;
 		}
 	}
 
@@ -388,28 +331,9 @@ namespace chromium
 		}
 
 		shared_ptr<Browser> browser = shared_ptr<Browser>(new Browser());
-		browser->mOffscreen = true;
 		browser->mTransparent = transparent;
 
 		browser->mClient = new ClientImpl(static_cast<int>(width), static_cast<int>(height));
-
-		return browser;
-	}
-
-	shared_ptr<Browser> Browser::CreateFullScreenBrowser()
-	{
-		// This mode uses OS specific functionality to render the page but overrides our cursor so we can't use this
-		if (!chromium::isInited())
-		{
-			Warning(LOCATION, "Chromium subsystem is not inited, that either means you haven't enabled chromium in your mod table or created a browser too early.");
-			return nullptr;
-		}
-
-		shared_ptr<Browser> browser = shared_ptr<Browser>(new Browser());
-		browser->mOffscreen = false;
-		browser->mTransparent = true;
-
-		browser->mClient = new ClientImpl();
 
 		return browser;
 	}

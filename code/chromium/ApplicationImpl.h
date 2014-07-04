@@ -28,15 +28,15 @@ namespace chromium
 
 		// CefApp interface
 	public:
-		virtual void OnRegisterCustomSchemes(CefRefPtr<CefSchemeRegistrar> registrar);
+		virtual void OnRegisterCustomSchemes(CefRefPtr<CefSchemeRegistrar> registrar) override;
 
-		virtual CefRefPtr<CefBrowserProcessHandler> GetBrowserProcessHandler() { return this; }
+		virtual CefRefPtr<CefBrowserProcessHandler> GetBrowserProcessHandler() override { return this; }
 
-		virtual void OnRenderProcessThreadCreated(CefRefPtr<CefListValue> extra_info);
+		virtual void OnRenderProcessThreadCreated(CefRefPtr<CefListValue> extra_info) override;
 
 		// CefBrowserProcessHandler interface
 	public:
-		virtual void OnContextInitialized();
+		virtual void OnContextInitialized() override;
 
 		IMPLEMENT_REFCOUNTING(ApplicationImpl);
 	};
