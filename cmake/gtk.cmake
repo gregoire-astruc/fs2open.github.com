@@ -1,0 +1,5 @@
+FIND_PACKAGE(PkgConfig)
+
+IF(PKG_CONFIG_FOUND)
+    pkg_check_modules(GTK gtk+-2.0)
+ENDIF(PKG_CONFIG_FOUND)

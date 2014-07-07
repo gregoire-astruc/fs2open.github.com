@@ -19,7 +19,9 @@
 #include "graphics/2d.h"
 
 // No need to actually include gamesequence.h
-enum GameState;
+//enum GameState;
+// But it doesn't work with clang!
+#include "gamesequence/gamesequence.h"
 
 // --------------------------------------------------------------------------------------------------------
 // FREESPACE DEFINES/VARS
