@@ -18,10 +18,10 @@ function(CEF_TARGET NAME)
         target_link_libraries(${NAME} ${GTK_LIBRARIES})
         
         if(CEF_PATH)
-            set(CEF_DLL_WRAPPER ${CEF_PATH}/out/${CMAKE_BUILD_TYPE}/obj.target/libcef_dll_wrapper.a)
+            set(CEF_DLL_WRAPPER ${CEF_PATH}/out/Release/obj.target/libcef_dll_wrapper.a)
             
             add_dependencies(${NAME} libcef_dll_wrapper)
-            target_link_libraries(${NAME} ${CEF_PATH}/${CMAKE_BUILD_TYPE}/libcef.so ${CEF_DLL_WRAPPER})
+            target_link_libraries(${NAME} ${CEF_PATH}/Release/libcef.so ${CEF_DLL_WRAPPER})
         endif(CEF_PATH)
     endif(UNIX)
 endfunction(CEF_TARGET)

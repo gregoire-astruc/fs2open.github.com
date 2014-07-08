@@ -369,6 +369,9 @@ void model_init()
 		Polygon_models[i] = NULL;
 	}
 
+	// Why is this here? model_free_all() is called by game_shutdown() normally.
+	// This exit handler triggers a useless second call.
+	// --ngld
 	atexit( model_free_all );
 	model_initted = 1;
 }
