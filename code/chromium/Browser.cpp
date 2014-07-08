@@ -64,11 +64,6 @@ namespace
 
 		return state;
 	}
-
-	bool isKeyDown(WPARAM wparam)
-	{
-		return (GetKeyState(wparam) & 0x8000) != 0;
-	}
 }
 
 namespace chromium
@@ -174,6 +169,13 @@ namespace chromium
 			return false;
 		}
 
+#ifndef SCP_UNIX
+		// TODO: Make this cross-platform compatible.
+		// event.syswm.msg->msg is a SDL_SysWMmsg
+		// SDL_SysWMmsg has the win property only on windows and an x11 only on linux.
+		// It should be possible to do this stuff with the x11 property, too.
+		// Would be best to do this using SDL's keyboard functions. I'm not sure why this is done the way it is...
+		
 		auto message = event.syswm.msg->msg.win.msg;
 		auto wParam = event.syswm.msg->msg.win.wParam;
 		auto lParam = event.syswm.msg->msg.win.lParam;
@@ -216,6 +218,7 @@ namespace chromium
 				return true;
 			}
 		}
+#endif
 
 		return false;
 	}
@@ -248,14 +251,18 @@ namespace chromium
 			return false;
 		}
 
-		info.SetAsWindowless(wmInfo.info.win.window, mTransparent);
-
 		CefBrowserSettings settings;
+		
+#ifdef WIN32
+		info.SetAsWindowless(wmInfo.info.win.window, mTransparent);
+		settings.windowless_frame_rate = 60;
+#endif
+		
 		settings.java = STATE_DISABLED;
 		settings.javascript_close_windows = STATE_DISABLED;
 		settings.javascript_open_windows = STATE_DISABLED;
 		settings.plugins = STATE_DISABLED;
-		settings.windowless_frame_rate = 60;
+		
 		CefString(&settings.default_encoding).FromASCII("UTF-8");
 
 		return CefBrowserHost::CreateBrowser(info, mClient.get(), url, settings, nullptr);

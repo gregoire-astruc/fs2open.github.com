@@ -238,7 +238,7 @@ namespace chromium
 
 			CefRect client_popup_rect(0, 0, mPopupRect.width, mPopupRect.height);
 
-			browser->GetHost()->Invalidate(PET_POPUP);
+			browser->GetHost()->Invalidate(client_popup_rect, PET_POPUP);
 
 			mPaintingPopup = false;
 		}
@@ -266,7 +266,7 @@ namespace chromium
 		{
 			CefRect dirty_rect = mPopupRect;
 			ClearPopupRects();
-			browser->GetHost()->Invalidate(PET_VIEW);
+			browser->GetHost()->Invalidate(dirty_rect, PET_VIEW);
 		}
 	}
 

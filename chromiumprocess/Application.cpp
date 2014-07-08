@@ -1,8 +1,7 @@
 
+#include <algorithm>
 #include "Application.h"
-
 #include "jsapi.h"
-
 #include "include/cef_runnable.h"
 
 namespace

@@ -7,6 +7,22 @@
  *
 */ 
 
+#include <boost/filesystem.hpp>
+
+#include <boost/smart_ptr.hpp>
+#include <boost/pool/object_pool.hpp>
+#include <boost/iostreams/stream_buffer.hpp>
+#include <boost/iostreams/device/mapped_file.hpp>
+
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/lock_guard.hpp>
+
+#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string_regex.hpp>
+
+#include <boost/bind.hpp>
+#include <boost/ref.hpp>
+
 #include "globalincs/pstypes.h"
 
 #include "cfile/cfile.h"
@@ -25,22 +41,6 @@
 #include <VFSPP/merged.hpp>
 #include <VFSPP/system.hpp>
 #include <VFSPP/7zip.hpp>
-
-#include <boost/filesystem.hpp>
-
-#include <boost/smart_ptr.hpp>
-#include <boost/pool/object_pool.hpp>
-#include <boost/iostreams/stream_buffer.hpp>
-#include <boost/iostreams/device/mapped_file.hpp>
-
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/lock_guard.hpp>
-
-#include <boost/algorithm/string.hpp>
-#include <boost/algorithm/string_regex.hpp>
-
-#include <boost/bind.hpp>
-#include <boost/ref.hpp>
 
 #include <unzip.h>
 
@@ -159,7 +159,7 @@ namespace cfile
 		rootDir = fs::current_path();
 
 #ifdef SCP_UNIX
-		userDir.assign(detect_home());
+		userDir = detect_home();
 		userDir /= Osreg_user_dir;
 #endif
 
@@ -1125,7 +1125,7 @@ namespace cfile
 			{
 				std::ostringstream os;
 
-				os << "Attempted to read " << (diff.seekpos() - handle->maxReadLength) << "-byte(s) beyond length limit";
+				os << "Attempted to read " << ((int)diff - handle->maxReadLength) << "-byte(s) beyond length limit";
 
 				throw MaxReadLengthException(os.str());
 			}

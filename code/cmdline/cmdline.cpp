@@ -54,7 +54,8 @@ static cmdline_parm Parm_list(NULL, NULL);
 static int Parm_list_inited = 0;
 
 extern int Show_framerate;	// from freespace.cpp
-
+int Cmdline_argc;
+char **Cmdline_argv;
 
 enum
 {
@@ -896,6 +897,9 @@ void os_init_cmdline(int argc, char *argv[])
 	}
 #endif
 
+	Cmdline_argc = argc;
+	Cmdline_argv = argv;
+	
 	os_parse_parms(argc, argv);
 	os_validate_parms(argc, argv);
 }

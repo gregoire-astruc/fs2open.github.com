@@ -8,13 +8,17 @@
 #include "mainloop/mainloop.h"
 #include "io/timer.h"
 #include "mod_table/mod_table.h"
+#include "cmdline/cmdline.h"
 
 #ifdef WIN32
 #include <Windows.h>
 #endif
+#ifdef SCP_UNIX
+#include <unistd.h>
+#endif
 
 #include "include/cef_app.h"
-#include "include/cef_sandbox_win.h"
+//#include "include/cef_sandbox_win.h"
 
 #include <boost/filesystem.hpp>
 
@@ -53,9 +57,13 @@ namespace chromium
 		}
 
 		knownBrowsers.clear();
-
+		
+		CefSettings settings;
+		
 		// TODO: implement code which works for other platforms (possible using argc and argv
 		// to determine the executable path)
+		// See http://stackoverflow.com/a/1024937
+#ifdef WIN32
 		CefMainArgs main_args(GetModuleHandle(nullptr));
 
 		WCHAR moduleName[MAX_PATH];
@@ -66,14 +74,27 @@ namespace chromium
 			mprintf(("Path to executable is too long, errors might occur."));
 		}
 		
-		CefSettings settings;
-		CefString(&settings.browser_subprocess_path).FromWString((fs::path(moduleName).parent_path() / CHROMIUM_PROCESS).native());
-
+		CefString(&settings.browser_subprocess_path).FromWString((fs::path(moduleName).parent_path() / CHROMIUM_PROCESS).wstring());
+		settings.windowless_rendering_enabled = true;
+		
+#elif SCP_UNIX
+		CefMainArgs main_args(Cmdline_argc, Cmdline_argv);
+		
+		char moduleName[MAX_PATH];
+		size_t moduleLen = readlink("/proc/self/exe", moduleName, MAX_PATH);
+		
+		if (moduleLen == MAX_PATH)
+		{
+			mprintf(("Path to executable is too long, errors might occur."));
+		}
+		moduleName[moduleLen - 1] = '\0';
+		
+		CefString(&settings.browser_subprocess_path).FromString((fs::path(moduleName).parent_path() / CHROMIUM_PROCESS).string());
+#endif
 		settings.multi_threaded_message_loop = false;
 		settings.remote_debugging_port = 12345;
-		settings.windowless_rendering_enabled = true;
 
-		CefString(&settings.log_file).FromWString((fs::current_path() / "data" / "chromium.log").native());
+		CefString(&settings.log_file).FromWString((fs::current_path() / "data" / "chromium.log").wstring());
 		
 		application = new ApplicationImpl();
 

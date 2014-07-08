@@ -86,7 +86,15 @@ MACRO(COPY_FILES_TO_TARGET _target)
 		ADD_CUSTOM_COMMAND(
 			TARGET ${_target} POST_BUILD
 			COMMAND ${CMAKE_COMMAND} -E copy_if_different "${file}"  "$<TARGET_FILE_DIR:${_target}>"
-			COMMENT "copying '${file}'..."
+			COMMENT "Copying '${file}'..."
 		)
 	ENDFOREACH(file)
+	
+	FOREACH(dir IN LISTS TARGET_COPY_DIRS)
+		ADD_CUSTOM_COMMAND(
+			TARGET ${_target} POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E copy_directory "${dir}" "$<TARGET_FILE_DIR:${_target}>"
+			COMMENT "Copying '${dir}'..."
+		)
+	ENDFOREACH(dir)
 ENDMACRO(COPY_FILES_TO_TARGET)

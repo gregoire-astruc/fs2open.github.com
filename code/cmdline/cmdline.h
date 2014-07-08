@@ -15,6 +15,9 @@
 
 int parse_cmdline(int argc, char *argv[]);
 
+extern int Cmdline_argc;
+extern char **Cmdline_argv;
+
 // COMMAND LINE SETTINGS
 // This section is for reference by all the *_init() functions. For example, the multiplayer init function
 // could check to see if (int Cmdline_multi_stream_chat_to_file) has been set by the command line parser.

@@ -233,7 +233,7 @@ public:
     virtual void execute() {
         if (MULTI_IS_TRACKER_GAME) {
             // delete mvalid.cfg if it exists
-            cf_delete(MULTI_VALID_MISSION_FILE, CF_TYPE_DATA);
+            cfile::deleteFile(MULTI_VALID_MISSION_FILE, cfile::TYPE_DATA);
 
             // refresh missions
             multi_update_valid_missions();
@@ -917,7 +917,7 @@ void std_multi_add_goals() {}
 void std_multi_update_goals() {}
 void std_multi_update_netgame_info_controls() {}
 void std_multi_set_standalone_mission_name(char *mission_name) {}
-void std_gen_set_text(char *str, int field_num) {}
+void std_gen_set_text(const char *str, int field_num) {}
 void std_create_gen_dialog(char *title) {}
 void std_destroy_gen_dialog() {}
 int std_gen_is_active() {return 0;}

@@ -17,10 +17,6 @@
 #include "globalincs/pstypes.h"
 #include "globalincs/systemvars.h"
 #include "graphics/2d.h"
-
-// No need to actually include gamesequence.h
-//enum GameState;
-// But it doesn't work with clang!
 #include "gamesequence/gamesequence.h"
 
 // --------------------------------------------------------------------------------------------------------

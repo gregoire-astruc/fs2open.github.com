@@ -5,50 +5,37 @@ set (file_root
 # AI files
 set (file_root_ai
 	ai/ai.cpp
-	ai/ai.h
 	ai/ai_profiles.cpp
-	ai/ai_profiles.h
 	ai/aibig.cpp
-	ai/aibig.h
 	ai/aicode.cpp
 	ai/aigoals.cpp
-	ai/aigoals.h
-	ai/aiinternal.h
-	ai/ailocal.h
 	ai/aiturret.cpp
 )
 
 # Anim files
 set (file_root_anim
 	anim/animplay.cpp
-	anim/animplay.h
 	anim/packunpack.cpp
-	anim/packunpack.h
 )
 
 # Asteroid files
 set (file_root_asteroid
 	asteroid/asteroid.cpp
-	asteroid/asteroid.h
 )
 
 # Autopilot files
 set (file_root_autopilot
 	autopilot/autopilot.cpp
-	autopilot/autopilot.h
 )
 
 # Bmpman files
 set (file_root_bmpman
-	bmpman/bm_internal.h
 	bmpman/bmpman.cpp
-	bmpman/bmpman.h
 )
 
 # Camera files
 set (file_root_camera
 	camera/camera.cpp
-	camera/camera.h
 )
 
 # CFile files
@@ -58,85 +45,64 @@ set (file_root_cfile
 	cfile/VPFileSystemEntry.cpp
 	cfile/ZipFileSystem.cpp
 	cfile/ZipFileSystemEntry.cpp
-	cfile/cfile.h
-	cfile/VPFileSystem.h
-	cfile/VPFileSystemEntry.h
-	cfile/ZipFileSystem.h
-	cfile/ZipFileSystemEntry.h
 )
 
 # Chromium files
 set(file_root_chromium
-	chromium/chromium.h
 	chromium/chromium.cpp
-	chromium/ApplicationImpl.h
 	chromium/ApplicationImpl.cpp
-	chromium/Browser.h
 	chromium/Browser.cpp
-	chromium/ChromiumStateLogic.h
 	chromium/ChromiumStateLogic.cpp
-	chromium/ClientImpl.h
 	chromium/ClientImpl.cpp
 )
 
 # jsapi Files
 set(file_root_chromium_jsapi
-	chromium/jsapi/jsapi.h
 	chromium/jsapi/jsapi.cpp
 )
 
 # Cmdline files
 set (file_root_cmdline
 	cmdline/cmdline.cpp
-	cmdline/cmdline.h
 )
 
 # CMeasure files
 set (file_root_cmeasure
 	cmeasure/cmeasure.cpp
-	cmeasure/cmeasure.h
 )
 
 # ControlConfig files
 set (file_root_controlconfig
 	controlconfig/controlsconfig.cpp
-	controlconfig/controlsconfig.h
 	controlconfig/controlsconfigcommon.cpp
 )
 
 # Cutscene files
 set (file_root_cutscene
 	cutscene/cutscenes.cpp
-	cutscene/cutscenes.h
 	cutscene/decoder16.cpp
 	cutscene/decoder8.cpp
 	cutscene/movie.cpp
-	cutscene/movie.h
 	cutscene/mve_audio.cpp
 	cutscene/mvelib.cpp
-	cutscene/mvelib.h
 	cutscene/mveplayer.cpp
 	cutscene/oggplayer.cpp
-	cutscene/oggplayer.h
 )
 
 # ddsutils files
 set (file_root_ddsutils
 	ddsutils/ddsutils.cpp
-	ddsutils/ddsutils.h
 )
 
 # Debris files
 set (file_root_debris
 	debris/debris.cpp
-	debris/debris.h
 )
 
 # DebugConsole files
 set (file_root_debugconsole
 	debugconsole/console.cpp
 	debugconsole/timerbar.cpp
-	debugconsole/timerbar.h
 )
 
 SET(file_root_def_files
@@ -166,102 +132,68 @@ SET(file_root_def_files
 
 # DirectX files
 set (file_root_directx
-	directx/vasync.h
-	directx/vdinput.h
-	directx/vdplay.h
-	directx/vdplobby.h
-	directx/vdsetup.h
-	directx/vdvp.h
 )
 
 # ExceptionHandler files
 set (file_root_exceptionhandler
 	exceptionhandler/exceptionhandler.cpp
-	exceptionhandler/exceptionhandler.h
 )
 
 # ExternalDLL files
 set (file_root_externaldll
-	external_dll/externalcode.h
 	external_dll/trackirglobal.cpp
-	external_dll/trackirpublic.h
 )
 
 # Fireball files
 set (file_root_fireball
 	fireball/fireballs.cpp
-	fireball/fireballs.h
 	fireball/warpineffect.cpp
 )
 
 # GameHelp files
 set (file_root_gamehelp
 	gamehelp/contexthelp.cpp
-	gamehelp/contexthelp.h
 	gamehelp/gameplayhelp.cpp
-	gamehelp/gameplayhelp.h
 )
 
 # GameHelp -> fs2netd files
 set (file_root_gamehelp_fs2netd
 	fs2netd/fs2netd_client.cpp
-	fs2netd/fs2netd_client.h
-	fs2netd/protocol.h
 	fs2netd/tcp_client.cpp
-	fs2netd/tcp_client.h
 	fs2netd/tcp_socket.cpp
-	fs2netd/tcp_socket.h
 )
 
 # GameSequence files
 set (file_root_gamesequence
 	gamesequence/gamesequence.cpp
-	gamesequence/gamesequence.h
 )
 
 # GameSnd files
 set (file_root_gamesnd
 	gamesnd/eventmusic.cpp
-	gamesnd/eventmusic.h
 	gamesnd/gamesnd.cpp
-	gamesnd/gamesnd.h
 )
 
 set(file_root_generated
-	${GENERATED_SOURCE_DIR}/project.h
-	${GENERATED_SOURCE_DIR}/compiler.h
 )
 
 # GlobalIncs files
 set (file_root_globalincs
 	globalincs/alphacolors.cpp
-	globalincs/alphacolors.h
 	globalincs/def_files.cpp
-	globalincs/def_files.h
 	globalincs/fsmemory.cpp
-	globalincs/fsmemory.h
-	globalincs/globals.h
-	globalincs/linklist.h
 	globalincs/profiling.cpp
-	globalincs/pstypes.h
 	globalincs/safe_strings.cpp
-	globalincs/safe_strings.h
 	globalincs/safe_strings_test.cpp
 	globalincs/systemvars.cpp
-	globalincs/systemvars.h
 	globalincs/util.cpp
-	globalincs/util.h
 	globalincs/version.cpp
-	globalincs/version.h
-	globalincs/vmallocator.h
-	globalincs/scp_defines.h
 )
 
 IF (WIN32)
 	set (file_root_globalincs
 		${file_root_globalincs}
 		globalincs/mspdb_callstack.cpp
-		globalincs/mspdb_callstack.h
 		globalincs/windebug.cpp
 	)
 ENDIF(WIN32)
@@ -269,11 +201,7 @@ ENDIF(WIN32)
 # Graphics files
 set (file_root_graphics
 	graphics/2d.cpp
-	graphics/2d.h
 	graphics/grbatch.cpp
-	graphics/grbatch.h
-	graphics/grinternal.h
-	graphics/tmapper.h
 )
 
 # Graphics -> OpenGLGr files
@@ -296,98 +224,55 @@ set (file_root_graphics_openglgr_opengl_cpps
 
 # Graphics -> OpenGLGr -> OpenGL Headers files
 set (file_root_graphics_openglgr_opengl_headers
-	graphics/gropengl.h
-	graphics/gropenglbmpman.h
-	graphics/gropengldraw.h
-	graphics/gropenglextension.h
-	graphics/gropengllight.h
-	graphics/gropenglpostprocessing.h
-	graphics/gropenglshader.h
-	graphics/gropenglstate.h
-	graphics/gropengltexture.h
-	graphics/gropengltnl.h
 )
 
 # Graphics -> SoftwareGr files
 set (file_root_graphics_softwaregr
 	graphics/font.cpp
-	graphics/font.h
 	graphics/generic.cpp
-	graphics/generic.h
 	graphics/grstub.cpp
-	graphics/grstub.h
-	graphics/line.h
 )
 
 # Hud files
 set (file_root_hud
 	hud/hud.cpp
-	hud/hud.h
 	hud/hudartillery.cpp
-	hud/hudartillery.h
 	hud/hudbrackets.cpp
-	hud/hudbrackets.h
 	hud/hudconfig.cpp
-	hud/hudconfig.h
 	hud/hudescort.cpp
-	hud/hudescort.h
 	hud/hudets.cpp
-	hud/hudets.h
-	hud/hudgauges.h
 	hud/hudlock.cpp
-	hud/hudlock.h
 	hud/hudmessage.cpp
-	hud/hudmessage.h
 	hud/hudnavigation.cpp
-	hud/hudnavigation.h
 	hud/hudobserver.cpp
-	hud/hudobserver.h
 	hud/hudparse.cpp
-	hud/hudparse.h
 	hud/hudreticle.cpp
-	hud/hudreticle.h
 	hud/hudshield.cpp
-	hud/hudshield.h
 	hud/hudsquadmsg.cpp
-	hud/hudsquadmsg.h
 	hud/hudtarget.cpp
-	hud/hudtarget.h
 	hud/hudtargetbox.cpp
-	hud/hudtargetbox.h
 	hud/hudwingmanstatus.cpp
-	hud/hudwingmanstatus.h
 )
 
 # iff_defs files
 set (file_root_iff_defs
 	iff_defs/iff_defs.cpp
-	iff_defs/iff_defs.h
 )
 
 # InetFile files
 set (file_root_inetfile
 	inetfile/cftp.cpp
-	inetfile/cftp.h
 	inetfile/chttpget.cpp
-	inetfile/chttpget.h
 	inetfile/inetgetfile.cpp
-	inetfile/inetgetfile.h
 )
 
 # Io files
 set (file_root_io
 	io/cursor.cpp
-	io/cursor.h
 	io/key.cpp
-	io/key.h
 	io/keycontrol.cpp
-	io/keycontrol.h
 	io/mouse.cpp
-	io/mouse.h
 	io/timer.cpp
-	io/timer.h
-	io/joy.h
-	io/joy_ff.h
 	io/joy-sdl.cpp
 	io/joy_ff-sdl.cpp
 )
@@ -395,232 +280,145 @@ set (file_root_io
 # jpgutils files
 set (file_root_jpgutils
 	jpgutils/jpgutils.cpp
-	jpgutils/jpgutils.h
 )
 
 # JumpNode files
 set (file_root_jumpnode
 	jumpnode/jumpnode.cpp
-	jumpnode/jumpnode.h
 )
 
 # Lab files
 set (file_root_lab
 	lab/lab.cpp
-	lab/lab.h
 	lab/wmcgui.cpp
-	lab/wmcgui.h
 )
 
 # Lighting files
 set (file_root_lighting
 	lighting/lighting.cpp
-	lighting/lighting.h
 )
 
 # Localization files
 set (file_root_localization
 	localization/fhash.cpp
-	localization/fhash.h
 	localization/localize.cpp
-	localization/localize.h
 )
 
 # Mainloop files
 set(file_root_mainloop
-	mainloop/mainloop.h
 	mainloop/mainloop.cpp
 )
 
 # Math files
 set (file_root_math
-	math/bitarray.h
 	math/fix.cpp
-	math/fix.h
 	math/floating.cpp
-	math/floating.h
 	math/fvi.cpp
-	math/fvi.h
 	math/spline.cpp
-	math/spline.h
 	math/staticrand.cpp
-	math/staticrand.h
 	math/vecmat.cpp
-	math/vecmat.h
 )
 
 # MenuUI files
 set (file_root_menuui
 	menuui/barracks.cpp
-	menuui/barracks.h
 	menuui/credits.cpp
-	menuui/credits.h
 	menuui/fishtank.cpp
-	menuui/fishtank.h
 	menuui/mainhallmenu.cpp
-	menuui/mainhallmenu.h
 	menuui/mainhalltemp.cpp
-	menuui/mainhalltemp.h
 	menuui/optionsmenu.cpp
-	menuui/optionsmenu.h
 	menuui/optionsmenumulti.cpp
-	menuui/optionsmenumulti.h
 	menuui/playermenu.cpp
-	menuui/playermenu.h
 	menuui/readyroom.cpp
-	menuui/readyroom.h
 	menuui/snazzyui.cpp
-	menuui/snazzyui.h
 	menuui/techmenu.cpp
-	menuui/techmenu.h
 	menuui/trainingmenu.cpp
-	menuui/trainingmenu.h
 )
 
 # Mission files
 set (file_root_mission
 	mission/missionbriefcommon.cpp
-	mission/missionbriefcommon.h
 	mission/missioncampaign.cpp
-	mission/missioncampaign.h
 	mission/missiongoals.cpp
-	mission/missiongoals.h
 	mission/missiongrid.cpp
-	mission/missiongrid.h
 	mission/missionhotkey.cpp
-	mission/missionhotkey.h
 	mission/missionload.cpp
-	mission/missionload.h
 	mission/missionlog.cpp
-	mission/missionlog.h
 	mission/missionmessage.cpp
-	mission/missionmessage.h
 	mission/missionparse.cpp
-	mission/missionparse.h
 	mission/missiontraining.cpp
-	mission/missiontraining.h
 )
 
 # MissionUI files
 set (file_root_missionui
 	missionui/chatbox.cpp
-	missionui/chatbox.h
 	missionui/fictionviewer.cpp
-	missionui/fictionviewer.h
 	missionui/missionbrief.cpp
-	missionui/missionbrief.h
 	missionui/missioncmdbrief.cpp
-	missionui/missioncmdbrief.h
 	missionui/missiondebrief.cpp
-	missionui/missiondebrief.h
 	missionui/missionloopbrief.cpp
-	missionui/missionloopbrief.h
 	missionui/missionpause.cpp
-	missionui/missionpause.h
 	missionui/missionrecommend.cpp
-	missionui/missionrecommend.h
 	missionui/missionscreencommon.cpp
-	missionui/missionscreencommon.h
 	missionui/missionshipchoice.cpp
-	missionui/missionshipchoice.h
 	missionui/missionstats.cpp
-	missionui/missionstats.h
 	missionui/missionweaponchoice.cpp
-	missionui/missionweaponchoice.h
 	missionui/redalert.cpp
-	missionui/redalert.h
 )
 
 # mod_table files
 set (file_root_mod_table
 	mod_table/mod_table.cpp
-	mod_table/mod_table.h
 )
 
 # Model files
 set (file_root_model
-	model/model.h
 	model/modelanim.cpp
-	model/modelanim.h
 	model/modelcollide.cpp
 	model/modelinterp.cpp
 	model/modeloctant.cpp
 	model/modelread.cpp
-	model/modelsinc.h
 )
 
 # Nebula files
 set (file_root_nebula
 	nebula/neb.cpp
-	nebula/neb.h
 	nebula/neblightning.cpp
-	nebula/neblightning.h
 )
 
 # Network files
 set (file_root_network
 	network/chat_api.cpp
-	network/chat_api.h
 	network/multi.cpp
-	network/multi.h
 	network/multi_campaign.cpp
-	network/multi_campaign.h
 	network/multi_data.cpp
-	network/multi_data.h
 	network/multi_dogfight.cpp
-	network/multi_dogfight.h
 	network/multi_endgame.cpp
-	network/multi_endgame.h
 	network/multi_ingame.cpp
-	network/multi_ingame.h
 	network/multi_kick.cpp
-	network/multi_kick.h
 	network/multi_log.cpp
-	network/multi_log.h
 	network/multi_obj.cpp
-	network/multi_obj.h
 	network/multi_observer.cpp
-	network/multi_observer.h
 	network/multi_options.cpp
-	network/multi_options.h
 	network/multi_pause.cpp
-	network/multi_pause.h
 	network/multi_pinfo.cpp
-	network/multi_pinfo.h
 	network/multi_ping.cpp
-	network/multi_ping.h
 	network/multi_pmsg.cpp
-	network/multi_pmsg.h
 	network/multi_pxo.cpp
-	network/multi_pxo.h
 	network/multi_rate.cpp
-	network/multi_rate.h
 	network/multi_respawn.cpp
-	network/multi_respawn.h
 	network/multi_sexp.cpp
-	network/multi_sexp.h
 	network/multi_team.cpp
-	network/multi_team.h
 	network/multi_update.cpp
-	network/multi_update.h
 	network/multi_voice.cpp
-	network/multi_voice.h
 	network/multi_xfer.cpp
-	network/multi_xfer.h
 	network/multilag.cpp
-	network/multilag.h
 	network/multimsgs.cpp
-	network/multimsgs.h
 	network/multiteamselect.cpp
-	network/multiteamselect.h
 	network/multiui.cpp
-	network/multiui.h
 	network/multiutil.cpp
-	network/multiutil.h
 	network/psnet2.cpp
-	network/psnet2.h
 	network/stand_gui.cpp
-	network/stand_gui.h
 )
 
 IF(WIN32)
@@ -643,42 +441,29 @@ set (file_root_object
 	object/collideshipweapon.cpp
 	object/collideweaponweapon.cpp
 	object/deadobjectdock.cpp
-	object/deadobjectdock.h
 	object/objcollide.cpp
-	object/objcollide.h
 	object/object.cpp
-	object/object.h
 	object/objectdock.cpp
-	object/objectdock.h
 	object/objectshield.cpp
-	object/objectshield.h
 	object/objectsnd.cpp
-	object/objectsnd.h
 	object/objectsort.cpp
 	object/parseobjectdock.cpp
-	object/parseobjectdock.h
 	object/waypoint.cpp
-	object/waypoint.h
 )
 
 # Observer files
 set (file_root_observer
 	observer/observer.cpp
-	observer/observer.h
 )
 
 # OsApi files
 set (file_root_osapi
-	osapi/osapi.h
 	osapi/osapi.cpp
-	osapi/osregistry.h
-	osapi/outwnd.h
 )
 
 IF(WIN32)
 set (file_root_osapi
 	${file_root_osapi}
-	osapi/monopub.h
 	osapi/osregistry.cpp
 	osapi/outwnd.cpp
 )
@@ -693,46 +478,35 @@ ENDIF(WIN32)
 # Palman files
 set (file_root_palman
 	palman/palman.cpp
-	palman/palman.h
 )
 
 # Parse files
 set (file_root_parse
 	parse/encrypt.cpp
-	parse/encrypt.h
 	parse/generic_log.cpp
-	parse/generic_log.h
 	parse/lua.cpp
-	parse/lua.h
 	parse/parselo.cpp
-	parse/parselo.h
 	parse/scripting.cpp
-	parse/scripting.h
 	parse/sexp.cpp
-	parse/sexp.h
 )
 
 set(file_root_parse_lua
-	parse/lua/util.h
 	parse/lua/util.cpp
 )
 
 # Particle files
 set (file_root_particle
 	particle/particle.cpp
-	particle/particle.h
 )
 
 # PcxUtils files
 set (file_root_pcxutils
 	pcxutils/pcxutils.cpp
-	pcxutils/pcxutils.h
 )
 
 # Physics files
 set (file_root_physics
 	physics/physics.cpp
-	physics/physics.h
 )
 
 # PilotFile files
@@ -740,9 +514,7 @@ set (file_root_pilotfile
 	pilotfile/csg.cpp
 	pilotfile/csg_convert.cpp
 	pilotfile/pilotfile.cpp
-	pilotfile/pilotfile.h
 	pilotfile/pilotfile_convert.cpp
-	pilotfile/pilotfile_convert.h
 	pilotfile/plr.cpp
 	pilotfile/plr_convert.cpp
 )
@@ -750,43 +522,32 @@ set (file_root_pilotfile
 # Playerman files
 set (file_root_playerman
 	playerman/managepilot.cpp
-	playerman/managepilot.h
-	playerman/player.h
 	playerman/playercontrol.cpp
 )
 
 # pngutils files
 set (file_root_pngutils
 	pngutils/pngutils.cpp
-	pngutils/pngutils.h
 )
 
 # Popup files
 set (file_root_popup
 	popup/popup.cpp
-	popup/popup.h
 	popup/popupdead.cpp
-	popup/popupdead.h
 )
 
 # Radar files
 set (file_root_radar
 	radar/radar.cpp
-	radar/radar.h
 	radar/radardradis.cpp
-	radar/radardradis.h
 	radar/radarorb.cpp
-	radar/radarorb.h
 	radar/radarsetup.cpp
-	radar/radarsetup.h
 )
 
 # Render files
 set (file_root_render
-	render/3d.h
 	render/3dclipper.cpp
 	render/3ddraw.cpp
-	render/3dinternal.h
 	render/3dlaser.cpp
 	render/3dmath.cpp
 	render/3dsetup.cpp
@@ -795,90 +556,61 @@ set (file_root_render
 # Ship files
 set (file_root_ship
 	ship/afterburner.cpp
-	ship/afterburner.h
 	ship/awacs.cpp
-	ship/awacs.h
 	ship/shield.cpp
 	ship/ship.cpp
-	ship/ship.h
 	ship/shipcontrails.cpp
-	ship/shipcontrails.h
 	ship/shipfx.cpp
-	ship/shipfx.h
 	ship/shiphit.cpp
-	ship/shiphit.h
-	ship/subsysdamage.h
 )
 
 # Sound files
 set (file_root_sound
 	sound/acm.cpp
-	sound/acm.h
 	sound/audiostr.cpp
-	sound/audiostr.h
-	sound/channel.h
 	sound/ds.cpp
-	sound/ds.h
 	sound/ds3d.cpp
-	sound/ds3d.h
 	sound/dscap.cpp
-	sound/dscap.h
 	sound/fsspeech.cpp
-	sound/fsspeech.h
 	sound/openal.cpp
-	sound/openal.h
 	sound/phrases.xml
 	sound/rtvoice.cpp
-	sound/rtvoice.h
 	sound/sound.cpp
-	sound/sound.h
 	sound/speech.cpp
-	sound/speech.h
 	sound/voicerec.cpp
-	sound/voicerec.h
 )
 
 # Sound -> ogg files
 set (file_root_sound_ogg
 	sound/ogg/ogg.cpp
-	sound/ogg/ogg.h
 )
 
 # Species_Defs files
 set (file_root_species_defs
 	species_defs/species_defs.cpp
-	species_defs/species_defs.h
 )
 
 # Starfield files
 set (file_root_starfield
 	starfield/nebula.cpp
-	starfield/nebula.h
 	starfield/starfield.cpp
-	starfield/starfield.h
 	starfield/supernova.cpp
-	starfield/supernova.h
 )
 
 set(file_root_statelogic
 	statelogic/statelogic.cpp
-	statelogic/statelogic.h
 )
 
 # Stats files
 set (file_root_stats
 	stats/medals.cpp
-	stats/medals.h
 	stats/scoring.cpp
-	stats/scoring.h
 	stats/stats.cpp
-	stats/stats.h
 )
 
 # TgaUtils files
 set (file_root_tgautils
 	tgautils/tgautils.cpp
-	tgautils/tgautils.h
 )
 
 # Ui files
@@ -894,8 +626,6 @@ set (file_root_ui
 	ui/scroll.cpp
 	ui/slider.cpp
 	ui/slider2.cpp
-	ui/ui.h
-	ui/uidefs.h
 	ui/uidraw.cpp
 	ui/uimouse.cpp
 	ui/window.cpp
@@ -904,28 +634,18 @@ set (file_root_ui
 # Weapon files
 set (file_root_weapon
 	weapon/beam.cpp
-	weapon/beam.h
 	weapon/corkscrew.cpp
-	weapon/corkscrew.h
 	weapon/emp.cpp
-	weapon/emp.h
 	weapon/flak.cpp
-	weapon/flak.h
 	weapon/muzzleflash.cpp
-	weapon/muzzleflash.h
 	weapon/shockwave.cpp
-	weapon/shockwave.h
 	weapon/swarm.cpp
-	weapon/swarm.h
 	weapon/trails.cpp
-	weapon/trails.h
-	weapon/weapon.h
 	weapon/weapons.cpp
 )
 
 # Windows stubs files
 set(file_root_windows_stubs
-	windows_stub/config.h
 )
 
 IF(UNIX)
