@@ -457,6 +457,10 @@ void joy_device_changed(int state, int device)
 			// found our wanted stick!
 			setJoystickDevice(joystick);
 		}
+		else
+		{
+			SDL_JoystickClose(joystick);
+		}
 	}
 	else if (state == SDL_JOYDEVICEREMOVED)
 	{
