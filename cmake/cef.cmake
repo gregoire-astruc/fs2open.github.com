@@ -4,7 +4,7 @@ function(CEF_TARGET NAME)
             message(FATAL_ERROR "The passed CEF_PATH is not valid!")
         endif(NOT EXISTS ${CEF_PATH}/include)
         
-        include_directories(${CEF_PATH})
+        target_include_directories(${NAME} PUBLIC ${CEF_PATH})
     endif(CEF_PATH)
 
     if(UNIX)
@@ -14,7 +14,7 @@ function(CEF_TARGET NAME)
             pkg_check_modules(GTK gtk+-2.0)
         endif(PKG_CONFIG_FOUND)
 
-        include_directories(${GTK_INCLUDE_DIRS})
+        target_include_directories(${NAME} PUBLIC ${GTK_INCLUDE_DIRS})
         target_link_libraries(${NAME} ${GTK_LIBRARIES})
         
         if(CEF_PATH)

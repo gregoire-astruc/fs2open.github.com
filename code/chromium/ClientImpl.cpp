@@ -1,3 +1,7 @@
+#include <SDL_syswm.h>
+
+#include "include/cef_version.h"
+#include "include/cef_url.h"
 
 #include "bmpman/bmpman.h"
 #include "chromium/ClientImpl.h"
@@ -6,9 +10,6 @@
 #include "graphics/2d.h"
 #include "osapi/osapi.h"
 
-#include "include/cef_url.h"
-
-#include <SDL_syswm.h>
 
 namespace
 {
@@ -44,16 +45,27 @@ namespace
 
 namespace chromium
 {
-	ClientImpl::ClientImpl() : width(-1), height(-1), bitmapData(nullptr), browserBitmapHandle(-1),
+	ClientImpl::ClientImpl() : bitmapData(nullptr), browserBitmapHandle(-1),
 		mPaintingPopup(false)
 	{
 		// Don't create the bitmap data
+		mPosition = new CefRect(0, 0, -1, -1);
 	}
 
 	ClientImpl::ClientImpl(int widthIn, int heightIn)
-		: width(widthIn), height(heightIn), bitmapData(nullptr), browserBitmapHandle(-1),
+		: bitmapData(nullptr), browserBitmapHandle(-1),
 		mPaintingPopup(false)
 	{
+		mPosition = new CefRect(0, 0, widthIn, heightIn);
+		resize(widthIn, heightIn);
+	}
+
+	ClientImpl::ClientImpl(int xIn, int yIn, int widthIn, int heightIn)
+		: bitmapData(nullptr), browserBitmapHandle(-1),
+		mPaintingPopup(false)
+	{
+		mPosition = new CefRect(xIn, yIn, widthIn, heightIn);
+		move(xIn, yIn);
 		resize(widthIn, heightIn);
 	}
 
@@ -70,6 +82,8 @@ namespace chromium
 			vm_free(bitmapData);
 			bitmapData = nullptr;
 		}
+
+		delete mPosition;
 	}
 
 	void ClientImpl::executeCallback(CefString const& callbackName, CefRefPtr<CefListValue> values)
@@ -96,6 +110,12 @@ namespace chromium
 		mainBrowser->SendProcessMessage(PID_RENDERER, message);
 	}
 
+	void ClientImpl::move(int x, int y)
+	{
+		mPosition->x = x;
+		mPosition->y = y;
+	}
+
 	void ClientImpl::resize(int width, int height)
 	{
 		if (browserBitmapHandle >= 0)
@@ -115,10 +135,21 @@ namespace chromium
 		memset(bitmapData, 0, width * height * 4);
 
 		browserBitmapHandle = bm_create(32, width, height, bitmapData, BMP_TEX_XPARENT);
+		mPosition->width = width;
+		mPosition->height = height;
 
 		if (getMainBrowser() != nullptr)
 		{
 			getMainBrowser()->GetHost()->WasResized();
+		}
+	}
+
+	void ClientImpl::render()
+	{
+		if (bm_is_valid(browserBitmapHandle))
+		{
+			gr_set_bitmap(browserBitmapHandle); //, GR_ALPHABLEND_FILTER);
+			gr_bitmap(mPosition->x, mPosition->y, false);
 		}
 	}
 
@@ -188,8 +219,8 @@ namespace chromium
 
 	bool ClientImpl::GetViewRect(CefRefPtr<CefBrowser> browser, CefRect &rect)
 	{
-		rect.width = width;
-		rect.height = height;
+		rect.width = mPosition->width;
+		rect.height = mPosition->height;
 
 		return true;
 	}
@@ -236,9 +267,12 @@ namespace chromium
 		{
 			mPaintingPopup = true;
 
+#if CEF_REVISION < 1750
 			CefRect client_popup_rect(0, 0, mPopupRect.width, mPopupRect.height);
-
 			browser->GetHost()->Invalidate(client_popup_rect, PET_POPUP);
+#else
+			browser->GetHost()->Invalidate(PET_POPUP);
+#endif
 
 			mPaintingPopup = false;
 		}
@@ -249,8 +283,8 @@ namespace chromium
 	{
 		if (type == PET_VIEW)
 		{
-			Assertion(this->width == width, "Paint event width is not the same as the set width!");
-			Assertion(this->height == height, "Paint event height is not the same as the set height!");
+			Assertion(mPosition->width == width, "Paint event width is not the same as the set width!");
+			Assertion(mPosition->height == height, "Paint event height is not the same as the set height!");
 
 			gr_update_texture(browserBitmapHandle, 32, buffer, width, height);
 		}
@@ -264,9 +298,14 @@ namespace chromium
 	{
 		if (!show)
 		{
+#if CEF_REVISION < 1750
 			CefRect dirty_rect = mPopupRect;
 			ClearPopupRects();
 			browser->GetHost()->Invalidate(dirty_rect, PET_VIEW);
+#else
+			ClearPopupRects();
+			browser->GetHost()->Invalidate(PET_VIEW);
+#endif
 		}
 	}
 
@@ -288,10 +327,10 @@ namespace chromium
 		if (rc.y < 0)
 			rc.y = 0;
 		// if popup goes outside the view, try to reposition origin
-		if (rc.x + rc.width > width)
-			rc.x = width - rc.width;
-		if (rc.y + rc.height > height)
-			rc.y = height - rc.height;
+		if (rc.x + rc.width > mPosition->width)
+			rc.x = mPosition->width - rc.width;
+		if (rc.y + rc.height > mPosition->height)
+			rc.y = mPosition->height - rc.height;
 		// if x or y became negative, move them to 0 again.
 		if (rc.x < 0)
 			rc.x = 0;

@@ -140,6 +140,8 @@ namespace chromium
 
 		if (handle == nullptr)
 		{
+			Warning(LOCATION, "Chromium could not find file %s!\n", filePath.c_str());
+
 			return nullptr;
 		}
 		

@@ -672,7 +672,7 @@ void os_validate_parms(int argc, char *argv[])
 	{
 		token = argv[i];
 
-		if (token[0] == '-') {
+		if (token[0] == '-' && token[1] != '-') {
 			parm_found = 0;
 			for (parmp = GET_FIRST(&Parm_list); parmp != END_OF_LIST(&Parm_list); parmp = GET_NEXT(parmp)) {
 				if (!stricmp(parmp->name, token)) {

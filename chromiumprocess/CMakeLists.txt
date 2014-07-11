@@ -25,7 +25,7 @@ add_executable(chromiumprocess ${EXE_GUI_TYPE} ${SOURCES})
 
 source_group(Resources FILES resources/fsoExtension.js)
 
-SET_TARGET_PROPERTIES(chromiumprocess PROPERTIES OUTPUT_NAME "chromiumprocess_${FSO_BINARY_SUFFIX}")
+SET_TARGET_PROPERTIES(chromiumprocess PROPERTIES OUTPUT_NAME "chromium/chromiumprocess_${FSO_BINARY_SUFFIX}")
 SET_TARGET_PROPERTIES(chromiumprocess PROPERTIES DEBUG_POSTFIX "-DEBUG")
 
 IF(MSVC)
@@ -54,6 +54,15 @@ install(
 	BUNDLE DESTINATION ${BINARY_DESTINATION}
 	CONFIGURATIONS Debug Release
 )
+
+if(CEF_PATH)
+	add_custom_command(
+	    TARGET chromiumprocess
+	    PRE_LINK
+	    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CEF_PATH}/Resources ${EXECUTABLE_OUTPUT_PATH}/chromium
+	    COMMENT "Copying CEF resources..."
+	)
+endif(CEF_PATH)
 
 INCLUDE(util)
 INCLUDE(cef)

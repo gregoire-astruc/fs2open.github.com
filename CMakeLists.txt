@@ -100,7 +100,7 @@ OPTION(FSO_CMAKE_DEBUG "Enable cmake debugging in while generating build files" 
 
 OPTION(COTIRE_ENABLE "Enable cotire, disabling may be useful for cmake files development" ON)
 
-OPTION(CEF_PATH "Path to the CEF files" OFF)
+SET(CEF_PATH "" CACHE PATH "Path to the CEF files")
 
 MARK_AS_ADVANCED(FORCE FSO_CMAKE_DEBUG)
 MARK_AS_ADVANCED(FORCE FSO_BUILD_INCLUDED_LIBS)

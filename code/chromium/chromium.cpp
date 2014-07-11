@@ -1,5 +1,11 @@
 
-#include <ctime>
+#include <boost/filesystem.hpp>
+#ifdef WIN32
+#include <Windows.h>
+#endif
+#ifdef SCP_UNIX
+#include <unistd.h>
+#endif
 
 #include "chromium/chromium.h"
 #include "chromium/jsapi/jsapi.h"
@@ -9,24 +15,16 @@
 #include "io/timer.h"
 #include "mod_table/mod_table.h"
 #include "cmdline/cmdline.h"
-
-#ifdef WIN32
-#include <Windows.h>
-#endif
-#ifdef SCP_UNIX
-#include <unistd.h>
-#endif
+#include "osapi/osapi.h"
 
 #include "include/cef_app.h"
-//#include "include/cef_sandbox_win.h"
 
-#include <boost/filesystem.hpp>
 
 namespace chromium
 {
 	namespace fs = boost::filesystem;
 
-	clock_t lastUpdate = 0;
+	int lastUpdate = 0;
 
 	bool chromiumInited = false;
 
@@ -36,9 +34,9 @@ namespace chromium
 
 	bool doChromiumWork()
 	{
-		clock_t now = clock();
+		int now = timer_get_milliseconds();
 
-		if (lastUpdate == 0 || (static_cast<float>(now - lastUpdate) / CLOCKS_PER_SEC) > 0.016666f)
+		if (now - lastUpdate >= 16)
 		{
 			// Try to limit it to 60 updates per second
 			CefDoMessageLoopWork();
@@ -59,6 +57,7 @@ namespace chromium
 		knownBrowsers.clear();
 		
 		CefSettings settings;
+		fs::path base_path, home_path;
 		
 		// TODO: implement code which works for other platforms (possible using argc and argv
 		// to determine the executable path)
@@ -74,8 +73,7 @@ namespace chromium
 			mprintf(("Path to executable is too long, errors might occur."));
 		}
 		
-		CefString(&settings.browser_subprocess_path).FromWString((fs::path(moduleName).parent_path() / CHROMIUM_PROCESS).wstring());
-		settings.windowless_rendering_enabled = true;
+		home_path = fs::path(detect_home()) / "data";
 		
 #elif SCP_UNIX
 		CefMainArgs main_args(Cmdline_argc, Cmdline_argv);
@@ -87,14 +85,28 @@ namespace chromium
 		{
 			mprintf(("Path to executable is too long, errors might occur."));
 		}
-		moduleName[moduleLen - 1] = '\0';
 		
-		CefString(&settings.browser_subprocess_path).FromString((fs::path(moduleName).parent_path() / CHROMIUM_PROCESS).string());
+		moduleName[moduleLen - 1] = '\0';
+		home_path = fs::path(detect_home()) / Osreg_user_dir / "data";
+#endif
+		base_path = fs::path(moduleName).parent_path();
+		
+		if (!fs::exists(base_path / "chromium" / CHROMIUM_PROCESS))
+		{
+			Error(LOCATION, "%s is missing! Failed to initialize Chromium!", (base_path / "chromium" / CHROMIUM_PROCESS).string().c_str());
+		}
+		
+		
+#if CEF_REVISION >= 1750
+		settings.windowless_rendering_enabled = true;
 #endif
 		settings.multi_threaded_message_loop = false;
 		settings.remote_debugging_port = 12345;
 
-		CefString(&settings.log_file).FromWString((fs::current_path() / "data" / "chromium.log").wstring());
+		CefString(&settings.log_file) = (home_path / "chromium.log").native();
+		CefString(&settings.browser_subprocess_path) = (base_path / "chromium" / CHROMIUM_PROCESS).native();
+		CefString(&settings.resources_dir_path) = (base_path / "chromium").native();
+		CefString(&settings.locales_dir_path) = (base_path / "chromium" / "locales").native();
 		
 		application = new ApplicationImpl();
 

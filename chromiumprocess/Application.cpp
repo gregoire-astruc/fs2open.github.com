@@ -283,6 +283,11 @@ namespace
 					return;
 				}
 			}
+			else
+			{
+				exception = std::string("The callback '") + nameValue->GetStringValue().ToString() + "' doesn't exist!";
+				return;
+			}
 
 			retval = CefV8Value::CreateNull();
 

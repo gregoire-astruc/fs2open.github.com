@@ -7,6 +7,8 @@
  *
 */
 
+#include <algorithm>
+
 #include "playerman/managepilot.h"
 #include "freespace.h"
 #include "hud/hudsquadmsg.h"

@@ -24,7 +24,7 @@ namespace chromium
 		int width, height;
 		SDL_GetWindowSize(os_get_window(), &width, &height);
 
-		mBrowser = Browser::CreateOffScreenBrowser(width, height, false);
+		mBrowser = Browser::CreateOffScreenBrowser(0, 0, width, height, false);
 	}
 
 	void ChromiumStateLogic::enterState(GameState oldState)
@@ -56,12 +56,7 @@ namespace chromium
 
 		if (mBrowser)
 		{
-			if (bm_is_valid(mBrowser->GetClient()->getBrowserBitmap()))
-			{
-				gr_set_bitmap(mBrowser->GetClient()->getBrowserBitmap(), GR_ALPHABLEND_FILTER);
-				gr_bitmap(0, 0, false);
-			}
-
+			mBrowser->GetClient()->render();
 			mBrowser->SetFocused(true);
 		}
 

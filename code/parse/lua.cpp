@@ -11802,7 +11802,7 @@ ADE_FUNC(loadURL, l_Browser, "string url", "Loads the specfied URL.", "boolean",
 	return ADE_RETURN_TRUE;
 }
 
-ADE_FUNC(registerEventHandlers, l_Browser, "boolean reagister = true", "Registers event handlers for handling mouse and keyboad input", "boolean", "true if successful, false otherwise")
+ADE_FUNC(registerEventHandlers, l_Browser, "boolean register = true", "Registers event handlers for handling mouse and keyboad input", "boolean", "true if successful, false otherwise")
 {
 	using namespace chromium;
 
@@ -11837,6 +11837,50 @@ ADE_FUNC(isValid, l_Browser, NULL, "Determines if the browser handle is valid", 
 		return ADE_RETURN_FALSE;
 
 	return ade_set_args(L, "b", handle->isValid());
+}
+
+ADE_FUNC(render, l_Browser, NULL, "Renders the browser.", NULL, NULL)
+{
+	browser_h *handle = NULL;
+	if (!ade_get_args(L, "o", l_Browser.Get(&handle)))
+		return ADE_RETURN_FALSE;
+
+	if (handle == NULL)
+		return ADE_RETURN_FALSE;
+
+	handle->getBrowser()->GetClient()->render();
+
+	return ADE_RETURN_NIL;
+}
+
+ADE_FUNC(move, l_Browser, "number x, number y", "Move the browser to a different position.", NULL, NULL)
+{
+	int x, y;
+	browser_h *handle = NULL;
+	if (!ade_get_args(L, "oii", l_Browser.Get(&handle), &x, &y))
+		return ADE_RETURN_FALSE;
+
+	if (handle == NULL)
+		return ADE_RETURN_FALSE;
+
+	handle->getBrowser()->Move(x, y);
+
+	return ADE_RETURN_NIL;
+}
+
+ADE_FUNC(resize, l_Browser, "number width, number height", "Change the browser's size.", NULL, NULL)
+{
+	int width, height;
+	browser_h *handle = NULL;
+	if (!ade_get_args(L, "oii", l_Browser.Get(&handle), &width, &height))
+		return ADE_RETURN_FALSE;
+
+	if (handle == NULL)
+		return ADE_RETURN_FALSE;
+
+	handle->getBrowser()->Resize(width, height);
+
+	return ADE_RETURN_NIL;
 }
 
 //**********LIBRARY: Audio
@@ -14966,17 +15010,19 @@ ADE_FUNC(addBit, l_BitOps, "number, number (bit)", "Performs inclusive or (OR) o
 //**********LIBRARY: Chromium
 ade_lib l_Chromium("chromium", NULL, "ch", "Chromium interface");
 
-ADE_FUNC(createBrowser, l_Chromium, "number width, number height[, boolean transparent = true]", "Creates a new browser. If <tt>transparent</tt> is <b>true</b> the browser will render"
+ADE_FUNC(createBrowser, l_Chromium, "number x, number y, number width, number height[, boolean transparent = true]", "Creates a new browser. If <tt>transparent</tt> is <b>true</b> the browser will render"
 	" transparent colors, if it's <b>false</b> the background is white.", "browser", "browser handle or invalid handle on failure")
 {
+	int x;
+	int y;
 	int width;
 	int height;
 	bool transparent = true;
 
-	if (!ade_get_args(L, "ii|b", &width, &height, &transparent))
+	if (!ade_get_args(L, "iiii|b", &x, &y, &width, &height, &transparent))
 		return ade_set_error(L, "o", l_Browser.Set(new browser_h()));
 
-	boost::shared_ptr<chromium::Browser> browser = chromium::Browser::CreateOffScreenBrowser(width, height, transparent);
+	boost::shared_ptr<chromium::Browser> browser = chromium::Browser::CreateOffScreenBrowser(x, y, width, height, transparent);
 
 	return ade_set_error(L, "o", l_Browser.Set(new browser_h(browser)));
 }

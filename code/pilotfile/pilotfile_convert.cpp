@@ -1,3 +1,4 @@
+#include <algorithm>
 
 #include "globalincs/pstypes.h"
 #include "pilotfile/pilotfile_convert.h"
