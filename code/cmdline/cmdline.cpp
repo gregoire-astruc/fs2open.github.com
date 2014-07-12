@@ -1644,3 +1644,9 @@ int parse_cmdline(int argc, char *argv[])
 	// I did this because of fred2_parse_cmdline()
 	return SetCmdlineParams();
 }
+
+void cmdline_get_args(int &argc, char** &argv)
+{
+	argc = Cmdline_argc;
+	argv = Cmdline_argv;
+}

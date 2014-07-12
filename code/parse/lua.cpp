@@ -1,3 +1,9 @@
+#include <boost/algorithm/string.hpp>
+
+#include <LuaCpp/LuaConvert.hpp>
+#include <LuaCpp/LuaFunction.hpp>
+#include <LuaCpp/LuaTable.hpp>
+
 #include "ai/ai.h"
 #include "ai/aigoals.h"
 #include "asteroid/asteroid.h"
@@ -56,11 +62,6 @@
 #define BMPMAN_INTERNAL
 #include "bmpman/bm_internal.h"
 
-#include <LuaCpp/LuaConvert.hpp>
-#include <LuaCpp/LuaFunction.hpp>
-#include <LuaCpp/LuaTable.hpp>
-
-#include <boost/algorithm/string.hpp>
 
 //*************************Lua globals*************************
 SCP_vector<ade_table_entry> Ade_table_entries;
@@ -15010,17 +15011,16 @@ ADE_FUNC(addBit, l_BitOps, "number, number (bit)", "Performs inclusive or (OR) o
 //**********LIBRARY: Chromium
 ade_lib l_Chromium("chromium", NULL, "ch", "Chromium interface");
 
-ADE_FUNC(createBrowser, l_Chromium, "number x, number y, number width, number height[, boolean transparent = true]", "Creates a new browser. If <tt>transparent</tt> is <b>true</b> the browser will render"
+ADE_FUNC(createBrowser, l_Chromium, "[number x, number y, number width, number height[, boolean transparent = true]]", "Creates a new browser. If <tt>transparent</tt> is <b>true</b> the browser will render"
 	" transparent colors, if it's <b>false</b> the background is white.", "browser", "browser handle or invalid handle on failure")
 {
-	int x;
-	int y;
-	int width;
-	int height;
+	int x = 0;
+	int y = 0;
+	int width = -1;
+	int height = -1;
 	bool transparent = true;
 
-	if (!ade_get_args(L, "iiii|b", &x, &y, &width, &height, &transparent))
-		return ade_set_error(L, "o", l_Browser.Set(new browser_h()));
+	ade_get_args(L, "|iiiib", &x, &y, &width, &height, &transparent);
 
 	boost::shared_ptr<chromium::Browser> browser = chromium::Browser::CreateOffScreenBrowser(x, y, width, height, transparent);
 

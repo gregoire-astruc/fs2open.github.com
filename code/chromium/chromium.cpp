@@ -36,7 +36,7 @@ namespace chromium
 	{
 		int now = timer_get_milliseconds();
 
-		if (now - lastUpdate >= 16)
+		if (now - lastUpdate >= 15)
 		{
 			// Try to limit it to 60 updates per second
 			CefDoMessageLoopWork();
@@ -62,6 +62,9 @@ namespace chromium
 		// TODO: implement code which works for other platforms (possible using argc and argv
 		// to determine the executable path)
 		// See http://stackoverflow.com/a/1024937
+		// TODO: Parameters in cmdline_fso.cfg are only included on Linux. Windows should also
+		// use cmdline_get_args() but I have no idea how to construct an HINSTANCE from our
+		// argc and argv... -- ngld
 #ifdef WIN32
 		CefMainArgs main_args(GetModuleHandle(nullptr));
 
@@ -76,7 +79,11 @@ namespace chromium
 		home_path = fs::path(detect_home()) / "data";
 		
 #elif SCP_UNIX
-		CefMainArgs main_args(Cmdline_argc, Cmdline_argv);
+		int argc;
+		char **argv;
+
+		cmdline_get_args(argc, argv);
+		CefMainArgs main_args(argc, argv);
 		
 		char moduleName[MAX_PATH];
 		size_t moduleLen = readlink("/proc/self/exe", moduleName, MAX_PATH);
@@ -91,9 +98,9 @@ namespace chromium
 #endif
 		base_path = fs::path(moduleName).parent_path();
 		
-		if (!fs::exists(base_path / "chromium" / CHROMIUM_PROCESS))
+		if (!fs::exists(base_path / CHROMIUM_PROCESS) && !fs::exists(base_path / "chromium" / CHROMIUM_PROCESS))
 		{
-			Error(LOCATION, "%s is missing! Failed to initialize Chromium!", (base_path / "chromium" / CHROMIUM_PROCESS).string().c_str());
+			Error(LOCATION, "%s is missing! Failed to initialize Chromium!", (base_path / CHROMIUM_PROCESS).string().c_str());
 		}
 		
 		
@@ -104,7 +111,7 @@ namespace chromium
 		settings.remote_debugging_port = 12345;
 
 		CefString(&settings.log_file) = (home_path / "chromium.log").native();
-		CefString(&settings.browser_subprocess_path) = (base_path / "chromium" / CHROMIUM_PROCESS).native();
+		CefString(&settings.browser_subprocess_path) = (fs::exists(base_path / CHROMIUM_PROCESS) ? base_path / CHROMIUM_PROCESS : base_path / "chromium" / CHROMIUM_PROCESS).native();
 		CefString(&settings.resources_dir_path) = (base_path / "chromium").native();
 		CefString(&settings.locales_dir_path) = (base_path / "chromium" / "locales").native();
 		

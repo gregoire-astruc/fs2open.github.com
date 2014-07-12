@@ -1,5 +1,8 @@
-
 #include <ctime>
+#include <SDL_video.h>
+#include <SDL_syswm.h>
+
+#include "include/cef_app.h"
 
 #include "chromium/ChromiumStateLogic.h"
 #include "chromium/ClientImpl.h"
@@ -11,9 +14,6 @@
 
 #include "freespace.h"
 
-#include "include/cef_app.h"
-
-#include <SDL_syswm.h>
 
 namespace chromium
 {
@@ -35,6 +35,7 @@ namespace chromium
 		}
 
 		mBrowser->RegisterEventHandlers();
+		mBrowser->SetFocused(true);
 
 		mLastUpdate = 0;
 	}
@@ -57,7 +58,6 @@ namespace chromium
 		if (mBrowser)
 		{
 			mBrowser->GetClient()->render();
-			mBrowser->SetFocused(true);
 		}
 
 		gr_flip();

@@ -59,7 +59,7 @@ if(CEF_PATH)
 	add_custom_command(
 	    TARGET chromiumprocess
 	    PRE_LINK
-	    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CEF_PATH}/Resources ${EXECUTABLE_OUTPUT_PATH}/chromium
+	    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CEF_PATH}/Resources $<TARGET_FILE_DIR:chromiumprocess>
 	    COMMENT "Copying CEF resources..."
 	)
 endif(CEF_PATH)

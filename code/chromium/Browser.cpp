@@ -1,3 +1,8 @@
+#include <SDL_events.h>
+#include <SDL_keyboard.h>
+#include <SDL_syswm.h>
+#include <SDL_video.h>
+#include "include/cef_version.h"
 
 #include "chromium/chromium.h"
 #include "chromium/Browser.h"
@@ -5,11 +10,6 @@
 
 #include "osapi/osapi.h"
 #include "io/cursor.h"
-
-#include "include/cef_version.h"
-#include <SDL_events.h>
-#include <SDL_keyboard.h>
-#include <SDL_syswm.h>
 
 namespace
 {
@@ -352,14 +352,11 @@ namespace chromium
 
 		addEventHandler(SDL_MOUSEBUTTONDOWN, os::DEFAULT_LISTENER_WEIGHT - 1, mouseHandler);
 		addEventHandler(SDL_MOUSEBUTTONUP, os::DEFAULT_LISTENER_WEIGHT - 1, mouseHandler);
-
 		addEventHandler(SDL_MOUSEMOTION, os::DEFAULT_LISTENER_WEIGHT - 1, mouseHandler);
-
 		addEventHandler(SDL_MOUSEWHEEL, os::DEFAULT_LISTENER_WEIGHT - 1, mouseHandler);
 
 		addEventHandler(SDL_SYSWMEVENT, os::DEFAULT_LISTENER_WEIGHT - 1, systemHandler);
 
-		// Block keyboard input as we use system events for this
 		addEventHandler(SDL_KEYDOWN, os::DEFAULT_LISTENER_WEIGHT - 1, keyHandler);
 		addEventHandler(SDL_KEYUP, os::DEFAULT_LISTENER_WEIGHT - 1, keyHandler);
 
@@ -428,10 +425,22 @@ namespace chromium
 			return nullptr;
 		}
 
+		int i_width, i_height;
+
+		if (width == (size_t) -1 && height == (size_t) -1)
+		{
+			SDL_GetWindowSize(os_get_window(), &i_width, &i_height);
+		}
+		else
+		{
+			i_width = static_cast<int>(width);
+			i_height = static_cast<int>(height);
+		}
+
 		shared_ptr<Browser> browser = shared_ptr<Browser>(new Browser());
 		browser->mTransparent = transparent;
 
-		browser->mClient = new ClientImpl(static_cast<int>(x), static_cast<int>(y), static_cast<int>(width), static_cast<int>(height));
+		browser->mClient = new ClientImpl(static_cast<int>(x), static_cast<int>(y), i_width, i_height);
 
 		addBrowserInstance(weak_ptr<Browser>(browser));
 

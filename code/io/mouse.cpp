@@ -109,17 +109,22 @@ void mouse_init()
 		if (event.button.button == SDL_BUTTON_LEFT)
 		{
 			mouse_mark_button(MOUSE_LEFT_BUTTON, event.button.state);
+			return true;
 		}
 		else if (event.button.button == SDL_BUTTON_MIDDLE)
 		{
 			mouse_mark_button(MOUSE_MIDDLE_BUTTON, event.button.state);
+			return true;
 		}
 		else if (event.button.button == SDL_BUTTON_RIGHT)
 		{
 			mouse_mark_button(MOUSE_RIGHT_BUTTON, event.button.state);
+			return true;
 		}
-		
-		return false;
+		else
+		{
+			return false;
+		}
 	};
 
 	os::addEventListener(SDL_MOUSEBUTTONDOWN, os::DEFAULT_LISTENER_WEIGHT, eventHandler);
@@ -129,7 +134,7 @@ void mouse_init()
 	{
 		mouse_event(event.motion.x, event.motion.y, event.motion.xrel, event.motion.yrel);
 
-		return false;
+		return true;
 	});
 }
 
