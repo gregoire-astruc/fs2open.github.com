@@ -25,7 +25,7 @@ add_executable(chromiumprocess ${EXE_GUI_TYPE} ${SOURCES})
 
 source_group(Resources FILES resources/fsoExtension.js)
 
-SET_TARGET_PROPERTIES(chromiumprocess PROPERTIES OUTPUT_NAME "chromium/chromiumprocess_${FSO_BINARY_SUFFIX}")
+SET_TARGET_PROPERTIES(chromiumprocess PROPERTIES OUTPUT_NAME "chromiumprocess_${FSO_BINARY_SUFFIX}")
 SET_TARGET_PROPERTIES(chromiumprocess PROPERTIES DEBUG_POSTFIX "-DEBUG")
 
 IF(MSVC)
@@ -55,16 +55,40 @@ install(
 	CONFIGURATIONS Debug Release
 )
 
+INCLUDE(cef)
+
 if(CEF_PATH)
 	add_custom_command(
 	    TARGET chromiumprocess
 	    PRE_LINK
-	    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CEF_PATH}/Resources $<TARGET_FILE_DIR:chromiumprocess>
+	    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CEF_PATH}/Resources $<TARGET_FILE_DIR:chromiumprocess>/chromium
 	    COMMENT "Copying CEF resources..."
+	    VERBATIM
 	)
+
+	if(WIN32)
+		set(LIB_EXT dll)
+	elseif(UNIX)
+		set(LIB_EXT so)
+	endif(WIN32)
+
+	file(GLOB CEF_LIBS ${CEF_PATH}/${CEF_BUILD_TYPE}/*.${LIB_EXT})
+	list(LENGTH CEF_LIBS CEF_LIBS_SIZE)
+	math(EXPR CEF_LIBS_END "${CEF_LIBS_SIZE} - 1")
+
+	foreach(i RANGE 0 ${CEF_LIBS_END})
+		list(GET CEF_LIBS ${i} LIB)
+		math(EXPR num "${i} + 1")
+
+		add_custom_command(
+		    TARGET chromiumprocess
+		    COMMAND ${CMAKE_COMMAND} -E copy ${LIB} $<TARGET_FILE_DIR:chromiumprocess>
+		    COMMENT "[${num}/${CEF_LIBS_SIZE}] Copying CEF libraries..."
+		    VERBATIM
+		)
+	endforeach(i)
 endif(CEF_PATH)
 
 INCLUDE(util)
-INCLUDE(cef)
 CEF_TARGET(chromiumprocess)
 COPY_FILES_TO_TARGET(chromiumprocess)

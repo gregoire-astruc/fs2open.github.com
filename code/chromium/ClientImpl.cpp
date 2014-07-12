@@ -148,7 +148,7 @@ namespace chromium
 	{
 		if (bm_is_valid(browserBitmapHandle))
 		{
-			gr_set_bitmap(browserBitmapHandle); //, GR_ALPHABLEND_FILTER);
+			gr_set_bitmap(browserBitmapHandle);
 			gr_bitmap(mPosition->x, mPosition->y, false);
 		}
 	}
