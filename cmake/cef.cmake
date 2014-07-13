@@ -115,4 +115,35 @@ if(NOT TARGET cef)
 				FOLDER "3rdparty"
 		)
     endif(NOT TARGET libcef_dll_wrapper)
+	
+	# Define install files
+	install(DIRECTORY "${CEF_PATH}/Resources/locales" DESTINATION ${BINARY_DESTINATION}/chromium)
+	file(GLOB RESOURCE_FILES "${CEF_PATH}/Resources/*")
+	foreach(resource ${RESOURCE_FILES})
+		if (NOT IS_DIRECTORY "${resource}")
+			install(FILES "${resource}" DESTINATION ${BINARY_DESTINATION}/chromium)
+		endif (NOT IS_DIRECTORY "${resource}")
+	endforeach(resource)
+
+	foreach(config Release Debug)
+		set(CEF_LIB_NAMES)
+		set(LIB_ROOT_PATH "${CEF_PATH}/${config}")
+		
+		file(GLOB CEF_LIBS "${LIB_ROOT_PATH}/${CMAKE_SHARED_LIBRARY_PREFIX}*${CMAKE_SHARED_LIBRARY_SUFFIX}")
+		foreach(filepath ${CEF_LIBS})
+			file(RELATIVE_PATH FILE_NAME "${LIB_ROOT_PATH}" "${filepath}")
+			
+			# Don't copy the pdf plugin, we don't need it
+			if (NOT "${FILE_NAME}" STREQUAL "${CMAKE_SHARED_LIBRARY_PREFIX}pdf${CMAKE_SHARED_LIBRARY_SUFFIX}")
+				set(CEF_LIB_NAMES ${CEF_LIB_NAMES} "${FILE_NAME}")
+			endif (NOT "${FILE_NAME}" STREQUAL "${CMAKE_SHARED_LIBRARY_PREFIX}pdf${CMAKE_SHARED_LIBRARY_SUFFIX}")
+		endforeach(filepath ${CEF_LIBS})
+		
+		list(LENGTH CEF_LIB_NAMES CEF_LIBS_SIZE)
+		set(i 0)
+
+		foreach(lib IN LISTS CEF_LIB_NAMES)
+			install(FILES "${LIB_ROOT_PATH}/${lib}" DESTINATION ${BINARY_DESTINATION} CONFIGURATIONS ${config})
+		endforeach(lib IN LISTS CEF_LIBS)
+	endforeach(config)
 endif(NOT TARGET cef)
