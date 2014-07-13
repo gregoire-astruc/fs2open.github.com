@@ -60,6 +60,9 @@ namespace
 
 		SDL_JoystickGetGUIDString(guid, &joystickGUID[0], static_cast<int>(joystickGUID.size()));
 
+		// There is a \0 character at the end of the string, remove it!
+		joystickGUID.resize(GUID_STR_SIZE - 1);
+
 		// Make sure the GUID is upper case
 		transform(begin(joystickGUID), end(joystickGUID), begin(joystickGUID), toupper);
 
@@ -119,7 +122,6 @@ namespace
 			sdljoy = stick;
 			currentJoystickID = SDL_JoystickInstanceID(sdljoy);
 
-			currentJoystickID = SDL_JoystickInstanceID(sdljoy);
 			joy_num_buttons = SDL_JoystickNumButtons(sdljoy);
 			joy_num_axes = SDL_JoystickNumAxes(sdljoy);
 			joy_num_hats = SDL_JoystickNumHats(sdljoy);
