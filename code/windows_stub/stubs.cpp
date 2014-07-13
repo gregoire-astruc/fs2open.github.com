@@ -580,7 +580,7 @@ void *_vm_malloc( int size, int quiet )
 		Error(LOCATION, "Out of memory.");
 	}
 
-#ifndef NDEBUG
+#ifdef MEM_DEBUG
 	size_t used_size = MALLOC_USABLE(ptr);
 	if ( Watch_malloc )	{
 		// mprintf now uses SCP_strings = recursion! Whee!!
@@ -602,7 +602,7 @@ void *_vm_realloc( void *ptr, int size, int quiet )
 	if (ptr == NULL)
 		return vm_malloc(size);
 
-#ifndef NDEBUG
+#ifdef MEM_DEBUG
 	size_t old_size = MALLOC_USABLE(ptr);
 #endif
 
@@ -617,7 +617,7 @@ void *_vm_realloc( void *ptr, int size, int quiet )
 		Error(LOCATION, "Out of memory.");
 	}
 
-#ifndef NDEBUG
+#ifdef MEM_DEBUG
 	size_t used_size = MALLOC_USABLE(ret_ptr);
 	if ( Watch_malloc )	{
 		// mprintf now uses SCP_strings = recursion! Whee!!
@@ -684,7 +684,7 @@ void _vm_free( void *ptr )
 		return;
 	}
 
-#ifndef NDEBUG
+#ifdef MEM_DEBUG
 	TotalRam -= MALLOC_USABLE(ptr);
 #endif // !NDEBUG
 

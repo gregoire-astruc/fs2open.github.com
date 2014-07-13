@@ -71,6 +71,8 @@ INSTALL(
 )
 
 INCLUDE(util)
+INCLUDE(cef)
+CEF_TARGET(Freespace2)
 COPY_FILES_TO_TARGET(Freespace2)
 
 include(CreateLaunchers)

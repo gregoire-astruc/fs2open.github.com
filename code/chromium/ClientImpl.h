@@ -19,14 +19,12 @@ namespace chromium
 
 		int browserBitmapHandle;
 
-		int width;
-		int height;
-
 		bool mFocused;
 		bool mPaintingPopup;
 
 		void* bitmapData;
 
+		CefRect mPosition;
 		CefRect mPopupRect;
 		CefRect mOriginalPopupRect;
 
@@ -35,17 +33,25 @@ namespace chromium
 
 		ClientImpl(int widthIn, int heightIn);
 
+		ClientImpl(int xIn, int yIn, int widthIn, int heightIn);
+
 		~ClientImpl();
 
 		CefRefPtr<CefBrowser> getMainBrowser() { return mainBrowser; }
 
 		int getBrowserBitmap() { return browserBitmapHandle; }
 
+		CefRect* getPosition() { return &mPosition; }
+
 		void executeCallback(const CefString& callbackName, CefRefPtr<CefListValue> values);
 
 		void executeCallback(const CefString& callbackName, CefRefPtr<CefDictionaryValue> values);
 
+		void move(int x, int y);
+
 		void resize(int width, int height);
+
+		void render();
 
 		bool forceClose();
 
@@ -78,7 +84,7 @@ namespace chromium
 	public:
 		bool GetViewRect(CefRefPtr<CefBrowser> browser, CefRect &rect) override;
 
-		bool ClientImpl::GetRootScreenRect(CefRefPtr<CefBrowser> browser, CefRect& rect) override;
+		bool GetRootScreenRect(CefRefPtr<CefBrowser> browser, CefRect& rect) override;
 
 		void OnPaint(CefRefPtr<CefBrowser> browser, PaintElementType type,
 			const RectList &dirtyRects, const void *buffer, int width, int height) override;

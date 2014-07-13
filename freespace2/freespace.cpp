@@ -20,6 +20,7 @@
 #else
  #include <unistd.h>
  #include <sys/stat.h>
+ #include <locale>
 #endif
 
 #include "anim/animplay.h"
@@ -8401,6 +8402,10 @@ int actual_main(int argc, char *argv[])
 {
 	int result = -1;
 	Assert(argc > 0);
+
+#ifdef SCP_UNIX
+	std::locale("");
+#endif
 
 #ifdef WIN32
 	// Don't let more than one instance of FreeSpace run.

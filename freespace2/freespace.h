@@ -17,9 +17,7 @@
 #include "globalincs/pstypes.h"
 #include "globalincs/systemvars.h"
 #include "graphics/2d.h"
-
-// No need to actually include gamesequence.h
-enum GameState;
+#include "gamesequence/gamesequence.h"
 
 // --------------------------------------------------------------------------------------------------------
 // FREESPACE DEFINES/VARS

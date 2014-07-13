@@ -18,10 +18,14 @@ namespace chromium
 		SCP_vector<size_t> mHandlerIdentifiers;
 
 		bool mTransparent;
+		
+		bool MapMousePosition(CefMouseEvent &event);
 
 		bool MouseEvent(const SDL_Event& event);
 
 		bool SystemEvent(const SDL_Event& event);
+		
+		bool KeyEvent(const SDL_Event& event);
 
 		void addEventHandler(SDL_EventType type, int weigth,
 			const std::function<bool(const SDL_Event&)>& listener);
@@ -49,10 +53,12 @@ namespace chromium
 
 		void LoadURL(const CefString& string);
 
+		void Move(size_t x, size_t y);
+
 		void Resize(size_t width, size_t height);
 
 	public:
-		static boost::shared_ptr<Browser> CreateOffScreenBrowser(size_t width, size_t height, bool transparent = true);
+		static boost::shared_ptr<Browser> CreateOffScreenBrowser(size_t x, size_t y, size_t width, size_t height, bool transparent = true);
 	};
 }
 

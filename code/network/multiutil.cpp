@@ -21,6 +21,7 @@
 #include <errno.h>
 #endif
 #include <ctype.h>
+#include <iostream>
 
 #include "globalincs/pstypes.h"
 #include "network/multiutil.h"

@@ -1,11 +1,11 @@
-
+#include <cstring>
 #include "globalincs/util.h"
 
 namespace util
 {
 	std::wstring charToWchar(const char* text)
 	{
-		size_t textSize = strlen(text);
+		size_t textSize = std::strlen(text);
 		std::wstring outString;
 		outString.resize(textSize);
 

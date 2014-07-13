@@ -2,6 +2,8 @@
 
 SET(EXTENSION_HEADER_FILE "${GENERATED_SOURCE_DIR}/chromiumprocess/fsoExtension.js.h")
 # Generate the java script extension header
+FILE(MAKE_DIRECTORY "${GENERATED_SOURCE_DIR}/chromiumprocess")
+
 ADD_CUSTOM_COMMAND(
 	OUTPUT ${EXTENSION_HEADER_FILE}
 	COMMAND embedfile -text "${CMAKE_CURRENT_SOURCE_DIR}/resources/fsoExtension.js" "${EXTENSION_HEADER_FILE}" "FSOExtensionCode"
@@ -20,7 +22,6 @@ set(SOURCES
 )
 
 add_executable(chromiumprocess ${EXE_GUI_TYPE} ${SOURCES})
-target_link_libraries(chromiumprocess cef_cpp_wrapper)
 
 source_group(Resources FILES resources/fsoExtension.js)
 
@@ -31,6 +32,8 @@ IF(MSVC)
 	set_target_properties(chromiumprocess PROPERTIES
 		COMPILE_DEFINITIONS_DEBUG "_DEBUG"
 	)
+ELSEIF(UNIX)
+	target_link_libraries(chromiumprocess pthread)
 ENDIF(MSVC)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
@@ -50,5 +53,8 @@ install(
 	CONFIGURATIONS Debug Release
 )
 
+INCLUDE(cef)
+
 INCLUDE(util)
+CEF_TARGET(chromiumprocess)
 COPY_FILES_TO_TARGET(chromiumprocess)

@@ -13,6 +13,7 @@
 #include <string.h>
 #include <setjmp.h>
 #include <errno.h>
+#include <algorithm>
 
 #ifdef _WIN32
 #include <direct.h>

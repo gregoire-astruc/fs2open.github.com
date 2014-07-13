@@ -8,7 +8,9 @@
 #include "theora/theora.h"
 #include "vorbis/codec.h"
 
-struct cfile::FileHandle;
+namespace cfile {
+	struct FileHandle;
+}
 
 // structure for maintaining info on a THEORAFILE stream
 typedef struct THEORAFILE

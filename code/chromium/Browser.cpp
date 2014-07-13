@@ -1,3 +1,8 @@
+#include <SDL_events.h>
+#include <SDL_keyboard.h>
+#include <SDL_syswm.h>
+#include <SDL_video.h>
+#include "include/cef_version.h"
 
 #include "chromium/chromium.h"
 #include "chromium/Browser.h"
@@ -5,9 +10,6 @@
 
 #include "osapi/osapi.h"
 #include "io/cursor.h"
-
-#include <SDL_keyboard.h>
-#include <SDL_syswm.h>
 
 namespace
 {
@@ -64,16 +66,28 @@ namespace
 
 		return state;
 	}
-
-	bool isKeyDown(WPARAM wparam)
-	{
-		return (GetKeyState(wparam) & 0x8000) != 0;
-	}
 }
 
 namespace chromium
 {
 	using namespace boost;
+	
+	bool Browser::MapMousePosition(CefMouseEvent& event)
+	{
+		CefRect *position = mClient->getPosition();
+		
+		if (event.x >= position->x && event.x <= position->x + position->width && event.y > position->y && event.y < position->y + position->width)
+		{
+			event.x -= position->x;
+			event.y -= position->y;
+
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
 
 	bool Browser::MouseEvent(const SDL_Event& event)
 	{
@@ -88,16 +102,6 @@ namespace chromium
 			return false;
 		}
 
-		if (!mClient->isFocused())
-		{
-			// Special handling for not focused, may need to be changed to be more flexible
-			if (event.type != SDL_MOUSEMOTION)
-			{
-				// Report mouse motion but nothing else
-				return false;
-			}
-		}
-
 		auto browser = mClient->getMainBrowser();
 		auto host = browser->GetHost();
 
@@ -109,6 +113,12 @@ namespace chromium
 			CefMouseEvent mouseEvent;
 			mouseEvent.x = event.button.x;
 			mouseEvent.y = event.button.y;
+
+			if (!MapMousePosition(mouseEvent))
+			{
+				return false;
+			}
+
 			mouseEvent.modifiers = GetCefModifiers();
 
 			CefBrowserHost::MouseButtonType type;
@@ -137,7 +147,14 @@ namespace chromium
 			CefMouseEvent mouseEvent;
 			mouseEvent.x = event.motion.x;
 			mouseEvent.y = event.motion.y;
+
+			if (!MapMousePosition(mouseEvent))
+			{
+				return false;
+			}
+
 			mouseEvent.modifiers = GetCefModifiers();
+
 
 			host->SendMouseMoveEvent(mouseEvent, false);
 			break;
@@ -153,6 +170,12 @@ namespace chromium
 
 			mouseEvent.x = mouseX;
 			mouseEvent.y = mouseY;
+
+			if (!MapMousePosition(mouseEvent))
+			{
+				return false;
+			}
+
 			mouseEvent.modifiers = GetCefModifiers();
 
 			// Multiplying it with 120 as that works for windows, needs testing on other platforms
@@ -174,6 +197,9 @@ namespace chromium
 			return false;
 		}
 
+#ifdef WIN32
+		// TODO: Can we unify this and KeyEvent ?
+		
 		auto message = event.syswm.msg->msg.win.msg;
 		auto wParam = event.syswm.msg->msg.win.wParam;
 		auto lParam = event.syswm.msg->msg.win.lParam;
@@ -216,8 +242,43 @@ namespace chromium
 				return true;
 			}
 		}
+#endif
 
 		return false;
+	}
+	
+	bool Browser::KeyEvent(const SDL_Event& event)
+	{
+		if (!mClient->isFocused())
+		{
+			return false;
+		}
+		
+#ifdef WIN32
+		return true;
+#else
+		CefKeyEvent keyEvent;
+		keyEvent.native_key_code = event.key.keysym.sym;
+		
+		if (event.type == SDL_KEYDOWN)
+		{
+			keyEvent.type = KEYEVENT_KEYDOWN;
+		}
+		else
+		{
+			keyEvent.type = KEYEVENT_KEYUP;
+		}
+		
+		keyEvent.modifiers = GetCefModifiers();
+
+		if (mClient->getMainBrowser().get())
+		{
+			mClient->getMainBrowser()->GetHost()->SendKeyEvent(keyEvent);
+		}
+		
+		// We handled the event...
+		return true;
+#endif
 	}
 
 	void Browser::addEventHandler(SDL_EventType type, int weigth,
@@ -248,14 +309,31 @@ namespace chromium
 			return false;
 		}
 
-		info.SetAsWindowless(wmInfo.info.win.window, mTransparent);
-
 		CefBrowserSettings settings;
+		
+#if CEF_REVISION < 1750
+		#ifdef WIN32
+			info.SetAsOffScreen(wmInfo.info.win.window);
+		#else
+			info.SetAsOffScreen(0);
+		#endif
+		
+		info.SetTransparentPainting(mTransparent);
+#else
+		#ifdef WIN32
+			info.SetAsWindowless(wmInfo.info.win.window, mTransparent);
+		#else
+			info.SetAsWindowless(0, mTransparent);
+		#endif
+		
+		settings.windowless_frame_rate = 60;
+#endif
+		
 		settings.java = STATE_DISABLED;
 		settings.javascript_close_windows = STATE_DISABLED;
 		settings.javascript_open_windows = STATE_DISABLED;
 		settings.plugins = STATE_DISABLED;
-		settings.windowless_frame_rate = 60;
+		
 		CefString(&settings.default_encoding).FromASCII("UTF-8");
 
 		return CefBrowserHost::CreateBrowser(info, mClient.get(), url, settings, nullptr);
@@ -270,19 +348,17 @@ namespace chromium
 	{
 		auto mouseHandler = std::bind(&Browser::MouseEvent, this, std::placeholders::_1);
 		auto systemHandler = std::bind(&Browser::SystemEvent, this, std::placeholders::_1);
+		auto keyHandler = std::bind(&Browser::KeyEvent, this, std::placeholders::_1);
 
 		addEventHandler(SDL_MOUSEBUTTONDOWN, os::DEFAULT_LISTENER_WEIGHT - 1, mouseHandler);
 		addEventHandler(SDL_MOUSEBUTTONUP, os::DEFAULT_LISTENER_WEIGHT - 1, mouseHandler);
-
 		addEventHandler(SDL_MOUSEMOTION, os::DEFAULT_LISTENER_WEIGHT - 1, mouseHandler);
-
 		addEventHandler(SDL_MOUSEWHEEL, os::DEFAULT_LISTENER_WEIGHT - 1, mouseHandler);
 
 		addEventHandler(SDL_SYSWMEVENT, os::DEFAULT_LISTENER_WEIGHT - 1, systemHandler);
 
-		// Block keyboard input as we use system events for this
-		addEventHandler(SDL_KEYDOWN, os::DEFAULT_LISTENER_WEIGHT - 1, [&](const SDL_Event& event) { return mClient->isFocused(); });
-		addEventHandler(SDL_KEYUP, os::DEFAULT_LISTENER_WEIGHT - 1, [&](const SDL_Event& event) { return mClient->isFocused(); });
+		addEventHandler(SDL_KEYDOWN, os::DEFAULT_LISTENER_WEIGHT - 1, keyHandler);
+		addEventHandler(SDL_KEYUP, os::DEFAULT_LISTENER_WEIGHT - 1, keyHandler);
 
 		addEventHandler(SDL_WINDOWEVENT, os::DEFAULT_LISTENER_WEIGHT - 1, [&](const SDL_Event& event)
 		{
@@ -331,12 +407,17 @@ namespace chromium
 		}
 	}
 
+	void Browser::Move(size_t x, size_t y)
+	{
+		GetClient()->move(static_cast<int>(x), static_cast<int>(y));
+	}
+
 	void Browser::Resize(size_t width, size_t height)
 	{
 		GetClient()->resize(static_cast<int>(width), static_cast<int>(height));
 	}
 
-	shared_ptr<Browser> Browser::CreateOffScreenBrowser(size_t width, size_t height, bool transparent)
+	shared_ptr<Browser> Browser::CreateOffScreenBrowser(size_t x, size_t y, size_t width, size_t height, bool transparent)
 	{
 		if (!chromium::isInited())
 		{
@@ -344,10 +425,22 @@ namespace chromium
 			return nullptr;
 		}
 
+		int i_width, i_height;
+
+		if (width == (size_t) -1 && height == (size_t) -1)
+		{
+			SDL_GetWindowSize(os_get_window(), &i_width, &i_height);
+		}
+		else
+		{
+			i_width = static_cast<int>(width);
+			i_height = static_cast<int>(height);
+		}
+
 		shared_ptr<Browser> browser = shared_ptr<Browser>(new Browser());
 		browser->mTransparent = transparent;
 
-		browser->mClient = new ClientImpl(static_cast<int>(width), static_cast<int>(height));
+		browser->mClient = new ClientImpl(static_cast<int>(x), static_cast<int>(y), i_width, i_height);
 
 		addBrowserInstance(weak_ptr<Browser>(browser));
 

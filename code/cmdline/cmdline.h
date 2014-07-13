@@ -14,6 +14,7 @@
 
 
 int parse_cmdline(int argc, char *argv[]);
+void cmdline_get_args(int &argc, char** &argv);
 
 // COMMAND LINE SETTINGS
 // This section is for reference by all the *_init() functions. For example, the multiplayer init function

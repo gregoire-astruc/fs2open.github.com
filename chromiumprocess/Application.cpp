@@ -1,8 +1,7 @@
 
+#include <algorithm>
 #include "Application.h"
-
 #include "jsapi.h"
-
 #include "include/cef_runnable.h"
 
 namespace
@@ -283,6 +282,11 @@ namespace
 					// Don't set a return value here so the exception gets thrown
 					return;
 				}
+			}
+			else
+			{
+				exception = std::string("The callback '") + nameValue->GetStringValue().ToString() + "' doesn't exist!";
+				return;
 			}
 
 			retval = CefV8Value::CreateNull();

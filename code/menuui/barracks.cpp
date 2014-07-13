@@ -10,6 +10,7 @@
 
 
 #include <ctype.h>
+#include <algorithm>
 
 
 #include "menuui/barracks.h"

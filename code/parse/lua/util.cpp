@@ -130,7 +130,8 @@ namespace lua
 					LuaValue val;
 					toLuaValue(L, i, listVal, val);
 
-					table.addValue(i, val);
+					// Lua tables start with the index 1.
+					table.addValue(i + 1, val);
 				}
 
 				target = table;

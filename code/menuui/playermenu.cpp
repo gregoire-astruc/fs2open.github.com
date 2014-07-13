@@ -10,6 +10,7 @@
 
 #include <limits.h>
 #include <ctype.h>
+#include <algorithm>
 
 
 #include "menuui/playermenu.h"

@@ -1,5 +1,8 @@
-
 #include <ctime>
+#include <SDL_video.h>
+#include <SDL_syswm.h>
+
+#include "include/cef_app.h"
 
 #include "chromium/ChromiumStateLogic.h"
 #include "chromium/ClientImpl.h"
@@ -11,9 +14,6 @@
 
 #include "freespace.h"
 
-#include "include/cef_app.h"
-
-#include <SDL_syswm.h>
 
 namespace chromium
 {
@@ -24,7 +24,7 @@ namespace chromium
 		int width, height;
 		SDL_GetWindowSize(os_get_window(), &width, &height);
 
-		mBrowser = Browser::CreateOffScreenBrowser(width, height, false);
+		mBrowser = Browser::CreateOffScreenBrowser(0, 0, width, height, false);
 	}
 
 	void ChromiumStateLogic::enterState(GameState oldState)
@@ -35,6 +35,7 @@ namespace chromium
 		}
 
 		mBrowser->RegisterEventHandlers();
+		mBrowser->SetFocused(true);
 
 		mLastUpdate = 0;
 	}
@@ -56,13 +57,7 @@ namespace chromium
 
 		if (mBrowser)
 		{
-			if (bm_is_valid(mBrowser->GetClient()->getBrowserBitmap()))
-			{
-				gr_set_bitmap(mBrowser->GetClient()->getBrowserBitmap(), GR_ALPHABLEND_FILTER);
-				gr_bitmap(0, 0, false);
-			}
-
-			mBrowser->SetFocused(true);
+			mBrowser->GetClient()->render();
 		}
 
 		gr_flip();

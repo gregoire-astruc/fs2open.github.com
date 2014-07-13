@@ -54,7 +54,8 @@ static cmdline_parm Parm_list(NULL, NULL);
 static int Parm_list_inited = 0;
 
 extern int Show_framerate;	// from freespace.cpp
-
+int Cmdline_argc;
+char **Cmdline_argv;
 
 enum
 {
@@ -671,7 +672,7 @@ void os_validate_parms(int argc, char *argv[])
 	{
 		token = argv[i];
 
-		if (token[0] == '-') {
+		if (token[0] == '-' && token[1] != '-') {
 			parm_found = 0;
 			for (parmp = GET_FIRST(&Parm_list); parmp != END_OF_LIST(&Parm_list); parmp = GET_NEXT(parmp)) {
 				if (!stricmp(parmp->name, token)) {
@@ -896,6 +897,9 @@ void os_init_cmdline(int argc, char *argv[])
 	}
 #endif
 
+	Cmdline_argc = argc;
+	Cmdline_argv = argv;
+	
 	os_parse_parms(argc, argv);
 	os_validate_parms(argc, argv);
 }
@@ -1639,4 +1643,10 @@ int parse_cmdline(int argc, char *argv[])
 	// If you're looking for the list of if (someparam.found()) { cmdline_someparam = something; } look above at this function
 	// I did this because of fred2_parse_cmdline()
 	return SetCmdlineParams();
+}
+
+void cmdline_get_args(int &argc, char** &argv)
+{
+	argc = Cmdline_argc;
+	argv = Cmdline_argv;
 }

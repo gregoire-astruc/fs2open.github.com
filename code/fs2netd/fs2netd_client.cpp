@@ -8,6 +8,8 @@
 */
 
 
+#include <iostream>
+#include <algorithm>
 
 #include "globalincs/pstypes.h"
 #include "fs2netd/fs2netd_client.h"
