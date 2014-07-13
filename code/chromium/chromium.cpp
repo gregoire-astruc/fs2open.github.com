@@ -101,6 +101,7 @@ namespace chromium
 		if (!fs::exists(base_path / CHROMIUM_PROCESS) && !fs::exists(base_path / "chromium" / CHROMIUM_PROCESS))
 		{
 			Error(LOCATION, "%s is missing! Failed to initialize Chromium!", (base_path / CHROMIUM_PROCESS).string().c_str());
+			return;
 		}
 		
 		
