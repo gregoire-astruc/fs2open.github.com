@@ -29,8 +29,6 @@ SET_TARGET_PROPERTIES(chromiumprocess PROPERTIES OUTPUT_NAME "chromiumprocess_${
 SET_TARGET_PROPERTIES(chromiumprocess PROPERTIES DEBUG_POSTFIX "-DEBUG")
 
 IF(MSVC)
-	# target_link_libraries(chromiumprocess cef_dll_wrapper)
-	
 	set_target_properties(chromiumprocess PROPERTIES
 		COMPILE_DEFINITIONS_DEBUG "_DEBUG"
 	)
@@ -56,38 +54,6 @@ install(
 )
 
 INCLUDE(cef)
-
-if(CEF_PATH)
-	add_custom_command(
-	    TARGET chromiumprocess
-	    PRE_LINK
-	    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CEF_PATH}/Resources $<TARGET_FILE_DIR:chromiumprocess>/chromium
-	    COMMENT "Copying CEF resources..."
-	    VERBATIM
-	)
-
-	if(WIN32)
-		set(LIB_EXT dll)
-	elseif(UNIX)
-		set(LIB_EXT so)
-	endif(WIN32)
-
-	file(GLOB CEF_LIBS ${CEF_PATH}/${CEF_BUILD_TYPE}/*.${LIB_EXT})
-	list(LENGTH CEF_LIBS CEF_LIBS_SIZE)
-	math(EXPR CEF_LIBS_END "${CEF_LIBS_SIZE} - 1")
-
-	foreach(i RANGE 0 ${CEF_LIBS_END})
-		list(GET CEF_LIBS ${i} LIB)
-		math(EXPR num "${i} + 1")
-
-		add_custom_command(
-		    TARGET chromiumprocess
-		    COMMAND ${CMAKE_COMMAND} -E copy ${LIB} $<TARGET_FILE_DIR:chromiumprocess>
-		    COMMENT "[${num}/${CEF_LIBS_SIZE}] Copying CEF libraries..."
-		    VERBATIM
-		)
-	endforeach(i)
-endif(CEF_PATH)
 
 INCLUDE(util)
 CEF_TARGET(chromiumprocess)
