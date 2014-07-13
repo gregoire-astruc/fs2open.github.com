@@ -24,7 +24,7 @@ namespace chromium
 
 		void* bitmapData;
 
-		CefRect* mPosition;
+		CefRect mPosition;
 		CefRect mPopupRect;
 		CefRect mOriginalPopupRect;
 
@@ -41,7 +41,7 @@ namespace chromium
 
 		int getBrowserBitmap() { return browserBitmapHandle; }
 
-		CefRect* getPosition() { return mPosition; }
+		CefRect* getPosition() { return &mPosition; }
 
 		void executeCallback(const CefString& callbackName, CefRefPtr<CefListValue> values);
 

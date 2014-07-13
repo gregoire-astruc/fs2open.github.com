@@ -46,25 +46,22 @@ namespace
 namespace chromium
 {
 	ClientImpl::ClientImpl() : bitmapData(nullptr), browserBitmapHandle(-1),
-		mPaintingPopup(false)
+		mPaintingPopup(false), mPosition(0, 0, -1, -1)
 	{
 		// Don't create the bitmap data
-		mPosition = new CefRect(0, 0, -1, -1);
 	}
 
 	ClientImpl::ClientImpl(int widthIn, int heightIn)
 		: bitmapData(nullptr), browserBitmapHandle(-1),
-		mPaintingPopup(false)
+		mPaintingPopup(false), mPosition(0, 0, widthIn, heightIn)
 	{
-		mPosition = new CefRect(0, 0, widthIn, heightIn);
 		resize(widthIn, heightIn);
 	}
 
 	ClientImpl::ClientImpl(int xIn, int yIn, int widthIn, int heightIn)
 		: bitmapData(nullptr), browserBitmapHandle(-1),
-		mPaintingPopup(false)
+		mPaintingPopup(false), mPosition(xIn, yIn, widthIn, heightIn)
 	{
-		mPosition = new CefRect(xIn, yIn, widthIn, heightIn);
 		move(xIn, yIn);
 		resize(widthIn, heightIn);
 	}
@@ -82,8 +79,6 @@ namespace chromium
 			vm_free(bitmapData);
 			bitmapData = nullptr;
 		}
-
-		delete mPosition;
 	}
 
 	void ClientImpl::executeCallback(CefString const& callbackName, CefRefPtr<CefListValue> values)
@@ -112,8 +107,8 @@ namespace chromium
 
 	void ClientImpl::move(int x, int y)
 	{
-		mPosition->x = x;
-		mPosition->y = y;
+		mPosition.x = x;
+		mPosition.y = y;
 	}
 
 	void ClientImpl::resize(int width, int height)
@@ -135,8 +130,8 @@ namespace chromium
 		memset(bitmapData, 0, width * height * 4);
 
 		browserBitmapHandle = bm_create(32, width, height, bitmapData, BMP_TEX_XPARENT);
-		mPosition->width = width;
-		mPosition->height = height;
+		mPosition.width = width;
+		mPosition.height = height;
 
 		if (getMainBrowser() != nullptr)
 		{
@@ -149,7 +144,7 @@ namespace chromium
 		if (bm_is_valid(browserBitmapHandle))
 		{
 			gr_set_bitmap(browserBitmapHandle);
-			gr_bitmap(mPosition->x, mPosition->y, false);
+			gr_bitmap(mPosition.x, mPosition.y, false);
 		}
 	}
 
@@ -219,8 +214,8 @@ namespace chromium
 
 	bool ClientImpl::GetViewRect(CefRefPtr<CefBrowser> browser, CefRect &rect)
 	{
-		rect.width = mPosition->width;
-		rect.height = mPosition->height;
+		rect.width = mPosition.width;
+		rect.height = mPosition.height;
 
 		return true;
 	}
@@ -283,8 +278,8 @@ namespace chromium
 	{
 		if (type == PET_VIEW)
 		{
-			Assertion(mPosition->width == width, "Paint event width is not the same as the set width!");
-			Assertion(mPosition->height == height, "Paint event height is not the same as the set height!");
+			Assertion(mPosition.width == width, "Paint event width is not the same as the set width!");
+			Assertion(mPosition.height == height, "Paint event height is not the same as the set height!");
 
 			gr_update_texture(browserBitmapHandle, 32, buffer, width, height);
 		}
@@ -327,10 +322,10 @@ namespace chromium
 		if (rc.y < 0)
 			rc.y = 0;
 		// if popup goes outside the view, try to reposition origin
-		if (rc.x + rc.width > mPosition->width)
-			rc.x = mPosition->width - rc.width;
-		if (rc.y + rc.height > mPosition->height)
-			rc.y = mPosition->height - rc.height;
+		if (rc.x + rc.width > mPosition.width)
+			rc.x = mPosition.width - rc.width;
+		if (rc.y + rc.height > mPosition.height)
+			rc.y = mPosition.height - rc.height;
 		// if x or y became negative, move them to 0 again.
 		if (rc.x < 0)
 			rc.x = 0;
