@@ -1,6 +1,8 @@
 
 #include "chromium/chromium.h"
 #include "chromium/Browser.h"
+#include "chromium/ApplicationImpl.h"
+
 #include "osapi/osapi.h"
 #include "io/cursor.h"
 
@@ -228,6 +230,12 @@ namespace chromium
 	{
 		Assertion(mClient != nullptr, "Can't create browser from default constructed object!");
 
+		if (!validateURL(url))
+		{
+			Warning(LOCATION, "The specified URL '%s' is not a valid file!", url.ToString().c_str());
+			return false;
+		}
+
 		CefWindowInfo info;
 
 		SDL_SysWMinfo wmInfo;
@@ -311,6 +319,12 @@ namespace chromium
 
 	void Browser::LoadURL(const CefString& string)
 	{
+		if (!validateURL(string))
+		{
+			Warning(LOCATION, "The specified URL '%s' is not a valid file!", string.ToString().c_str());
+			return;
+		}
+
 		if (GetClient()->getMainBrowser().get())
 		{
 			GetClient()->getMainBrowser()->GetMainFrame()->LoadURL(string);

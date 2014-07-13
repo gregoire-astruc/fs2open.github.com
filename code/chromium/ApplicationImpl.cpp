@@ -34,6 +34,17 @@ namespace
 
 namespace chromium
 {
+	bool validateURL(const CefString& url)
+	{
+		CefURLParts parts;
+		CefParseURL(url, parts);
+
+		std::string path = CefString(&parts.path).ToString();
+
+		SCP_string filePath = vfspp::util::normalizePath(path).c_str();
+
+		return cfile::exists(filePath);
+	}
 
 	class CFileHandlerFactory : public CefSchemeHandlerFactory
 	{
@@ -112,6 +123,12 @@ namespace chromium
 	CefRefPtr<CefResourceHandler> CFileHandlerFactory::Create(CefRefPtr<CefBrowser> browser,
 		CefRefPtr<CefFrame> frame, const CefString& scheme_name, CefRefPtr<CefRequest> request)
 	{
+		if (!validateURL(request->GetURL()))
+		{
+			// URL is not valid!
+			return nullptr;
+		}
+
 		CefURLParts parts;
 		CefParseURL(request->GetURL(), parts);
 

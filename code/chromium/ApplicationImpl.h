@@ -12,6 +12,8 @@
 
 namespace chromium
 {
+	bool validateURL(const CefString& url);
+
 	class ApplicationImpl : public CefApp,
 									CefBrowserProcessHandler
 	{
