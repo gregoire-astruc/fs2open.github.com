@@ -89,7 +89,12 @@ if(NOT TARGET cef)
             VERBATIM
         )
 
-        file(GLOB CEF_LIBS ${CEF_PATH}/${CEF_BUILD_TYPE}/*.so)
+        if(WIN32)
+            file(GLOB CEF_LIBS ${CEF_PATH}/Release/*.dll)
+        else(WIN32)
+            file(GLOB CEF_LIBS ${CEF_PATH}/${CEF_BUILD_TYPE}/*.so)
+        endif(WIN32)
+
         list(LENGTH CEF_LIBS CEF_LIBS_SIZE)
         set(i 0)
 
