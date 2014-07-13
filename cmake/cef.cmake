@@ -1,11 +1,53 @@
+
+if(NOT DEFINED CEF_BUILD_TYPE)
+	if(WIN32)
+		set(CEF_BUILD_TYPE "$<$<CONFIG:Debug>:Debug>$<$<CONFIG:Release>:Release>")
+	else(WIN32)
+		# Default to Release
+		set(CEF_BUILD_TYPE Release)
+	endif(WIN32)
+endif(NOT DEFINED CEF_BUILD_TYPE)
+
 if(NOT TARGET cef)
     function(CEF_TARGET NAME)
-        add_dependencies(${NAME} cef_files)
+        add_dependencies(${NAME} libcef_dll_wrapper)
+
+        add_custom_command(
+            TARGET ${NAME}
+			POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory "${CEF_PATH}/Resources" "$<TARGET_FILE_DIR:${NAME}>/chromium"
+            COMMENT "Copying CEF resources..."
+            VERBATIM
+        )
+
+		set(CEF_LIB_NAMES)
+		set(LIB_ROOT_PATH "${CEF_PATH}/Release")
+		
+        file(GLOB CEF_LIBS "${LIB_ROOT_PATH}/${CMAKE_SHARED_LIBRARY_PREFIX}*${CMAKE_SHARED_LIBRARY_SUFFIX}")
+		foreach(filepath ${CEF_LIBS})
+			file(RELATIVE_PATH FILE_NAME "${LIB_ROOT_PATH}" "${filepath}")
+			
+			# Don't copy the pdf plugin, we don't need it
+			if (NOT "${FILE_NAME}" STREQUAL "${CMAKE_SHARED_LIBRARY_PREFIX}pdf${CMAKE_SHARED_LIBRARY_SUFFIX}")
+				set(CEF_LIB_NAMES ${CEF_LIB_NAMES} "${FILE_NAME}")
+			endif (NOT "${FILE_NAME}" STREQUAL "${CMAKE_SHARED_LIBRARY_PREFIX}pdf${CMAKE_SHARED_LIBRARY_SUFFIX}")
+		endforeach(filepath ${CEF_LIBS})
+		
+        list(LENGTH CEF_LIB_NAMES CEF_LIBS_SIZE)
+        set(i 0)
+
+        foreach(lib IN LISTS CEF_LIB_NAMES)
+            math(EXPR i "${i} + 1")
+            add_custom_command(
+                TARGET ${NAME}
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CEF_PATH}/${CEF_BUILD_TYPE}/${lib}" "$<TARGET_FILE_DIR:${NAME}>"
+                COMMENT "[${i}/${CEF_LIBS_SIZE}] Copying CEF libraries..."
+                VERBATIM
+            )
+        endforeach(lib IN LISTS CEF_LIBS)
 
         if(WIN32)
             target_link_libraries(${NAME} cef)
-            target_link_libraries(${NAME} optimized "${CEF_PATH}/out/Release/lib/libcef_dll_wrapper.lib")
-            target_link_libraries(${NAME} debug "${CEF_PATH}/out/Debug/lib/libcef_dll_wrapper.lib")
         elseif(UNIX)
             find_package(PkgConfig)
 
@@ -21,16 +63,6 @@ if(NOT TARGET cef)
     if(NOT EXISTS ${CEF_PATH}/include)
         message(FATAL_ERROR "The passed CEF_PATH is not valid!")
     endif(NOT EXISTS ${CEF_PATH}/include)
-
-    if(NOT DEFINED CEF_BUILD_TYPE)
-        if(WIN32)
-            set(CEF_BUILD_TYPE "$<$<CONFIG:Debug>:Debug>$<$<CONFIG:Release>:Release>")
-        else(WIN32)
-            # Default to Release
-            set(CEF_BUILD_TYPE Release)
-        endif(WIN32)
-    endif(NOT DEFINED CEF_BUILD_TYPE)
-
 
     add_library(cef IMPORTED SHARED GLOBAL)
     add_library(cef_dll_wrapper IMPORTED STATIC GLOBAL)
@@ -77,36 +109,10 @@ if(NOT TARGET cef)
                 "${CEF_PATH}/libcef_dll_wrapper.vcxproj"
             )
         endif(UNIX)
+
+		set_target_properties(libcef_dll_wrapper
+			PROPERTIES
+				FOLDER "3rdparty"
+		)
     endif(NOT TARGET libcef_dll_wrapper)
-
-    if(NOT TARGET cef_files)
-        add_custom_target(cef_files)
-
-        add_custom_command(
-            TARGET cef_files
-            COMMAND ${CMAKE_COMMAND} -E copy_directory "${CEF_PATH}/Resources" "$<TARGET_FILE_DIR:embedfile>/chromium"
-            COMMENT "Copying CEF resources..."
-            VERBATIM
-        )
-
-        if(WIN32)
-            file(GLOB CEF_LIBS ${CEF_PATH}/Release/*.dll)
-        else(WIN32)
-            file(GLOB CEF_LIBS ${CEF_PATH}/${CEF_BUILD_TYPE}/*.so)
-        endif(WIN32)
-
-        list(LENGTH CEF_LIBS CEF_LIBS_SIZE)
-        set(i 0)
-
-        foreach(lib IN LISTS CEF_LIBS)
-            math(EXPR i "${i} + 1")
-
-            add_custom_command(
-                TARGET cef_files
-                COMMAND ${CMAKE_COMMAND} -E copy "${lib}" "$<TARGET_FILE_DIR:embedfile>"
-                COMMENT "[${i}/${CEF_LIBS_SIZE}] Copying CEF libraries..."
-                VERBATIM
-            )
-        endforeach(lib IN LISTS CEF_LIBS)
-    endif(NOT TARGET cef_files)
 endif(NOT TARGET cef)

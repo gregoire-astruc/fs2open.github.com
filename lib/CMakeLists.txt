@@ -64,8 +64,3 @@ set_target_properties(luacpputil
 	PROPERTIES
 		FOLDER "3rdparty"
 )
-
-IF(MSVC)
-	# Add precompiled libraries for visual studio
-	#ADD_SUBDIRECTORY(vclibs)
-ENDIF(MSVC)
