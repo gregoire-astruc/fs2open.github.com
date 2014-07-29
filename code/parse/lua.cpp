@@ -12636,13 +12636,13 @@ ADE_VIRTVAR(CurrentOpacityType, l_Graphics, "enumeration", "Current alpha blendi
 	return ade_set_args(L, "o", l_Enum.Set(rtn));
 }
 
-ADE_VIRTVAR(CurrentRenderTarget, l_Graphics, "texture", "Current rendering target", "texture", "Current rendering target, or invalid texture handle if screen is render target")
+ADE_VIRTVAR(CurrentRenderTarget, l_Graphics, "texture", "Current rendering target<br>Note: Setting this to <b>nil</b> will restore the previous render target.", "texture", "Current rendering target, or invalid texture handle if screen is render target")
 {
 	int newtx = -1;
 
 	if(ADE_SETTING_VAR && lua_isnil(L, 2))
 	{
-		bm_set_render_target(-1);
+		bm_pop_render_target();
 		return ade_set_args(L, "o", l_Texture.Set(gr_screen.rendering_to_texture));
 	}
 	else
@@ -12653,9 +12653,9 @@ ADE_VIRTVAR(CurrentRenderTarget, l_Graphics, "texture", "Current rendering targe
 
 		if(ADE_SETTING_VAR) {
 			if(newtx > -1 && bm_is_valid(newtx))
-				bm_set_render_target(newtx, 0);
+				bm_push_render_target(newtx, 0);
 			else
-				bm_set_render_target(-1);
+				bm_pop_render_target();
 		}
 
 		return ade_set_args(L, "o", l_Texture.Set(gr_screen.rendering_to_texture));
@@ -12814,7 +12814,7 @@ ADE_FUNC(setTarget, l_Graphics, "[texture Texture]",
 	int idx = -1;
 	ade_get_args(L, "|o", l_Texture.Get(&idx));
 
-	int i = bm_set_render_target(idx, 0);
+	int i = bm_push_render_target(idx, 0);
 
 	return ade_set_args(L, "b", i ? true : false);
 }

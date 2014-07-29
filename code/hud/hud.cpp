@@ -1845,11 +1845,6 @@ void hud_render_gauges(int cockpit_display_num)
 
 	if ( cockpit_display_num >= 0 ) {
 		ship_end_render_cockpit_display(cockpit_display_num);
-
-		if ( gr_screen.rendering_to_texture != -1 ) {
-			// are we still are rendering to a texture at this point? uh oh.
-			bm_set_render_target(-1);
-		}
 	}
 }
 

@@ -2833,21 +2833,21 @@ int bm_is_render_target(int bitmap_id)
 	return bm_bitmaps[n].type;
 }
 
-int bm_set_render_target(int handle, int face)
+int set_render_target(int handle, int face)
 {
 	int n = handle % MAX_BITMAPS;
 
-	if ( n >= 0 ) {
-		Assert( handle == bm_bitmaps[n].handle );
+	if (n >= 0) {
+		Assert(handle == bm_bitmaps[n].handle);
 
-		if ( (bm_bitmaps[n].type != BM_TYPE_RENDER_TARGET_STATIC) && (bm_bitmaps[n].type != BM_TYPE_RENDER_TARGET_DYNAMIC) ) {
+		if ((bm_bitmaps[n].type != BM_TYPE_RENDER_TARGET_STATIC) && (bm_bitmaps[n].type != BM_TYPE_RENDER_TARGET_DYNAMIC)) {
 			// odds are that someone passed a normal texture created with bm_load()
 			mprintf(("Trying to set invalid bitmap (slot: %i, handle: %i) as render target!\n", n, handle));
 			return 0;
 		}
 	}
 
-	if ( gr_bm_set_render_target(n, face) ) {
+	if (gr_bm_set_render_target(n, face)) {
 		if (gr_screen.rendering_to_texture == -1) {
 			//if we are moving from the back buffer to a texture save whatever the current settings are
 			gr_screen.save_max_w = gr_screen.max_w;
@@ -2863,7 +2863,8 @@ int bm_set_render_target(int handle, int face)
 
 			gr_screen.max_w_unscaled = gr_screen.save_max_w_unscaled;
 			gr_screen.max_h_unscaled = gr_screen.save_max_h_unscaled;
-		} else {
+		}
+		else {
 			gr_screen.max_w = bm_bitmaps[n].bm.w;
 			gr_screen.max_h = bm_bitmaps[n].bm.h;
 
@@ -2885,5 +2886,44 @@ int bm_set_render_target(int handle, int face)
 	}
 
 	return 0;
+}
+
+/**
+ * Stack that stores the currently used render targets.
+ * First element is the texture handle, second is the face
+ */
+SCP_stack<std::pair<int, int>> renderTargetStack;
+
+int bm_push_render_target(int handle, int face)
+{
+	if (set_render_target(handle, face))
+	{
+		renderTargetStack.push(std::make_pair(handle, face));
+
+		return 1;
+	}
+
+	return 0;
+}
+
+int bm_pop_render_target()
+{
+	Assertion(!renderTargetStack.empty(), "Render target stack imbalance detected! Get a coder!");
+
+	auto previous = renderTargetStack.top();
+	renderTargetStack.pop();
+
+	if (renderTargetStack.empty())
+	{
+		set_render_target(-1, -1);
+	}
+	else
+	{
+		auto current = renderTargetStack.top();
+
+		set_render_target(current.first, current.second);
+	}
+
+	return previous.first;
 }
 

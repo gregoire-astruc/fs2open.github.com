@@ -3074,7 +3074,7 @@ vec3d	Dead_player_last_vel = { { { 1.0f, 1.0f, 1.0f } } };
 extern float View_zoom;
 inline void render_environment(int i, vec3d *eye_pos, matrix *new_orient, float new_zoom)
 {
-	bm_set_render_target(gr_screen.envmap_render_target, i);
+	bm_push_render_target(gr_screen.envmap_render_target, i);
 
 	gr_clear();
 
@@ -3200,7 +3200,7 @@ void setup_environment_mapping(camid cid)
 
 
 	// we're done, so now reset
-	bm_set_render_target(-1);
+	bm_pop_render_target();
 	g3_set_view_matrix( &cam_pos, &cam_orient, old_zoom );
 }
 

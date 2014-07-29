@@ -282,7 +282,8 @@ void bm_print_bitmaps();
 
 int bm_make_render_target( int width, int height, int flags );
 int bm_is_render_target(int bitmap_id);
-int bm_set_render_target(int handle, int face = -1);
+int bm_push_render_target(int handle, int face = -1);
+int bm_pop_render_target();
 
 int bm_load_and_parse_eff(const char *filename, int dir_type, int *nframes, int *nfps, int *key, ubyte *type);
 #endif

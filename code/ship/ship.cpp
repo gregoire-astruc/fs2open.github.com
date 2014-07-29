@@ -6795,7 +6795,7 @@ int ship_start_render_cockpit_display(int cockpit_display_num)
 		return -1;
 	}
 
-	if ( !bm_set_render_target(display->target) ) {
+	if ( !bm_push_render_target(display->target) ) {
 		return -1;
 	}
 	
@@ -6844,7 +6844,7 @@ void ship_end_render_cockpit_display(int cockpit_display_num)
 	}
 
 	gr_set_cull(cull);
-	bm_set_render_target(-1);
+	bm_pop_render_target();
 }
 
 void ship_subsystems_delete(ship *shipp)
