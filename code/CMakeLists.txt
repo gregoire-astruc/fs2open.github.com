@@ -7,7 +7,14 @@ INCLUDE(default_files.cmake)
 
 INCLUDE(voice_rec.cmake)
 
-ADD_LIBRARY(code STATIC ${file_root} ${DEF_OUT_FILES} ${VOICE_REC_FILES})
+INCLUDE(glloadgen.cmake)
+
+ADD_LIBRARY(code STATIC
+	${file_root}
+	${DEF_OUT_FILES}
+	${VOICE_REC_FILES}
+	${GLLOADGEN_FILES}
+)
 
 target_compile_definitions(code PRIVATE "$<$<CONFIG:RELEASE>:NDEBUG>;$<$<CONFIG:DEBUG>:_DEBUG;$<$<CXX_COMPILER_ID:MSVC>:PDB_DEBUGGING=1>>")
 
