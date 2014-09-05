@@ -41,14 +41,6 @@
 #include <direct.h>
 #elif defined(__APPLE__)
 #include "OpenGL.h"
-#else
-typedef int ( * PFNGLXSWAPINTERVALSGIPROC) (int interval);
-#endif
-
-
-#if defined(_WIN32) && !defined(__GNUC__)
-#pragma comment (lib, "opengl32")
-#pragma comment (lib, "glu32")
 #endif
 
 // minimum GL version we can reliably support is 1.2
