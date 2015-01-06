@@ -1,4 +1,7 @@
 language: cpp
+env:
+  - BUILD_TYPE=Release
+  - BUILD_TYPE=Debug
 compiler:
   - gcc
   - clang
@@ -12,7 +15,7 @@ install:
 before_script:
   - cmake --version
   - mkdir travis-build
-script: cd travis-build && cmake -G Ninja .. && ninja
+script: cd travis-build && cmake -G Ninja -DCMAKE_BUILD_TYPE=$BUILD_TYPE .. && ninja
 branches:
   only: cmake-travis
 notifications:
