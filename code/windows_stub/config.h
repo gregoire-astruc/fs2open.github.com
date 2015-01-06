@@ -36,27 +36,24 @@
 // Try/Catch in MSVC is not handling these right, so for Release Builds
 // we are disabling unreferenced local variable warnings from showing. Zacam.
 #pragma warning(disable: 4101)
-#endif
+#endif // NDEBUG
 
 #elif defined(__MINGW32__) || defined(__GNUC__)
 // We're using mingw or we're crosscompiling
 #define _cdecl __cdecl
-#endif
+#endif // defined _MSC_VER
 
 #if !defined BYTE_ORDER
  #define LITTLE_ENDIAN 1234
  #define BIG_ENDIAN    4321
-
- #if defined _M_IX86 || defined _X86_
-  #define BYTE_ORDER   LITTLE_ENDIAN
- #else
-  #error unknown byte order
- #endif
+ 
+ // It appears windows is always little endian..
+ #define BYTE_ORDER   LITTLE_ENDIAN
 #endif  // BYTE_ORDER
 
 #ifndef snprintf
 #define snprintf _snprintf
-#endif
+#endif // snprintf
 
 #define STUB_FUNCTION nprintf(( "Warning", "STUB: %s in "__FILE__" at line %d\n", __FUNCTION__, __LINE__))
 
