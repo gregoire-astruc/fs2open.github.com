@@ -7,17 +7,15 @@ configuration:
   - Release
 environment:
   matrix:
-  - VS_VERSION: Visual Studio 9 2008
-  - VS_VERSION: Visual Studio 10
-  - VS_VERSION: Visual Studio 11
-  - VS_VERSION: Visual Studio 12
+  - VS_VERSION: 11
+  - VS_VERSION: 12
 
 before_build:
-  - cmake -G %VS_VERSION%
+  - cmake -G "Visual Studio %VS_VERSION%"
   - dir
 build:
   project: FS2_Open.sln
   verbosity: minimal
 artifacts:
   - path: bin\$(configuration)
-    name: fso-continuous-$(configuration)
+    name: fso-continuous-$(configuration)-vs$(VS_VERSION)
