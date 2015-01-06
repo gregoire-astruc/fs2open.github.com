@@ -1,5 +1,10 @@
 FreeSpace2 *S*ource *C*ode *P*roject
 ==
+
+[![Windows Build](https://ci.appveyor.com/api/projects/status/pjyo0efawl3612m3?svg=true)](https://ci.appveyor.com/project/gregoire-astruc/fs2open-github-com)
+
+[![Linux Build](https://travis-ci.org/gregoire-astruc/fs2open.github.com.svg?branch=cmake-travis)](https://travis-ci.org/gregoire-astruc/fs2open.github.com)
+
 Building
 --
 For building you will need [CMake](http://www.cmake.org/cmake/resources/software.html). Only version 2.8.12 has been tested extensively but older version may still work. Once you have installed CMake you should create a build directory where the project/make files should be created, **do not create them inside the source tree!**<br>
