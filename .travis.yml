@@ -2,6 +2,8 @@ language: cpp
 env:
   - BUILD_TYPE=Release
   - BUILD_TYPE=Debug
+  - GENERATOR=Ninja MAKER=ninja
+  - GENERATOR="Unix Makefiles" MAKER=make
 compiler:
   - gcc
   - clang
@@ -15,7 +17,10 @@ install:
 before_script:
   - cmake --version
   - mkdir travis-build
-script: cd travis-build && cmake -G Ninja -DCMAKE_BUILD_TYPE=$BUILD_TYPE .. && ninja
+script:
+  - cd travis-build
+  - cmake -G "$GENERATOR" -DCMAKE_BUILD_TYPE=$BUILD_TYPE ..
+  - $MAKER
 branches:
   only: cmake-travis
 notifications:
