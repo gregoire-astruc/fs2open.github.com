@@ -20,6 +20,7 @@ install:
   - 7z x -oC:\wxWidgets -y wxMSW_DLL.7z
   - 7z x -oC:\wxWidgets -y wxMSW_Dev.7z
   - dir C:\wxWidgets
+  - move C:\wxWidgets\lib\vc%VC_VERSION%0_dll C:\wxWidgets\lib\vc_dll
 before_build:
   - cmake -G "Visual Studio %VS_VERSION%" -DFSO_BUILD_WXFRED2=ON
   - dir
