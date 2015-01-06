@@ -1,0 +1,18 @@
+version: 1.0.{build}
+branches:
+  only:
+  - cmake-travis
+configuration:
+  - Debug
+  - Release
+before_build:
+  - cmake -G "Visual Studio 12"
+  - dir
+build:
+  project: FS2_Open.sln
+  verbosity: minimal
+artifacts:
+  - path: bin\Release
+    name: Release Binaries
+  - path: bin\Debug
+    name: Debug Binaries
