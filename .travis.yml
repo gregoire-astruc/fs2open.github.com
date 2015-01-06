@@ -1,9 +1,9 @@
 language: cpp
 env:
-  - BUILD_TYPE=Release
-  - BUILD_TYPE=Debug
-  - GENERATOR=Ninja MAKER=ninja
-  - GENERATOR="Unix Makefiles" MAKER=make
+  - BUILD_TYPE=Release GENERATOR=Ninja MAKER=ninja
+  - BUILD_TYPE=Debug GENERATOR=Ninja MAKER=ninja
+  - BUILD_TYPE=Release GENERATOR="Unix Makefiles" MAKER=make
+  - BUILD_TYPE=Debug GENERATOR="Unix Makefiles" MAKER=make
 compiler:
   - gcc
   - clang
