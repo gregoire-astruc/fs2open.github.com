@@ -15,13 +15,13 @@ install:
   - wget -nv -O wxMSW_DLL.7z "http://sourceforge.net/projects/wxwindows/files/3.0.2/binaries/wxMSW-3.0.2_vc%VS_VERSION%0_ReleaseDLL.7z/download"
   - wget -nv -O wxMSW_Dev.7z "http://sourceforge.net/projects/wxwindows/files/3.0.2/binaries/wxMSW-3.0.2_vc%VS_VERSION%0_Dev.7z/download"
   - dir
-  - mkdir wxWidgets-3.0.2
-  - 7z x -owxWidgets-3.0.2 -y wxWidgets_Headers.7z
-  - 7z x -owxWidgets-3.0.2 -y wxMSW_DLL.7z
-  - 7z x -owxWidgets-3.0.2 -y wxMSW_Dev.7z
-  - dir wxWidgets-3.0.2
+  - mkdir C:\wxWidgets
+  - 7z x -oC:\wxWidgets -y wxWidgets_Headers.7z
+  - 7z x -oC:\wxWidgets -y wxMSW_DLL.7z
+  - 7z x -oC:\wxWidgets -y wxMSW_Dev.7z
+  - dir C:\wxWidgets
 before_build:
-  - cmake -G "Visual Studio %VS_VERSION%" -DFSO_BUILD_WXFRED2=ON -DwxWidgets_ROOT_DIR=%APPVEYOR_BUILD_FOLDER%/wxWidgets-3.0.2
+  - cmake -G "Visual Studio %VS_VERSION%" -DFSO_BUILD_WXFRED2=ON
   - dir
 build:
   project: FS2_Open.sln
