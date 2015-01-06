@@ -10,8 +10,8 @@ environment:
   - VS_VERSION: 11
   - VS_VERSION: 12
 install:
-  - ps: (new-object net.webclient).DownloadFile("http://sourceforge.net/projects/wxwindows/files/3.0.2/binaries/wxMSW-3.0.2_vc%VS_VERSION%0_x86_ReleaseDLL.7z/download", 'wxMSW_DLL.7z')
-  - ps: (new-object net.webclient).DownloadFile("http://sourceforge.net/projects/wxwindows/files/3.0.2/binaries/wxMSW-3.0.2_vc%VS_VERSION%0_Dev.7z/download", 'wxMSW_Dev.7z')
+  - ps: (new-object net.webclient).DownloadFile("http://sourceforge.net/projects/wxwindows/files/3.0.2/binaries/wxMSW-3.0.2_vc" + "$env:VS_VERSION" + "0_x86_ReleaseDLL.7z/download", 'wxMSW_DLL.7z')
+  - ps: (new-object net.webclient).DownloadFile("http://sourceforge.net/projects/wxwindows/files/3.0.2/binaries/wxMSW-3.0.2_vc" + "$env:VS_VERSION" + "0_Dev.7z/download", 'wxMSW_Dev.7z')
   - mkdir wxWidgets-3.0.2
   - 7z e -o wxWidgets-3.0.2 wxMSW_DLL.7z
   - 7z e -o wxWidgets-3.0.2 wxMSW_Dev.7z
