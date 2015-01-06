@@ -12,6 +12,8 @@ environment:
 install:
   - choco install wxwidgets
 before_build:
+  - dir C:\
+  - dir C:\wxWidgets-3.0.2\
   - cmake -G "Visual Studio %VS_VERSION%" -DFSO_BUILD_WXFRED2=ON -DwxWidgets_ROOT_DIR=C:/wxWidgets-3.0.2
   - dir
 build:
