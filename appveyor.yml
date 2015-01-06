@@ -16,7 +16,7 @@ install:
   - wget -nv -O wxMSW_Dev.7z "http://sourceforge.net/projects/wxwindows/files/3.0.2/binaries/wxMSW-3.0.2_vc%VS_VERSION%0_Dev.7z/download"
   - dir
   - mkdir wxWidgets-3.0.2
-  - 7z -e -owxWidgets-3.0.2 -y wxWidgets_Headers.7z
+  - 7z e -owxWidgets-3.0.2 -y wxWidgets_Headers.7z
   - 7z e -owxWidgets-3.0.2 -y wxMSW_DLL.7z
   - 7z e -owxWidgets-3.0.2 -y wxMSW_Dev.7z
   - dir wxWidgets-3.0.2
