@@ -40,7 +40,7 @@
 #include <windowsx.h>
 #include <direct.h>
 #elif defined(__APPLE__)
-#include "OpenGL.h"
+#include <OpenGL/OpenGL.h>
 #else
 typedef int ( * PFNGLXSWAPINTERVALSGIPROC) (int interval);
 #endif
