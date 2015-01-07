@@ -22,6 +22,7 @@ before_script:
   - cmake --version
   - mkdir travis-build
 script:
+  - test "$TRAVIS_OS_NAME" = "osx" && export OPENALDIR=/usr/local/Cellar/openal-soft/1.16.0 || echo "NOT setting OPENALDIR."
   - cd travis-build
   - cmake -G "$GENERATOR" -DCMAKE_BUILD_TYPE=$BUILD_TYPE ..
   - $MAKER
