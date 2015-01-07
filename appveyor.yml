@@ -24,3 +24,5 @@ after_build:
 artifacts:
   - path: bin\$(configuration)
     name: fso-continuous-$(configuration)-vs$(VS_VERSION)
+  - path: FS2_Open-*.exe
+    name: fso-continuous-installer.exe
