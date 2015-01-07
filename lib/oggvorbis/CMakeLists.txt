@@ -1,5 +1,5 @@
 
-IF(UNIX AND NOT APPLE)
+IF(UNIX)
 	find_package(PkgConfig REQUIRED)
 	pkg_check_modules(OGG REQUIRED ogg)
 	pkg_check_modules(THEORA REQUIRED theora)
@@ -60,34 +60,7 @@ ELSEIF (WIN32)
 			INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_LIST_DIR}/include
 	)
 	SET(THEORA_LIBS theora CACHE INTERNAL "Theora library")
-ELSEIF(APPLE)
-	# We also have precompiled libs for windows
-	add_library(ogg STATIC IMPORTED GLOBAL)
-	set_target_properties(ogg
-		PROPERTIES
-			IMPORTED_LOCATION ${FSO_MAC_FRAMEWORKS}/Ogg.framework/Ogg
-			INTERFACE_INCLUDE_DIRECTORIES "${FSO_MAC_FRAMEWORKS}/Ogg.framework/Headers"
-	)
-	SET(OGG_LIBS ogg CACHE INTERNAL "OggVorbis library")
-
-	add_library(vorbis STATIC IMPORTED GLOBAL)
-	set_target_properties(vorbis
-		PROPERTIES
-			IMPORTED_LOCATION ${FSO_MAC_FRAMEWORKS}/Vorbis.framework/Vorbis
-			INTERFACE_INCLUDE_DIRECTORIES "${FSO_MAC_FRAMEWORKS}/Vorbis.framework/Headers"
-	)
-	SET(VORBIS_LIBS vorbis CACHE INTERNAL "OggVorbis library")
-
-	SET(VORBISFILE_LIBS "" CACHE INTERNAL "OggVorbis library")
-
-	add_library(theora STATIC IMPORTED GLOBAL)
-	set_target_properties(theora
-		PROPERTIES
-			IMPORTED_LOCATION ${FSO_MAC_FRAMEWORKS}/Theora.framework/Theora
-			INTERFACE_INCLUDE_DIRECTORIES "${FSO_MAC_FRAMEWORKS}/Theora.framework/Headers"
-	)
-	SET(THEORA_LIBS theora CACHE INTERNAL "Theora library")
-ELSE(UNIX AND NOT APPLE)
+ELSE(UNIX)
 	MESSAGE(FATAL_ERROR "Unconfigured oggvorbis platform, please report!")
-ENDIF(UNIX AND NOT APPLE)
+ENDIF(UNIX)
 
