@@ -61,12 +61,7 @@ IF(FSO_USE_OPENALSOFT)
 
 	SET(OPENAL_LIBS openalsoft_lib CACHE INTERNAL "OpenAL library")
 ELSE(FSO_USE_OPENALSOFT)
-	IF(NOT WIN32)
-		FIND_PACKAGE(OpenAL REQUIRED)
-	ENDIF(NOT WIN32)
-
-	# We have precompiled libs for windows
-	IF (WIN32)
+	IF(WIN32)
 		MESSAGE(STATUS "Could not find OpenAL libraries on system, using included pre-built libraries")
 		
 		add_library(openal STATIC IMPORTED GLOBAL)
@@ -88,12 +83,6 @@ ELSE(FSO_USE_OPENALSOFT)
 
 		SET(OPENAL_LIBS openal CACHE INTERNAL "OpenAL library")
 	ELSE(WIN32)
-		INCLUDE(util)
-		if(NOT APPLE)
-			ADD_IMPORTED_LIB(openal ${OPENAL_INCLUDE_DIR} ${OPENAL_LIBRARY} SHARED)
-		  	SET(OPENAL_LIBS openal CACHE INTERNAL "OpenAL library" FORCE)
-		ELSE(NOT APPLE)
-			SET(OPENAL_LIBS "${OPENAL_LIBRARY}")
-		ENDIF(NOT APPLE)
+		SET(OPENAL_LIBS "")
 	ENDIF(WIN32)
 ENDIF(FSO_USE_OPENALSOFT)
