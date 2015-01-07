@@ -13,7 +13,7 @@ if(NOT CMAKE_CXX_FLAGS)
 	CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
 
 	if(APPLE)
-		set(CMAKE_CXX_FLAGS "-arch i386 -mtune=generic -mfpmath=sse -msse -msse2")
+		set(CMAKE_CXX_FLAGS "-mfpmath=sse -msse -msse2")
 	elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
 		set(CMAKE_CXX_FLAGS "-march=i686 -mtune=generic -mfpmath=sse -msse -msse2")
 	elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
