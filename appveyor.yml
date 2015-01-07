@@ -9,22 +9,8 @@ environment:
   matrix:
   - VS_VERSION: 11
   - VS_VERSION: 12
-install:
-  - cinst wxwidgets
-  - cinst wget
-  - wget -nv -O wxWidgets_Headers.7z "http://sourceforge.net/projects/wxwindows/files/3.0.2/wxWidgets-3.0.2_headers.7z/download"
-  - wget -nv -O wxMSW_DLL.7z "http://sourceforge.net/projects/wxwindows/files/3.0.2/binaries/wxMSW-3.0.2_vc%VS_VERSION%0_ReleaseDLL.7z/download"
-  - wget -nv -O wxMSW_Dev.7z "http://sourceforge.net/projects/wxwindows/files/3.0.2/binaries/wxMSW-3.0.2_vc%VS_VERSION%0_Dev.7z/download"
-  - dir
-  - 7z x -oC:\wxWidgets-3.0.2 -y wxWidgets_Headers.7z
-  - 7z x -oC:\wxWidgets-3.0.2 -y wxMSW_DLL.7z
-  - 7z x -oC:\wxWidgets-3.0.2 -y wxMSW_Dev.7z
-  - move C:\wxWidgets-3.0.2 C:\wxWidgets
-  - dir C:\wxWidgets
-  - dir C:\wxWidgets\lib
-  - move C:\wxWidgets\lib\vc%VS_VERSION%0_dll C:\wxWidgets\lib\vc_dll
 before_build:
-  - cmake -G "Visual Studio %VS_VERSION%" -DFSO_BUILD_WXFRED2=ON
+  - cmake -G "Visual Studio %VS_VERSION%"
   - dir
 build:
   project: FS2_Open.sln
