@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # FS2_Open documentation build configuration file, created by
-# sphinx-quickstart on Fri Jan  9 09:25:09 2015.
+# sphinx-quickstart on Fri Jan  9 09:30:28 2015.
 #
 # This file is execfile()d with the current directory set to its
 # containing dir.
@@ -44,7 +44,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'FS2_Open'
-copyright = u'2015, Volition, Edward "Inquisitor" Gardner'
+copyright = u'2015, Volition'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -67,7 +67,7 @@ release = 'master'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = []
+exclude_patterns = ['_build']
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -197,7 +197,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
   ('index', 'FS2_Open.tex', u'FS2\\_Open Documentation',
-   u'Volition, Edward "Inquisitor" Gardner', 'manual'),
+   u'Volition', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -227,7 +227,7 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'fs2_open', u'FS2_Open Documentation',
-     [u'Volition, Edward "Inquisitor" Gardner'], 1)
+     [u'Volition'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -241,7 +241,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
   ('index', 'FS2_Open', u'FS2_Open Documentation',
-   u'Volition, Edward "Inquisitor" Gardner', 'FS2_Open', 'One line description of project.',
+   u'Volition', 'FS2_Open', 'One line description of project.',
    'Miscellaneous'),
 ]
 
