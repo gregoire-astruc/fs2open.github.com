@@ -20,7 +20,7 @@ read_the_docs = os.environ.get('READTHEDOCS', False)
 
 if read_the_docs:
     with open('../fs2open.Doxyfile.in', 'r') as doxyfile:
-        configuration = doxyfile.readall().replace('@OUTPUT_DIR@', './doxyxml').replace('@INPUT_DIRS@', '../code')
+        configuration = doxyfile.read().replace('@OUTPUT_DIR@', './doxyxml').replace('@INPUT_DIRS@', '../code')
         with open('./Doxyfile', 'w') as doxyout:
             doxyout.write(configuration)
 
