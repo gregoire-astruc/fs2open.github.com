@@ -28,7 +28,7 @@ import os
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['breathe']
+extensions = ['breathe',]
 
 breathe_project = { "fs2open": "doxyxml" }
 breathe_default_project = "fs2open"
