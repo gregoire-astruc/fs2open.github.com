@@ -1,9 +1,8 @@
 FreeSpace2 *S*ource *C*ode *P*roject
 ==
 
-[![Windows Build](https://ci.appveyor.com/api/projects/status/pjyo0efawl3612m3?svg=true)](https://ci.appveyor.com/project/gregoire-astruc/fs2open-github-com)
-
-[![Linux Build](https://travis-ci.org/gregoire-astruc/fs2open.github.com.svg?branch=cmake-travis)](https://travis-ci.org/gregoire-astruc/fs2open.github.com)
+[![Windows Build](https://img.shields.io/appveyor/ci/gregoire-astruc/fs2open-github-com.svg?label=windows%20builds&style=flat)](https://ci.appveyor.com/project/gregoire-astruc/fs2open-github-com)
+[![Linux Build](https://img.shields.io/travis/gregoire-astruc/fs2open.github.com.svg?branch=cmake-travis&label=linux%20builds&style=flat)](https://travis-ci.org/gregoire-astruc/fs2open.github.com)
 
 Building
 --
