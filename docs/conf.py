@@ -14,6 +14,18 @@
 
 import sys
 import os
+import subprocess
+
+read_the_docs = os.environ.get('READTHEDOCS', False)
+
+if read_the_docs:
+    with open('../fs2open.Doxyfile.in', 'r') as doxyfile:
+        configuration = doxyfile.readall().replace('@OUTPUT_DIR@', './doxyxml').replace('@INPUT_DIRS@', '../code')
+        with open('./Doxyfile', 'w') as doxyout:
+            doxyout.write(configuration)
+
+    subprocess.call('doxygen', shell=True)
+
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
