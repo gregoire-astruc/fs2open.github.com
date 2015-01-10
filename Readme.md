@@ -12,7 +12,7 @@ On Windows you can use the `cmake-gui` executable to get a nice GUI, on Unix jus
 Depending on the makefile generator used build the `all` or `ALL_BUILD` target to compile the project.<br>
 
 ### Available variables to control the build
-* `FSO_BUILD_WXFRED2`: Build the wxfred2 project, requires wxWidgets
+* `FSO_BUILD_QTFRED`: Build the qtfred project, requires Qt
 * `FSO_FREESPACE_PATH`: Sets the path of your FreeSpace install, can be used to automatically run the generated executables with the correct working directory, this is an optional variable. By default this will use the value of the `FS2PATH` environment variable.
 * `FSO_BUILD_TOOLS`: Build some tools related to FSO
 

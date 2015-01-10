@@ -72,7 +72,7 @@ OPTION(FSO_BUILD_TOOLS "Build tools related to FSO" OFF)
 
 OPTION(FSO_DEVELOPMENT_MODE "Generate binaries in development mode, only use if you know what you're doing!" OFF)
 
-OPTION(FSO_BUILD_WXFRED2 "Build wxFRED2 binary" OFF)
+OPTION(FSO_BUILD_QTFRED "Build QtFRED binary" OFF)
 
 IF(WIN32)
 	# On windows the default should be to always build the included libraries
@@ -142,9 +142,9 @@ IF(FSO_BUILD_FRED2)
 	ADD_SUBDIRECTORY(fred2)
 ENDIF(FSO_BUILD_FRED2)
 
-IF(FSO_BUILD_WXFRED2)
-	ADD_SUBDIRECTORY(wxfred2)
-ENDIF(FSO_BUILD_WXFRED2)
+IF(FSO_BUILD_QTFRED)
+	ADD_SUBDIRECTORY(qtfred)
+ENDIF(FSO_BUILD_QTFRED)
 
 IF(MSVC_USE_RUNTIME_DLL)
 	SET(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION "${BINARY_DESTINATION}")
