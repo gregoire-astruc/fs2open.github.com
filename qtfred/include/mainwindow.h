@@ -1,6 +1,4 @@
-#ifndef FSO_FRED_MAINWINDOW_H
-#define FSO_FRED_MAINWINDOW_H
-
+#pragma once
 #include <QMainWindow>
 
 namespace fso {
@@ -25,4 +23,3 @@ private:
 
 } // namespace fred
 } // namespace fso
-#endif // FSO_FRED_MAINWINDOW_H
