@@ -5,12 +5,6 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # Find the QtWidgets library
 find_package(Qt5 COMPONENTS Widgets OpenGL REQUIRED)
 
-if(WIN32)
-    foreach( Qt_library ${QT_LIBRARIES} )
-        message("${Qt_library}")
-    endforeach( Qt_library ${QT_LIBRARIES} )
-endif(WIN32)
-
 qt5_wrap_ui(qtfred_UIS ui/mainwindow.ui)
 qt5_wrap_cpp(qtfred_MOC include/renderwidget.h include/mainwindow.h)
 qt5_add_resources(qtfred_QRC resources/resources.qrc)
