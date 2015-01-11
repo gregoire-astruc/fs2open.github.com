@@ -85,7 +85,9 @@ int main(int argc, char *argv[])
     splash.show();
 	app.processEvents();
 
+#ifdef WIN32
 	SCP_mspdbcs_Initialise();
+#endif
 
     if (!vm_init(24*1024*1024)) {
         qFatal("Unable to allocate VM.");
@@ -148,7 +150,9 @@ int main(int argc, char *argv[])
 
 	auto ret = app.exec();
 
+#ifdef WIN32
 	SCP_mspdbcs_Cleanup();
+#endif
 
 	return ret;
 }
