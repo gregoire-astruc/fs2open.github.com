@@ -7,7 +7,7 @@ find_package(Qt5 COMPONENTS Widgets OpenGL REQUIRED)
 
 qt5_wrap_ui(qtfred_UIS ui/mainwindow.ui)
 qt5_wrap_cpp(qtfred_MOC include/renderwidget.h include/mainwindow.h)
-
+qt5_add_resources(qtfred_QRC resources/resources.qrc)
 add_executable(qtfred src/main.cpp
     src/fredrender.cpp
     src/fredstubs.cpp
@@ -15,6 +15,7 @@ add_executable(qtfred src/main.cpp
     src/renderwidget.cpp src/mainwindow.cpp
     ${qtfred_MOC}
     ${qtfred_UIS}
+    ${qtfred_QRC}
 )
 set_target_properties(qtfred PROPERTIES OUTPUT_NAME "qtfred_${FSO_BINARY_SUFFIX}")
 

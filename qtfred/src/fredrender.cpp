@@ -696,7 +696,7 @@ static void render_models(
                 cur_object_index, Show_starts, Show_ships, Show_iff,
                 Bg_bitmap_dialog, Show_ship_models, Show_dock_points,
                 Show_paths_fred));
-        obj_render_all(render_function.target<void(object *)>(),&f);
+        obj_render_all(render_function,&f);
     }
     else
     {
@@ -706,7 +706,7 @@ static void render_models(
                 cur_object_index, Show_starts, Show_ships, Show_iff,
                 Bg_bitmap_dialog, Show_dock_points, Show_ship_models,
                 Show_paths_fred, Lighting_on, FullDetail));
-        obj_render_all(render_function.target<void(object *)>(),&f);
+        obj_render_all(render_function,&f);
 
         fred_disable_htl();
 
@@ -1401,6 +1401,7 @@ static void process_controls(vec3d *pos, matrix *orient, float frametime, int ke
                 ;
 
         flFrametime = frametime;
+        //view_physics.flags |= (PF_ACCELERATES | PF_SLIDE_ENABLED);
         physics_read_flying_controls(orient, &view_physics, &view_controls, flFrametime);
         if (mode)
             physics_sim_editor(pos, orient, &view_physics, frametime);
@@ -1687,7 +1688,7 @@ void game_do_frame(const int view_obj, const int viewpoint, const int cur_object
     viewer_position = my_orient.vec.fvec;
     vm_vec_scale(&viewer_position,my_pos.xyz.z);
 
-    ///! \fixme Reset viewpoint.
+    ///! \bug Reset viewpoint.
     if ((viewpoint == 1) && !query_valid_object(view_obj))
         /*viewpoint = 0*/;
 

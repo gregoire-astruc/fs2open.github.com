@@ -1,11 +1,11 @@
 /*
  * Copyright (C) Volition, Inc. 1999.  All rights reserved.
  *
- * All source code herein is the property of Volition, Inc. You may not sell 
- * or otherwise commercially exploit the source or things you created based on the 
+ * All source code herein is the property of Volition, Inc. You may not sell
+ * or otherwise commercially exploit the source or things you created based on the
  * source.
  *
-*/ 
+*/
 
 
 
@@ -17,6 +17,8 @@
 #include "math/vecmat.h"
 #include "physics/physics.h"
 
+#include <functional>
+
 /*
  *		CONSTANTS
  */
@@ -24,7 +26,7 @@
 #define DEFAULT_SHIELD_SECTIONS	4	//	Number of sections in standard shields.
 
 #ifndef NDEBUG
-#define OBJECT_CHECK 
+#define OBJECT_CHECK
 #endif
 
 //Object types
@@ -74,7 +76,7 @@ extern char	*Object_type_names[MAX_OBJECT_TYPES];
 //    ... Free up all weapon-specfic data
 //    obj_delete(objnum);
 // }
-// 
+//
 // void weapon_move( object * obj )
 // {
 //    {Put a call to this in ??? }
@@ -84,14 +86,14 @@ extern char	*Object_type_names[MAX_OBJECT_TYPES];
 //
 // int weapon_check_collision( object * obj, object * other_obj, vec3d * hitpos )
 // {
-//    this should check if a vector from 
+//    this should check if a vector from
 //		other_obj->last_pos to other_obj->pos with a radius of other_obj->radius
 //    collides with object obj.   If it does, then fill in hitpos with the point
 //    of impact and return non-zero, otherwise return 0 if no impact.   Note that
 //    this shouldn't take any action... that happens in weapon_hit.
 // }
 
-// 
+//
 // void weapon_hit( object * obj, object * other_obj, vec3d * hitpos )
 // {
 //    {Put a call to this in COLLIDE.C}
@@ -127,9 +129,9 @@ extern char	*Object_type_names[MAX_OBJECT_TYPES];
 #define OF_HIDDEN			(1<<31)	// Object is hidden (not shown) and can't be manipulated
 
 typedef struct obj_flag_name {
-	int flag;
-	char flag_name[TOKEN_LENGTH];
-	int flag_list;
+    int flag;
+    char flag_name[TOKEN_LENGTH];
+    int flag_list;
 } obj_flag_name;
 
 #define MAX_OBJECT_FLAG_NAMES			9
@@ -140,61 +142,61 @@ struct dock_instance;
 class object
 {
 public:
-	class object	*next, *prev;	// for linked lists of objects
-	int				signature;		// Every object ever has a unique signature...
-	char			type;				// what type of object this is... robot, weapon, hostage, powerup, fireball
-	int				parent;			// This object's parent.
-	int				parent_sig;		// This object's parent's signature
-	char			parent_type;	// This object's parent's type
-	int				instance;		// which instance.  ie.. if type is Robot, then this indexes into the Robots array
-	uint			flags;			// misc flags.  Call obj_set_flags to change this.
-	vec3d			pos;				// absolute x,y,z coordinate of center of object
-	matrix			orient;			// orientation of object in world
-	float			radius;			// 3d size of object - for collision detection
-	vec3d			last_pos;		// where object was last frame
-	matrix			last_orient;	// how the object was oriented last frame
-	physics_info	phys_info;		// a physics object
-	int				n_quadrants;	// how many shield quadrants the ship has
-	SCP_vector<float>	shield_quadrant;	//	Shield is broken into components, quadrants by default.
-	float			hull_strength;	//	Remaining hull strength.
-	float			sim_hull_strength;	// Simulated hull strength - used with training weapons.
-	SCP_vector<int> objsnd_num;		// Index of persistant sound struct.
-	ushort			net_signature;
-	int				num_pairs;		// How many object pairs this is associated with.  When 0 then there are no more.
+    class object	*next, *prev;	// for linked lists of objects
+    int				signature;		// Every object ever has a unique signature...
+    char			type;				// what type of object this is... robot, weapon, hostage, powerup, fireball
+    int				parent;			// This object's parent.
+    int				parent_sig;		// This object's parent's signature
+    char			parent_type;	// This object's parent's type
+    int				instance;		// which instance.  ie.. if type is Robot, then this indexes into the Robots array
+    uint			flags;			// misc flags.  Call obj_set_flags to change this.
+    vec3d			pos;				// absolute x,y,z coordinate of center of object
+    matrix			orient;			// orientation of object in world
+    float			radius;			// 3d size of object - for collision detection
+    vec3d			last_pos;		// where object was last frame
+    matrix			last_orient;	// how the object was oriented last frame
+    physics_info	phys_info;		// a physics object
+    int				n_quadrants;	// how many shield quadrants the ship has
+    SCP_vector<float>	shield_quadrant;	//	Shield is broken into components, quadrants by default.
+    float			hull_strength;	//	Remaining hull strength.
+    float			sim_hull_strength;	// Simulated hull strength - used with training weapons.
+    SCP_vector<int> objsnd_num;		// Index of persistant sound struct.
+    ushort			net_signature;
+    int				num_pairs;		// How many object pairs this is associated with.  When 0 then there are no more.
 
-	dock_instance	*dock_list;			// Goober5000 - objects this object is docked to
-	dock_instance	*dead_dock_list;	// Goober5000 - objects this object was docked to when destroyed; replaces dock_objnum_when_dead
+    dock_instance	*dock_list;			// Goober5000 - objects this object is docked to
+    dock_instance	*dead_dock_list;	// Goober5000 - objects this object was docked to when destroyed; replaces dock_objnum_when_dead
 
-	int				collision_group_id; // This is a bitfield. Collision checks will be skipped if A->collision_group_id & B->collision_group_id returns nonzero
+    int				collision_group_id; // This is a bitfield. Collision checks will be skipped if A->collision_group_id & B->collision_group_id returns nonzero
 
-	object();
-	~object();
-	void clear();
+    object();
+    ~object();
+    void clear();
 };
 
 struct object_h {
-	object *objp;
-	int sig;
+    object *objp;
+    int sig;
 
-	bool IsValid(){return (this != NULL && objp != NULL && objp->signature == sig);}
-	object_h(object *in){objp=in; if(objp!=NULL){sig=in->signature;}}
-	object_h(){objp=NULL;sig=-1;}
+    bool IsValid(){return (this != NULL && objp != NULL && objp->signature == sig);}
+    object_h(object *in){objp=in; if(objp!=NULL){sig=in->signature;}}
+    object_h(){objp=NULL;sig=-1;}
 };
 
 // object backup struct used by Fred.
 typedef struct object_orient_pos {
-	vec3d pos;
-	matrix orient;
+    vec3d pos;
+    matrix orient;
 } object_orient_pos;
 
 #ifdef OBJECT_CHECK
 typedef struct checkobject
 {
-	int	type;
-	int	signature;
-	uint	flags;
-	int	parent_sig;
-	int	parent_type;
+    int	type;
+    int	signature;
+    uint	flags;
+    int	parent_sig;
+    int	parent_type;
 } checkobject;
 #endif
 
@@ -206,7 +208,7 @@ extern int Object_inited;
 extern int Show_waypoints;
 
 // The next signature for the next newly created object. Zero is bogus
-extern int Object_next_signature;		
+extern int Object_next_signature;
 extern int Num_objects;
 
 extern object Objects[];
@@ -245,7 +247,7 @@ int obj_create(ubyte type,int parent_obj, int instance, matrix * orient, vec3d *
 void obj_render(object *obj);
 
 //Sorts and renders all the ojbects
-void obj_render_all(void (*render_function)(object *objp), bool* render_viewer_last );
+void obj_render_all(const std::function<void(object *)> &renderer, bool *draw_viewer_last );
 
 //move all objects for the current frame
 void obj_move_all(float frametime);		// moves all objects
