@@ -31,7 +31,6 @@ extern int	Show_horizon;
 extern int	Lookat_mode;
 extern int	True_rw, True_rh;
 extern int	Fixed_briefing_size;
-extern vec3d	Constraint, Anticonstraint;
 extern vec3d	Tp1, Tp2;  // test points
 extern physics_info view_physics;
 extern vec3d view_pos, eye_pos;

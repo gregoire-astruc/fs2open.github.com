@@ -8,8 +8,15 @@
 #include <QDir>
 #include <QSplashScreen>
 
+#ifdef _WIN32
+#ifndef _MINGW
+#include <crtdbg.h>
+#endif // !_MINGW
+#endif
+
 #include "globalincs/globals.h"
 #include "globalincs/pstypes.h"
+#include "globalincs/mspdb_callstack.h"
 #include "io/timer.h"
 #include "io/key.h"
 #include "io/mouse.h"
@@ -62,7 +69,10 @@ void os_set_window_from_hwnd(WId handle)
 }
 }
 
-
+// SDL defines this on windows which causes problems
+#ifdef main
+#undef main
+#endif
 
 int main(int argc, char *argv[])
 {
@@ -73,28 +83,32 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
     QSplashScreen splash(QPixmap(":/images/splash.png"));
     splash.show();
-    app.processEvents();
+	app.processEvents();
+
+#ifdef WIN32
+	SCP_mspdbcs_Initialise();
+#endif
 
     if (!vm_init(24*1024*1024)) {
         qFatal("Unable to allocate VM.");
         return -1;
     }
 
-    //! \bug This leaks.
-    char *Fred_base_dir = strdup(QDir::current().absolutePath().toStdString().c_str());
+	auto baseDir = QDir::toNativeSeparators(QDir::current().absolutePath());
+
     os_init_registry_stuff(Osreg_company_name, Osreg_app_name, NULL);
     timer_init();
-    cfile_chdir(Fred_base_dir);
+	cfile_chdir(baseDir.toLocal8Bit());
 
     // d'oh
-    if(cfile_init(Fred_base_dir)){
+	if (cfile_init(baseDir.toLocal8Bit())){
         qFatal("Unable to cfile init.");
         return -2;
     }
 
     std::vector<std::pair<std::function<void(void)>, QString>> initializers = {
         {std::bind(lcl_init, FS2_OPEN_DEFAULT_LANGUAGE), app.tr("Initialization locale")},
-        {std::bind(gr_init, GR_OPENGL, 640, 480, 32), app.tr("Initializating graphics")},
+		{[](){ gr_init(GR_OPENGL, 640, 480, 32); }, app.tr("Initializating graphics") },
         {[](){ SDL_HideWindow(os_get_window()); }, app.tr("Hiding FreeSpace root window")},
         {key_init, app.tr("Initializing keyboard")},
         {mouse_init, app.tr("Initializing mouse")},
@@ -134,6 +148,11 @@ int main(int argc, char *argv[])
     mw.show();
     splash.finish(&mw);
 
+	auto ret = app.exec();
 
-    return app.exec();
+#ifdef WIN32
+	SCP_mspdbcs_Cleanup();
+#endif
+
+	return ret;
 }
