@@ -69,7 +69,10 @@ void os_set_window_from_hwnd(WId handle)
 }
 }
 
+// SDL defines this on windows which causes problems
+#ifdef main
 #undef main
+#endif
 
 int main(int argc, char *argv[])
 {
