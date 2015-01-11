@@ -51,13 +51,13 @@
 #include "graphics/font.h"
 #include "cmdline/cmdline.h"
 #include "iff_defs/iff_defs.h"
+#include "osapi/osapi.h"
 
 extern float flFrametime;
 //extern subsys_to_render Render_subsys;
 
 // Globals.
 vec3d	view_pos, eye_pos, Grid_center;
-vec3d Constraint({{{ 1.0f, 0.0f, 1.0f }}}), Anticonstraint({{{ 0.0f, 1.0f, 0.0f }}});
 vec3d	Tp1, Tp2;  // test points
 matrix	Grid_gmatrix;
 matrix	view_orient = IDENTITY_MATRIX, eye_orient;
@@ -106,9 +106,9 @@ int	True_rw, True_rh;
 int	Fixed_briefing_size = 1;
 
 fix		lasttime = 0;
-static vec3d	my_pos({{{ 0.0f, 0.0f, -5.0f }}});
+static vec3d	my_pos = { 0.0f, 0.0f, -5.0f };
 static vec3d	Viewer_pos, Last_eye_pos;
-static vec3d	Last_control_pos({{{ 0.0f }}});
+static vec3d	Last_control_pos = { 0.0f };
 static matrix	my_orient = IDENTITY_MATRIX;
 static matrix	trackball_orient = IDENTITY_MATRIX;
 static matrix	Last_eye_orient = IDENTITY_MATRIX;
@@ -116,7 +116,7 @@ static matrix	Last_control_orient = IDENTITY_MATRIX;
 static control_info view_controls;
 //CWnd		info_popup;
 
-static vec3d Global_light_world({{{ 0.208758f, -0.688253f, -0.694782f }}});
+static vec3d Global_light_world = { 0.208758f, -0.688253f, -0.694782f };
 
 static void display_distances();
 static void render_model_x(vec3d *pos, grid *gridp, int col_scheme = 0);
@@ -2164,7 +2164,7 @@ static void inc_mission_time()
     } else if (Frametime < MIN_FRAMETIME) {
         if ( !Cmdline_NoFPSCap ) {
             thistime = MIN_FRAMETIME - Frametime;
-            Sleep( DWORD(f2fl(thistime) * 1000.0f) );
+			os_sleep(f2i(thistime) * 1000);
             thistime = timer_get_fixed_seconds();
         }
 
