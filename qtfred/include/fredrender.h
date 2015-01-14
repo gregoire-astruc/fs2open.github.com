@@ -14,6 +14,8 @@
 
 #define BRIEFING_LOOKAT_POINT_ID	99999
 
+extern matrix	Grid_gmatrix;
+extern vec3d	Grid_center;
 extern int	Aa_gridlines;
 extern int	player_start1;
 extern int	Editing_mode;
@@ -62,6 +64,11 @@ void render_frame(
     bool Bg_bitmap_dialog, bool Render_compass,
     bool Lighting_on, bool FullDetail
 );
+int select_object(
+    int cx, int cy,
+    bool Selection_lock,
+    bool Show_starts, bool Show_ships, bool Show_iff[],
+    bool Show_ship_models);
 // viewpoint -> attach camera to current ship.
 // cur_obj -> ship viewed.
 void level_controlled(const int viewpoint, const int cur_obj);

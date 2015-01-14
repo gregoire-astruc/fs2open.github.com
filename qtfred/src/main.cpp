@@ -1,4 +1,5 @@
-#include <vector>
+#include <unordered_map>
+#include <memory>
 #include <utility>
 #include <functional>
 
@@ -14,30 +15,9 @@
 #endif // !_MINGW
 #endif
 
-#include "globalincs/globals.h"
-#include "globalincs/pstypes.h"
-#include "globalincs/mspdb_callstack.h"
-#include "io/timer.h"
-#include "io/key.h"
-#include "io/mouse.h"
-#include "graphics/2d.h"
-#include "osapi/osregistry.h"
-#include "osapi/osapi.h"
-#include "cfile/cfile.h"
-#include "object/object.h"
-#include "localization/localize.h"
-#include "mission/missionbriefcommon.h"
-#include "ship/ship.h"
-#include "species_defs/species_defs.h"
-#include "ai/ai.h"
-#include "weapon/weapon.h"
-#include "stats/medals.h"
-#include "iff_defs/iff_defs.h"
-#include "starfield/starfield.h"
-#include "nebula/neb.h"
-#include "physics/physics.h"
+#include "globalincs/globals.h" // MAX_SHIPS, NAME_LENGTH
 
-#include "fredrender.h"
+#include "editor.h"
 
 #include "mainwindow.h"
 
@@ -51,24 +31,6 @@ int Show_cpu = 0;
 void game_start_subspace_ambient_sound() {}
 void game_stop_subspace_ambient_sound() {}
 
-namespace {
-void os_set_window_from_hwnd(WId handle)
-{
-    if (!SDL_WasInit(SDL_INIT_VIDEO))
-        SDL_InitSubSystem(SDL_INIT_VIDEO);
-
-    if (SDL_GL_LoadLibrary(NULL) < 0)
-            Error(LOCATION, "Failed to load OpenGL library: %s!", SDL_GetError());
-
-
-    SDL_Window* window = SDL_CreateWindowFrom((void*) handle);
-
-    if (os_get_window())
-        SDL_DestroyWindow(os_get_window());
-    os_set_window(window);
-}
-}
-
 // SDL defines this on windows which causes problems
 #ifdef main
 #undef main
@@ -76,83 +38,63 @@ void os_set_window_from_hwnd(WId handle)
 
 int main(int argc, char *argv[])
 {
-#ifdef SCP_UNIX
-    setenv("force_s3tc_enable", "true", 1);
-#endif
-    //outwnd_init();
+
     QApplication app(argc, argv);
     QSplashScreen splash(QPixmap(":/images/splash.png"));
     splash.show();
-	app.processEvents();
+    app.processEvents();
+    std::shared_ptr<fso::fred::Editor> fred = std::make_shared<fso::fred::Editor>();
 
 #ifdef WIN32
-	SCP_mspdbcs_Initialise();
+    SCP_mspdbcs_Initialise();
 #endif
 
-    if (!vm_init(24*1024*1024)) {
-        qFatal("Unable to allocate VM.");
-        return -1;
-    }
+    auto baseDir = QDir::toNativeSeparators(QDir::current().absolutePath());
 
-	auto baseDir = QDir::toNativeSeparators(QDir::current().absolutePath());
-
-    os_init_registry_stuff(Osreg_company_name, Osreg_app_name, NULL);
-    timer_init();
-	cfile_chdir(baseDir.toLocal8Bit());
-
-    // d'oh
-	if (cfile_init(baseDir.toLocal8Bit())){
-        qFatal("Unable to cfile init.");
-        return -2;
-    }
-
-    std::vector<std::pair<std::function<void(void)>, QString>> initializers = {
-        {std::bind(lcl_init, FS2_OPEN_DEFAULT_LANGUAGE), app.tr("Initialization locale")},
-		{[](){ gr_init(GR_OPENGL, 640, 480, 32); }, app.tr("Initializating graphics") },
-        {[](){ SDL_HideWindow(os_get_window()); }, app.tr("Hiding FreeSpace root window")},
-        {key_init, app.tr("Initializing keyboard")},
-        {mouse_init, app.tr("Initializing mouse")},
-        {iff_init, app.tr("Initializing IFF")},
-        {obj_init, app.tr("Initializing objects")},
-        {species_init, app.tr("Initializing species")},
-        {mission_brief_common_init, app.tr("Initializing briefings")},
-        {ai_init, app.tr("Initializing AI")},
-        {ai_profiles_init, app.tr("Initializing AI profiles")},
-        {armor_init, app.tr("Initializing armors")},
-        {weapon_init, app.tr("Initializing weaponry")},
-        {parse_medal_tbl, app.tr("Initializing medals")},
-        {ship_init, app.tr("Initializing ships")},
-        {neb2_init, app.tr("Initializing nebulas")},
-        {stars_init, app.tr("Initializing stars")},
-        {std::bind(stars_pre_level_init, true), app.tr("Pre-intializing stars levels")},
-        {stars_post_level_init, app.tr("Initializing stars post levels")},
-        {[]{
-            gr_reset_clip();
-            g3_start_frame(0);
-            g3_set_view_matrix(&eye_pos, &eye_orient, 0.5f);
-        }, app.tr("Setting view")}
+    std::unordered_map<fso::fred::SubSystem, QString> initializers = {
+        {fso::fred::SubSystem::VM, app.tr("VM")},
+        {fso::fred::SubSystem::OSRegistry, app.tr("OS registry")},
+        {fso::fred::SubSystem::Timer, app.tr("Timer")},
+        {fso::fred::SubSystem::CFile, app.tr("CFile")},
+        {fso::fred::SubSystem::Locale, app.tr("Initialization locale")},
+        {fso::fred::SubSystem::Graphics, app.tr("Initializating graphics")},
+        {fso::fred::SubSystem::Fonts, app.tr("Fonts")},
+        {fso::fred::SubSystem::Keyboard, app.tr("Initializing keyboard")},
+        {fso::fred::SubSystem::Mouse, app.tr("Initializing mouse")},
+        {fso::fred::SubSystem::Iff, app.tr("Initializing IFF")},
+        {fso::fred::SubSystem::Objects, app.tr("Initializing objects")},
+        {fso::fred::SubSystem::Species, app.tr("Initializing species")},
+        {fso::fred::SubSystem::MissionBrief, app.tr("Initializing briefings")},
+        {fso::fred::SubSystem::AI, app.tr("Initializing AI")},
+        {fso::fred::SubSystem::AIProfiles, app.tr("Initializing AI profiles")},
+        {fso::fred::SubSystem::Armor, app.tr("Initializing armors")},
+        {fso::fred::SubSystem::Weapon, app.tr("Initializing weaponry")},
+        {fso::fred::SubSystem::Medals, app.tr("Initializing medals")},
+        {fso::fred::SubSystem::Ships, app.tr("Initializing ships")},
+        {fso::fred::SubSystem::Nebulas, app.tr("Initializing nebulas")},
+        {fso::fred::SubSystem::Stars, app.tr("Initializing stars")},
+        {fso::fred::SubSystem::View, app.tr("Setting view")}
     };
 
-    for (const auto &initializer : initializers) {
-        const auto &init_function = initializer.first;
-        const auto &message = initializer.second;
-        splash.showMessage(message, Qt::AlignHCenter | Qt::AlignBottom, Qt::white);
+    fso::fred::initialize(baseDir.toStdString(), [&](const fso::fred::SubSystem &which) {
+        if (initializers.count(which))
+            splash.showMessage(initializers.at(which), Qt::AlignHCenter | Qt::AlignBottom, Qt::white);
         app.processEvents();
-        init_function();
-    }
+    });
 
     fso::fred::MainWindow mw;
     splash.showMessage(qApp->tr("Switching rendering window"), Qt::AlignHCenter | Qt::AlignBottom, Qt::white);
     app.processEvents();
-    os_set_window_from_hwnd(mw.effectiveWinId());
+    fred->setRenderWindow(reinterpret_cast<void *>(mw.effectiveWinId()));
+    mw.setEditor(fred);
     mw.show();
     splash.finish(&mw);
 
-	auto ret = app.exec();
+    auto ret = app.exec();
 
 #ifdef WIN32
-	SCP_mspdbcs_Cleanup();
+    SCP_mspdbcs_Cleanup();
 #endif
 
-	return ret;
+    return ret;
 }

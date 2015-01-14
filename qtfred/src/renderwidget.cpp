@@ -13,6 +13,8 @@
 #include "io/timer.h"
 #include "starfield/starfield.h"
 
+#include "editor.h"
+
 namespace fso {
 namespace fred {
 
@@ -41,18 +43,7 @@ RenderWidget::RenderWidget(QWidget *parent) :
 void RenderWidget::initializeGL()
 {
     qDebug() << "fso::fred::RenderWidget::initializeGL()";
-    fred_render_init();
-    int physics_speed = 100;
-    int physics_rot = 20;
-    physics_init(&view_physics);
-    view_physics.max_vel.xyz.x *= physics_speed / 3.0f;
-    view_physics.max_vel.xyz.y *= physics_speed / 3.0f;
-    view_physics.max_vel.xyz.z *= physics_speed / 3.0f;
-    view_physics.max_rear_vel *= physics_speed / 3.0f;
-    view_physics.max_rotvel.xyz.x *= physics_rot / 30.0f;
-    view_physics.max_rotvel.xyz.y *= physics_rot / 30.0f;
-    view_physics.max_rotvel.xyz.z *= physics_rot / 30.0f;
-    view_physics.flags |= PF_ACCELERATES | PF_SLIDE_ENABLED;
+    fred->initializeRenderer();
     QTimer *updater(new QTimer(this));
     connect(updater, SIGNAL(timeout()), this, SLOT(updateGL()));
     updater->setInterval(30);
@@ -63,15 +54,12 @@ void RenderWidget::initializeGL()
 
 void RenderWidget::paintGL()
 {
-    game_do_frame(-1, 0, 0, -1);
-    std::array<bool, MAX_IFFS> iffs;
-    iffs.fill(true);
-    render_frame(-1, Render_subsys, false, Marking_box(), -1, true, true, &iffs[0], true, true, true, true, false, true, true, true);
+    fred->update();
 }
 
 void RenderWidget::resizeGL(int w, int h)
 {
-    gr_screen_resize(w, h);
+    fred->resize(w, h);
 }
 
 void RenderWidget::keyPressEvent(QKeyEvent *key)
@@ -83,7 +71,6 @@ void RenderWidget::keyPressEvent(QKeyEvent *key)
 
     key->accept();
     key_mark(qt2fsKeys.at(key->key()), 1, 0);
-    //updateGL();
 }
 
 void RenderWidget::keyReleaseEvent(QKeyEvent *key)
@@ -96,12 +83,11 @@ void RenderWidget::keyReleaseEvent(QKeyEvent *key)
     key->accept();
     qDebug() << "Key" << qt2fsKeys.at(key->key());
     key_mark(qt2fsKeys.at(key->key()), 0, 0);
-    //updateGL();
 }
 
-void RenderWidget::updateGame()
+void RenderWidget::mouseReleaseEvent(QMouseEvent *mouse)
 {
-    game_do_frame(-1, 0, 0, -1);
+    fred->findFirstObjectUnder(mouse->x(), mouse->y());
 }
 
 } // namespace fred

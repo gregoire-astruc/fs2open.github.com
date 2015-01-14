@@ -16,9 +16,11 @@ set(QTFRED_SRC
     src/object.cpp
     src/renderwidget.cpp
     src/mainwindow.cpp
+    src/editor.cpp
 )
 
 set(QTFRED_HEADERS
+    include/iterators.h
     include/editor.h
     include/fredrender.h
     include/mainwindow.h

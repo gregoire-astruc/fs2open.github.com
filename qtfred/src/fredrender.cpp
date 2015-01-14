@@ -31,7 +31,6 @@
 #include "object/object.h"
 #include "model/model.h"
 #include "palman/palman.h"
-#include "editor.h"
 #include "ai/ailocal.h"
 #include "ship/ship.h"
 #include "cfile/cfile.h"
@@ -41,8 +40,6 @@
 #include "render/3dinternal.h"
 #include "weapon/weapon.h"
 #include "wing.h"
-//#include "FredRender.h"
-//#include <windows.h>
 #include "starfield/starfield.h"
 #include "io/timer.h"
 #include "lighting/lighting.h"
@@ -52,6 +49,14 @@
 #include "cmdline/cmdline.h"
 #include "iff_defs/iff_defs.h"
 #include "osapi/osapi.h"
+
+#include "iterators.h"
+
+// Let the compilers figure out which one to use.
+using std::begin;
+using std::end;
+using fso::fred::begin;
+using fso::fred::end;
 
 extern float flFrametime;
 //extern subsys_to_render Render_subsys;
@@ -90,7 +95,7 @@ int	Show_outlines = 0;
 int	Show_stars = 1;
 int	Show_grid_positions = 1;
 int	Show_coordinates = 0;
-int	Show_distances = 0;
+int	Show_distances = 1;
 int	Show_horizon = 0;
 int	Show_asteroid_field = 1;
 int	Lookat_mode = 0;
@@ -106,7 +111,7 @@ int	True_rw, True_rh;
 int	Fixed_briefing_size = 1;
 
 fix		lasttime = 0;
-static vec3d	my_pos = { 0.0f, 0.0f, -5.0f };
+static vec3d	my_pos{ 0.0f, 0.0f, -5.0f };
 static vec3d	Viewer_pos, Last_eye_pos;
 static vec3d	Last_control_pos = { 0.0f };
 static matrix	my_orient = IDENTITY_MATRIX;
@@ -1037,39 +1042,33 @@ static void render_one_model_htl(
 
 static void display_distances()
 {
+    using object_iterator = fso::fred::iterator<object>;
     char buf[20];
-    object *objp, *o2;
     vec3d pos;
     vertex v;
 
 
     gr_set_color(255, 0, 0);
-    objp = GET_FIRST(&obj_used_list);
-    while (objp != END_OF_LIST(&obj_used_list))
+    for (object_iterator objp(begin(obj_used_list)); objp != end(obj_used_list); ++objp)
     {
-        if (objp->flags & OF_MARKED)
+        if ((*objp)->flags & OF_MARKED)
         {
-            o2 = GET_NEXT(objp);
-            while (o2 != END_OF_LIST(&obj_used_list))
+            for (object_iterator o2(objp); o2 != end(obj_used_list); ++o2)
             {
-                if (o2->flags & OF_MARKED)
+                if ((*o2)->flags & OF_MARKED)
                 {
-                    rpd_line(&objp->pos, &o2->pos);
-                    vm_vec_avg(&pos, &objp->pos, &o2->pos);
+                    rpd_line(&(*objp)->pos, &(*o2)->pos);
+                    vm_vec_avg(&pos, &(*objp)->pos, &(*o2)->pos);
                     g3_rotate_vertex(&v, &pos);
                     if (!(v.codes & CC_BEHIND))
                         if (!(g3_project_vertex(&v) & PF_OVERFLOW))	{
-                            sprintf(buf, "%.1f", vm_vec_dist(&objp->pos, &o2->pos));
+                            sprintf(buf, "%.1f", vm_vec_dist(&(*objp)->pos, &(*o2)->pos));
                             gr_set_color_fast(&colour_white);
                             gr_string((int) v.screen.xyw.x, (int) v.screen.xyw.y, buf);
                         }
                 }
-
-                o2 = GET_NEXT(o2);
             }
         }
-
-        objp = GET_NEXT(objp);
     }
 }
 
@@ -2000,17 +1999,17 @@ static int object_check_collision(
 
 // Finds the closest object or waypoint under the mouse cursor and returns
 // its index, or -1 if nothing there.
-static int select_object(
+int select_object(
     int cx, int cy,
     bool Selection_lock,
     bool Show_starts, bool Show_ships, bool Show_iff[],
     bool Show_ship_models)
 {
+    using object_iterator = fso::fred::iterator<object>;
     int		best = -1;
     double	dist, best_dist = 9e99;
     vec3d	p0, p1, v, hitpos;
     vertex	vt;
-    object *ptr;
 
     ///! \fixme Briefing!
 #if 0
@@ -2033,29 +2032,31 @@ static int select_object(
 
     //	Get 3d vector specified by mouse cursor location.
     g3_point_to_vec(&v, cx, cy);
+    float x = v.xyz.x;
+    float y = v.xyz.y;
+    float z = v.xyz.z;
 
 //	g3_end_frame();
-    if (!v.xyz.x && !v.xyz.y && !v.xyz.z)  // zero vector
+    if (!v.xyz.x && !v.xyz.y && !v.xyz.z) { // zero vector {
+        mprintf(("select_object: zero vector"));
         return -1;
+    }
 
     p0 = view_pos;
     vm_vec_scale_add(&p1, &p0, &v, 100.0f);
 
-    ptr = GET_FIRST(&obj_used_list);
-    while (ptr != END_OF_LIST(&obj_used_list))
-    {
-        if (object_check_collision(ptr, &p0, &p1, &hitpos, Show_starts, Show_ships, Show_iff, Show_ship_models))	{
-            hitpos.xyz.x = ptr->pos.xyz.x - view_pos.xyz.x;
-            hitpos.xyz.y = ptr->pos.xyz.y - view_pos.xyz.y;
-            hitpos.xyz.z = ptr->pos.xyz.z - view_pos.xyz.z;
+    for (object_iterator ptr(begin(obj_used_list)); ptr != end(obj_used_list); ++ptr) {
+        if (object_check_collision(*ptr, &p0, &p1, &hitpos, Show_starts, Show_ships, Show_iff, Show_ship_models))	{
+            hitpos.xyz.x = (*ptr)->pos.xyz.x - view_pos.xyz.x;
+            hitpos.xyz.y = (*ptr)->pos.xyz.y - view_pos.xyz.y;
+            hitpos.xyz.z = (*ptr)->pos.xyz.z - view_pos.xyz.z;
             dist = hitpos.xyz.x * hitpos.xyz.x + hitpos.xyz.y * hitpos.xyz.y + hitpos.xyz.z * hitpos.xyz.z;
             if (dist < best_dist) {
-                best = OBJ_INDEX(ptr);
+                best = OBJ_INDEX(*ptr);
+                mprintf(("select_object: best so far %d", best));
                 best_dist = dist;
             }
         }
-
-        ptr = GET_NEXT(ptr);
     }
 
     if (best >= 0)
@@ -2066,22 +2067,20 @@ static int select_object(
         }
         return best;
     }
-    ptr = GET_FIRST(&obj_used_list);
-    while (ptr != END_OF_LIST(&obj_used_list))
+
+    for (object_iterator ptr(begin(obj_used_list)); ptr != end(obj_used_list); ++ptr)
     {
-        g3_rotate_vertex(&vt, &ptr->pos);
+        g3_rotate_vertex(&vt, &(*ptr)->pos);
         if (!(vt.codes & CC_BEHIND))
             if (!(g3_project_vertex(&vt) & PF_OVERFLOW)) {
                 hitpos.xyz.x = vt.screen.xyw.x - cx;
                 hitpos.xyz.y = vt.screen.xyw.y - cy;
                 dist = hitpos.xyz.x * hitpos.xyz.x + hitpos.xyz.y * hitpos.xyz.y;
                 if ((dist < 8) && (dist < best_dist)) {
-                    best = OBJ_INDEX(ptr);
+                    best = OBJ_INDEX(*ptr);
                     best_dist = dist;
                 }
             }
-
-        ptr = GET_NEXT(ptr);
     }
 
     if(Selection_lock && !(Objects[best].flags & OF_MARKED))
@@ -2164,7 +2163,7 @@ static void inc_mission_time()
     } else if (Frametime < MIN_FRAMETIME) {
         if ( !Cmdline_NoFPSCap ) {
             thistime = MIN_FRAMETIME - Frametime;
-			os_sleep(f2i(thistime) * 1000);
+            os_sleep(f2i(thistime) * 1000);
             thistime = timer_get_fixed_seconds();
         }
 
