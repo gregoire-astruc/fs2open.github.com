@@ -10,6 +10,7 @@
 #include <QSplashScreen>
 
 #ifdef _WIN32
+#include "globalincs/mspdb_callstack.h"
 #ifndef _MINGW
 #include <crtdbg.h>
 #endif // !_MINGW

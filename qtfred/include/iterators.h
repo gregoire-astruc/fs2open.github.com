@@ -7,7 +7,12 @@
 namespace fso {
 namespace fred {
 
+#ifdef _MSC_VER
+    // MSVC apparently doesn't like declval (this will cause issues with derived classes)
+template<typename T, typename element_type = T*>
+#else
 template<typename T, typename element_type = decltype(std::declval<T>().prev)>
+#endif
 struct iterator : public std::iterator<std::bidirectional_iterator_tag, T>
 {
     iterator(const T &t): current{GET_FIRST(&t)} {}
