@@ -69,17 +69,38 @@ INSTALL(
 COPY_FILES_TO_TARGET(qtfred)
 
 if (WIN32)
+    set(additional_dlls
+        icudt52.dll
+        icuin52.dll
+        icuuc52.dll
+    )
+
+    include(util)
+    list_target_dependencies(qtfred qtfred_deps)
+
     get_target_property (QT_QMAKE_EXECUTABLE Qt5::qmake IMPORTED_LOCATION)
     execute_process(COMMAND ${QT_QMAKE_EXECUTABLE} -query QT_INSTALL_BINS OUTPUT_VARIABLE QT_INSTALL_BINS OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-    file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/run_$<CONFIG>.cmake"
-    CONTENT "
-include(BundleUtilities)
-fixup_bundle(\"$<TARGET_FILE:qtfred>\" \"\" \"${QT_INSTALL_BINS}\")
-    ")
+    set(file_paths)
+    foreach(dep ${qtfred_deps})
+        if ("${dep}" MATCHES "(^|;)Qt5::[A-Za-z0-9_]")
+            set(file_paths ${file_paths} "$<TARGET_FILE:${dep}>")
+        endif ("${dep}" MATCHES "(^|;)Qt5::[A-Za-z0-9_]")
+    endforeach(dep)
 
-    add_custom_command(TARGET qtfred
-    POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -P "${CMAKE_CURRENT_BINARY_DIR}/run_$<CONFIG>.cmake"
-    VERBATIM)
+    foreach(dll ${additional_dlls})
+        set(file_paths ${file_paths} "${QT_INSTALL_BINS}/${dll}")
+    endforeach(dll)
+
+    foreach(path ${file_paths})
+        add_custom_command(TARGET qtfred
+            POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different "${path}"  "$<TARGET_FILE_DIR:qtfred>"
+        VERBATIM)
+    endforeach(path)
+
+    install(FILES ${file_paths}
+        DESTINATION ${BINARY_DESTINATION}
+        CONFIGURATIONS Debug Release
+    )
 endif(WIN32)
