@@ -1,9 +1,8 @@
 #include "editor.h"
 
+#include <array>
 #include <vector>
 #include <stdexcept>
-
-#include <unistd.h>
 
 #include <SDL.h>
 
@@ -41,7 +40,7 @@ void initialize(const std::string &cfilepath, InitializerCallback listener)
         setenv("force_s3tc_enable", "true", 1);
 #endif
     std::vector<std::pair<std::function<void(void)>, SubSystem>> initializers = {
-        {std::bind(vm_init, 24*1024*1024), SubSystem::VM},
+		{[](){ std::bind(vm_init, 24 * 1024 * 1024); }, SubSystem::VM},
         {std::bind(os_init_registry_stuff, Osreg_company_name, Osreg_app_name, nullptr), SubSystem::OSRegistry},
         {timer_init, SubSystem::Timer},
         {[&cfilepath](void){

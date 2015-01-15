@@ -111,7 +111,7 @@ int	True_rw, True_rh;
 int	Fixed_briefing_size = 1;
 
 fix		lasttime = 0;
-static vec3d	my_pos{ 0.0f, 0.0f, -5.0f };
+static vec3d	my_pos = { 0.0f, 0.0f, -5.0f };
 static vec3d	Viewer_pos, Last_eye_pos;
 static vec3d	Last_control_pos = { 0.0f };
 static matrix	my_orient = IDENTITY_MATRIX;
