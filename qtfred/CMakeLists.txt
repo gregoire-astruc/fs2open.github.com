@@ -37,6 +37,8 @@ add_executable(qtfred ${EXE_GUI_TYPE}
     ${qtfred_QRC}
 )
 set_target_properties(qtfred PROPERTIES OUTPUT_NAME "qtfred_${FSO_BINARY_SUFFIX}")
+
+SET_TARGET_PROPERTIES(qtfred PROPERTIES DEBUG_POSTFIX "-DEBUG")
 target_compile_definitions(qtfred PRIVATE "$<$<CONFIG:RELEASE>:NDEBUG>;$<$<CONFIG:DEBUG>:_DEBUG;$<$<CXX_COMPILER_ID:MSVC>:PDB_DEBUGGING=1>>")
 
 add_definitions(-DFRED)

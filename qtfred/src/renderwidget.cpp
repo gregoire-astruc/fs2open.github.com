@@ -64,6 +64,12 @@ void RenderWidget::resizeGL(int w, int h)
 
 void RenderWidget::keyPressEvent(QKeyEvent *key)
 {
+    if (key->isAutoRepeat())
+    {
+        QGLWidget::keyPressEvent(key);
+        return;
+    }
+
     if (!qt2fsKeys.count(key->key())) {
         QGLWidget::keyPressEvent(key);
         return;
@@ -75,13 +81,18 @@ void RenderWidget::keyPressEvent(QKeyEvent *key)
 
 void RenderWidget::keyReleaseEvent(QKeyEvent *key)
 {
+    if (key->isAutoRepeat())
+    {
+        QGLWidget::keyReleaseEvent(key);
+        return;
+    }
+
     if (!qt2fsKeys.count(key->key())) {
-        QGLWidget::keyPressEvent(key);
+        QGLWidget::keyReleaseEvent(key);
         return;
     }
 
     key->accept();
-    qDebug() << "Key" << qt2fsKeys.at(key->key());
     key_mark(qt2fsKeys.at(key->key()), 0, 0);
 }
 
